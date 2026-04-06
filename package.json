@@ -1,0 +1,22 @@
+{
+  "name": "@m-notes/cli",
+  "version": "1.0.0",
+  "description": "CLI for m-notes AI knowledge base",
+  "bin": {
+    "mnotes": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "npx tsx src/index.ts"
+  },
+  "dependencies": {
+    "commander": "^4.1.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "@types/node": "^20.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
