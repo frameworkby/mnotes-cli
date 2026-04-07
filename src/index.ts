@@ -17,7 +17,7 @@ program
 program
   .name("mnotes")
   .description("CLI for m-notes AI knowledge base")
-  .version("1.0.0")
+  .version(process.env.npm_package_version ?? "1.0.0")
   .option("--api-key <key>", "API key (or set MNOTES_API_KEY)")
   .option("--url <url>", "Base URL (or set MNOTES_URL)")
   .option("--json", "Output as JSON");

@@ -1,14 +1,33 @@
 {
-  "name": "@m-notes/cli",
+  "name": "mnotes-cli",
   "version": "1.0.0",
-  "description": "CLI for m-notes AI knowledge base",
+  "description": "CLI for m-notes AI knowledge base — manage notes, search, and CRUD from the terminal",
   "bin": {
     "mnotes": "./dist/index.js"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
-    "dev": "npx tsx src/index.ts"
+    "dev": "npx tsx src/index.ts",
+    "prepublishOnly": "npm run build"
   },
+  "keywords": [
+    "m-notes",
+    "notes",
+    "cli",
+    "knowledge-base",
+    "markdown",
+    "ai"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/frameworkby/remedy-pod-m-notes.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/frameworkby/remedy-pod-m-notes/tree/main/packages/cli",
+  "license": "SEE LICENSE IN ../../LICENSE",
   "dependencies": {
     "commander": "^4.1.1"
   },
