@@ -12,6 +12,8 @@ import {
   detectConnectedAgents,
 } from "../config-utils";
 import { generateClaudeCodeTemplate } from "../../../templates/claude-code";
+import { generateCodexTemplate } from "../../../templates/codex";
+import { generateOpenClawTemplate } from "../../../templates/openclaw";
 
 // -- Helper: capture stdout --
 function captureStdout(fn: () => void): string {
@@ -464,7 +466,7 @@ describe("generateClaudeCodeTemplate", () => {
     expect(result).toContain("session_log");
   });
 
-  it("includes key naming conventions", () => {
+  it("includes all six key naming conventions (AC-6.2)", () => {
     const result = generateClaudeCodeTemplate({
       url: "http://localhost:3000",
       workspaceId: "ws-test",
@@ -473,7 +475,9 @@ describe("generateClaudeCodeTemplate", () => {
     expect(result).toContain("arch/{component}");
     expect(result).toContain("pattern/{name}");
     expect(result).toContain("bug/{id}");
+    expect(result).toContain("dep/{package}");
     expect(result).toContain("decision/{topic}");
+    expect(result).toContain("context/{area}");
   });
 
   it("includes all available MCP tools", () => {
@@ -496,6 +500,133 @@ describe("generateClaudeCodeTemplate", () => {
     for (const tool of expectedTools) {
       expect(result).toContain(tool);
     }
+  });
+});
+
+// =============================================================
+// Template generation — generateCodexTemplate (AC-6.3)
+// =============================================================
+describe("generateCodexTemplate", () => {
+  it("includes url and workspaceId in output (AC-6.5)", () => {
+    const result = generateCodexTemplate({
+      url: "https://notes.example.com",
+      workspaceId: "ws-abc-123",
+    });
+
+    expect(result).toContain("https://notes.example.com");
+    expect(result).toContain("ws-abc-123");
+  });
+
+  it("is functionally equivalent to Claude Code — has all lifecycle phases (AC-6.3)", () => {
+    const result = generateCodexTemplate({
+      url: "http://localhost:3000",
+      workspaceId: "ws-test",
+    });
+
+    expect(result).toContain("Session Start");
+    expect(result).toContain("Session End");
+    expect(result).toContain("During Work");
+    expect(result).toContain("project_context_load");
+    expect(result).toContain("session_context_resume");
+    expect(result).toContain("knowledge_store");
+    expect(result).toContain("session_log");
+  });
+
+  it("includes all six key naming conventions (AC-6.2 / AC-6.3)", () => {
+    const result = generateCodexTemplate({
+      url: "http://localhost:3000",
+      workspaceId: "ws-test",
+    });
+
+    expect(result).toContain("arch/{component}");
+    expect(result).toContain("pattern/{name}");
+    expect(result).toContain("bug/{id}");
+    expect(result).toContain("dep/{package}");
+    expect(result).toContain("decision/{topic}");
+    expect(result).toContain("context/{area}");
+  });
+
+  it("includes all available MCP tools (AC-6.3)", () => {
+    const result = generateCodexTemplate({
+      url: "http://localhost:3000",
+      workspaceId: "ws-test",
+    });
+
+    const expectedTools = [
+      "project_context_load",
+      "session_context_resume",
+      "knowledge_store",
+      "recall_knowledge",
+      "bulk_knowledge_recall",
+      "knowledge_snapshot",
+      "session_log",
+      "context_fetch",
+    ];
+
+    for (const tool of expectedTools) {
+      expect(result).toContain(tool);
+    }
+  });
+});
+
+// =============================================================
+// Template generation — generateOpenClawTemplate (AC-6.4)
+// =============================================================
+describe("generateOpenClawTemplate", () => {
+  it("includes url and workspaceId in output (AC-6.5)", () => {
+    const result = generateOpenClawTemplate({
+      url: "https://notes.example.com",
+      workspaceId: "ws-abc-123",
+    });
+
+    expect(result).toContain("https://notes.example.com");
+    expect(result).toContain("ws-abc-123");
+  });
+
+  it("is shorter than Claude Code template (AC-6.4)", () => {
+    const claudeCode = generateClaudeCodeTemplate({
+      url: "http://localhost:3000",
+      workspaceId: "ws-test",
+    });
+    const openclaw = generateOpenClawTemplate({
+      url: "http://localhost:3000",
+      workspaceId: "ws-test",
+    });
+
+    expect(openclaw.length).toBeLessThan(claudeCode.length);
+  });
+
+  it("focuses on knowledge_store and recall_knowledge (AC-6.4)", () => {
+    const result = generateOpenClawTemplate({
+      url: "http://localhost:3000",
+      workspaceId: "ws-test",
+    });
+
+    expect(result).toContain("knowledge_store");
+    expect(result).toContain("recall_knowledge");
+  });
+
+  it("includes key naming conventions", () => {
+    const result = generateOpenClawTemplate({
+      url: "http://localhost:3000",
+      workspaceId: "ws-test",
+    });
+
+    expect(result).toContain("decision/{topic}");
+    expect(result).toContain("context/{area}");
+    expect(result).toContain("bug/{id}");
+    expect(result).toContain("pattern/{name}");
+  });
+});
+
+// =============================================================
+// Template storage — .ts files in correct directory (AC-6.6)
+// =============================================================
+describe("template storage (AC-6.6)", () => {
+  it("all three templates are importable as .ts modules", () => {
+    expect(typeof generateClaudeCodeTemplate).toBe("function");
+    expect(typeof generateCodexTemplate).toBe("function");
+    expect(typeof generateOpenClawTemplate).toBe("function");
   });
 });
 
