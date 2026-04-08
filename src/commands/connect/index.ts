@@ -1,6 +1,10 @@
 import { Command } from "commander";
-import { detectConnectedAgents, validateConnection, writeMcpJson, writeClaudeMdBlock } from "./config-utils";
+import * as fs from "fs";
+import * as path from "path";
+import { detectConnectedAgents, validateConnection, writeMcpJson, writeClaudeMdBlock, writeInstructionBlock } from "./config-utils";
 import { generateClaudeCodeTemplate } from "../../templates/claude-code";
+import { generateCodexTemplate } from "../../templates/codex";
+import { generateOpenClawTemplate } from "../../templates/openclaw";
 
 /** Available integration targets with descriptions */
 export const INTEGRATION_TARGETS = [
@@ -110,6 +114,114 @@ async function handleClaudeCode(opts: {
 }
 
 /**
+ * Handles the `codex` integration target.
+ */
+async function handleCodex(opts: {
+  url?: string;
+  apiKey?: string;
+  workspace?: string;
+}): Promise<void> {
+  const url = opts.url || process.env.MNOTES_URL || "http://localhost:3000";
+  const apiKey = opts.apiKey || process.env.MNOTES_API_KEY;
+  const workspaceId = opts.workspace || process.env.MNOTES_WORKSPACE_ID;
+
+  if (!apiKey) {
+    process.stderr.write("Error: API key required. Use --api-key or set MNOTES_API_KEY\n");
+    process.exit(1);
+  }
+
+  if (!workspaceId) {
+    process.stderr.write("Error: Workspace ID required. Use --workspace or set MNOTES_WORKSPACE_ID\n");
+    process.exit(1);
+  }
+
+  const validation = await validateConnection(url, apiKey);
+  if (!validation.ok) {
+    process.stderr.write(`Error: Cannot connect to ${url}: ${validation.error}\n`);
+    process.exit(1);
+  }
+
+  const dir = process.cwd();
+  const mcpUrl = `${url.replace(/\/+$/, "")}/api/mcp`;
+
+  const mcpEntry = {
+    "m-notes": {
+      url: mcpUrl,
+      env: {
+        MNOTES_API_KEY: apiKey,
+      },
+    },
+  };
+
+  writeMcpJson(dir, mcpEntry);
+
+  const template = generateCodexTemplate({ url, workspaceId });
+  writeInstructionBlock(dir, "AGENTS.md", template);
+
+  console.log("Codex connected to m-notes!");
+  console.log(`  .mcp.json  -> MCP server: ${mcpUrl}`);
+  console.log(`  AGENTS.md  -> Agent instructions added`);
+  console.log(`  Workspace: ${workspaceId}`);
+
+  console.log("\nMCP config (copy if auto-detection fails):");
+  console.log(JSON.stringify({ mcpServers: mcpEntry }, null, 2));
+}
+
+/**
+ * Handles the `openclaw` integration target.
+ */
+async function handleOpenClaw(opts: {
+  url?: string;
+  apiKey?: string;
+  workspace?: string;
+  configPath?: string;
+}): Promise<void> {
+  const url = opts.url || process.env.MNOTES_URL || "http://localhost:3000";
+  const apiKey = opts.apiKey || process.env.MNOTES_API_KEY;
+  const workspaceId = opts.workspace || process.env.MNOTES_WORKSPACE_ID;
+  const configPath = opts.configPath || path.join(process.env.HOME || "~", ".openclaw", "mcp.json");
+
+  if (!apiKey) {
+    process.stderr.write("Error: API key required. Use --api-key or set MNOTES_API_KEY\n");
+    process.exit(1);
+  }
+
+  if (!workspaceId) {
+    process.stderr.write("Error: Workspace ID required. Use --workspace or set MNOTES_WORKSPACE_ID\n");
+    process.exit(1);
+  }
+
+  const validation = await validateConnection(url, apiKey);
+  if (!validation.ok) {
+    process.stderr.write(`Error: Cannot connect to ${url}: ${validation.error}\n`);
+    process.exit(1);
+  }
+
+  const mcpUrl = `${url.replace(/\/+$/, "")}/api/mcp`;
+  const configDir = path.dirname(configPath);
+
+  // Ensure config directory exists
+  fs.mkdirSync(configDir, { recursive: true });
+
+  writeMcpJson(configDir, {
+    "openclaw-mnotes": {
+      url: mcpUrl,
+      env: {
+        MNOTES_API_KEY: apiKey,
+      },
+    },
+  });
+
+  const template = generateOpenClawTemplate({ url, workspaceId });
+  writeInstructionBlock(configDir, "instructions.md", template);
+
+  console.log("OpenClaw connected to m-notes!");
+  console.log(`  ${path.join(configDir, ".mcp.json")}  -> MCP server: ${mcpUrl}`);
+  console.log(`  ${path.join(configDir, "instructions.md")}  -> Agent instructions added`);
+  console.log(`  Workspace: ${workspaceId}`);
+}
+
+/**
  * Registers the `connect` subcommand group on the root program.
  */
 export function registerConnectCommand(program: Command): void {
@@ -121,6 +233,7 @@ export function registerConnectCommand(program: Command): void {
     .option("--url <url>", "m-notes URL (skip prompt)")
     .option("--api-key <key>", "API key (skip prompt)")
     .option("--workspace <id>", "Workspace ID")
+    .option("--config-path <path>", "Config file path (openclaw only)")
     .action(
       async (
         target: string | undefined,
@@ -130,6 +243,7 @@ export function registerConnectCommand(program: Command): void {
           url?: string;
           apiKey?: string;
           workspace?: string;
+          configPath?: string;
         }
       ) => {
         if (opts.list) {
@@ -144,6 +258,16 @@ export function registerConnectCommand(program: Command): void {
 
         if (target === "claude-code") {
           await handleClaudeCode(opts);
+          return;
+        }
+
+        if (target === "codex") {
+          await handleCodex(opts);
+          return;
+        }
+
+        if (target === "openclaw") {
+          await handleOpenClaw(opts);
           return;
         }
 

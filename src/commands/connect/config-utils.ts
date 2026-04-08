@@ -129,6 +129,34 @@ export function writeClaudeMdBlock(dir: string, content: string): void {
 }
 
 /**
+ * Writes or replaces the m-notes instruction block in any file (generalized).
+ * Creates the file if it doesn't exist.
+ */
+export function writeInstructionBlock(dir: string, filename: string, content: string): void {
+  const filePath = path.join(dir, filename);
+  const block = `${MNOTES_BLOCK_START}\n${content}\n${MNOTES_BLOCK_END}`;
+  let existing = "";
+
+  try {
+    existing = fs.readFileSync(filePath, "utf-8");
+  } catch {
+    // File doesn't exist — will create
+  }
+
+  if (existing.includes(MNOTES_BLOCK_START) && existing.includes(MNOTES_BLOCK_END)) {
+    const regex = new RegExp(
+      `${escapeRegex(MNOTES_BLOCK_START)}[\\s\\S]*?${escapeRegex(MNOTES_BLOCK_END)}`
+    );
+    const updated = existing.replace(regex, block);
+    fs.writeFileSync(filePath, updated, "utf-8");
+  } else {
+    const separator = existing.length > 0 && !existing.endsWith("\n") ? "\n\n" : "\n";
+    const prefix = existing.length > 0 ? separator : "";
+    fs.writeFileSync(filePath, existing + prefix + block + "\n", "utf-8");
+  }
+}
+
+/**
  * Validates a connection to an m-notes instance by calling the health endpoint.
  * Returns true if the server responds successfully.
  */
