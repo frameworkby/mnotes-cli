@@ -1,5 +1,6 @@
 import { Command } from "commander";
-import { detectConnectedAgents } from "./config-utils";
+import { detectConnectedAgents, validateConnection, writeMcpJson, writeClaudeMdBlock } from "./config-utils";
+import { generateClaudeCodeTemplate } from "../../templates/claude-code";
 
 /** Available integration targets with descriptions */
 export const INTEGRATION_TARGETS = [
@@ -60,11 +61,60 @@ function printConnectionStatus(): void {
 }
 
 /**
+ * Handles the `claude-code` integration target.
+ */
+async function handleClaudeCode(opts: {
+  url?: string;
+  apiKey?: string;
+  workspace?: string;
+}): Promise<void> {
+  const url = opts.url || process.env.MNOTES_URL || "http://localhost:3000";
+  const apiKey = opts.apiKey || process.env.MNOTES_API_KEY;
+  const workspaceId = opts.workspace || process.env.MNOTES_WORKSPACE_ID;
+
+  if (!apiKey) {
+    process.stderr.write("Error: API key required. Use --api-key or set MNOTES_API_KEY\n");
+    process.exit(1);
+  }
+
+  if (!workspaceId) {
+    process.stderr.write("Error: Workspace ID required. Use --workspace or set MNOTES_WORKSPACE_ID\n");
+    process.exit(1);
+  }
+
+  const validation = await validateConnection(url, apiKey);
+  if (!validation.ok) {
+    process.stderr.write(`Error: Cannot connect to ${url}: ${validation.error}\n`);
+    process.exit(1);
+  }
+
+  const dir = process.cwd();
+  const mcpUrl = `${url.replace(/\/+$/, "")}/api/mcp`;
+
+  writeMcpJson(dir, {
+    "m-notes": {
+      url: mcpUrl,
+      env: {
+        MNOTES_API_KEY: apiKey,
+      },
+    },
+  });
+
+  const template = generateClaudeCodeTemplate({ url, workspaceId });
+  writeClaudeMdBlock(dir, template);
+
+  console.log("Claude Code connected to m-notes!");
+  console.log(`  .mcp.json  -> MCP server: ${mcpUrl}`);
+  console.log(`  CLAUDE.md  -> Agent instructions added`);
+  console.log(`  Workspace: ${workspaceId}`);
+}
+
+/**
  * Registers the `connect` subcommand group on the root program.
  */
 export function registerConnectCommand(program: Command): void {
   const connect = program
-    .command("connect")
+    .command("connect [target]")
     .description("Connect coding agents to m-notes")
     .option("--list", "List available integration targets")
     .option("--status", "Show connection status for agents in current directory")
@@ -72,13 +122,16 @@ export function registerConnectCommand(program: Command): void {
     .option("--api-key <key>", "API key (skip prompt)")
     .option("--workspace <id>", "Workspace ID")
     .action(
-      async (opts: {
-        list?: boolean;
-        status?: boolean;
-        url?: string;
-        apiKey?: string;
-        workspace?: string;
-      }) => {
+      async (
+        target: string | undefined,
+        opts: {
+          list?: boolean;
+          status?: boolean;
+          url?: string;
+          apiKey?: string;
+          workspace?: string;
+        }
+      ) => {
         if (opts.list) {
           printIntegrationList();
           return;
@@ -89,7 +142,18 @@ export function registerConnectCommand(program: Command): void {
           return;
         }
 
-        // No flag provided — show help
+        if (target === "claude-code") {
+          await handleClaudeCode(opts);
+          return;
+        }
+
+        if (target) {
+          process.stderr.write(`Error: Unknown integration target "${target}". Use --list to see available targets.\n`);
+          process.exit(1);
+          return;
+        }
+
+        // No target and no flag — show help
         connect.help();
       }
     );

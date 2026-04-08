@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Command } from "commander";
 import * as fs from "fs";
 import * as path from "path";
@@ -11,6 +11,7 @@ import {
   writeClaudeMdBlock,
   detectConnectedAgents,
 } from "../config-utils";
+import { generateClaudeCodeTemplate } from "../../../templates/claude-code";
 
 // -- Helper: capture stdout --
 function captureStdout(fn: () => void): string {
@@ -431,5 +432,330 @@ describe("config-utils: detectConnectedAgents", () => {
     const agents = detectConnectedAgents(tmpDir);
     expect(agents.get("openclaw")?.connected).toBe(true);
     expect(agents.get("openclaw")?.url).toBe("https://notes.example.com/api/mcp");
+  });
+});
+
+// =============================================================
+// Template generation — generateClaudeCodeTemplate
+// =============================================================
+describe("generateClaudeCodeTemplate", () => {
+  it("includes url and workspaceId in output", () => {
+    const result = generateClaudeCodeTemplate({
+      url: "https://notes.example.com",
+      workspaceId: "ws-abc-123",
+    });
+
+    expect(result).toContain("https://notes.example.com");
+    expect(result).toContain("ws-abc-123");
+  });
+
+  it("includes session lifecycle sections", () => {
+    const result = generateClaudeCodeTemplate({
+      url: "http://localhost:3000",
+      workspaceId: "ws-test",
+    });
+
+    expect(result).toContain("Session Start");
+    expect(result).toContain("Session End");
+    expect(result).toContain("During Work");
+    expect(result).toContain("project_context_load");
+    expect(result).toContain("session_context_resume");
+    expect(result).toContain("knowledge_store");
+    expect(result).toContain("session_log");
+  });
+
+  it("includes key naming conventions", () => {
+    const result = generateClaudeCodeTemplate({
+      url: "http://localhost:3000",
+      workspaceId: "ws-test",
+    });
+
+    expect(result).toContain("arch/{component}");
+    expect(result).toContain("pattern/{name}");
+    expect(result).toContain("bug/{id}");
+    expect(result).toContain("decision/{topic}");
+  });
+
+  it("includes all available MCP tools", () => {
+    const result = generateClaudeCodeTemplate({
+      url: "http://localhost:3000",
+      workspaceId: "ws-test",
+    });
+
+    const expectedTools = [
+      "project_context_load",
+      "session_context_resume",
+      "knowledge_store",
+      "recall_knowledge",
+      "bulk_knowledge_recall",
+      "knowledge_snapshot",
+      "session_log",
+      "context_fetch",
+    ];
+
+    for (const tool of expectedTools) {
+      expect(result).toContain(tool);
+    }
+  });
+});
+
+// =============================================================
+// mnotes connect claude-code subcommand
+// =============================================================
+describe("mnotes connect claude-code", () => {
+  let tmpDir: string;
+  let origCwd: () => string;
+  let origExit: (code?: number) => never;
+  let exitCode: number | undefined;
+
+  beforeEach(() => {
+    tmpDir = makeTmpDir();
+    origCwd = process.cwd;
+    process.cwd = () => tmpDir;
+    exitCode = undefined;
+    origExit = process.exit;
+    process.exit = ((code?: number) => {
+      exitCode = code;
+      throw new Error(`process.exit(${code})`);
+    }) as never;
+  });
+
+  afterEach(() => {
+    process.cwd = origCwd;
+    process.exit = origExit;
+    cleanTmpDir(tmpDir);
+    vi.restoreAllMocks();
+  });
+
+  it("writes .mcp.json with correct structure on success", async () => {
+    // Mock validateConnection to return ok
+    const configUtils = await import("../config-utils");
+    vi.spyOn(configUtils, "validateConnection").mockResolvedValue({ ok: true });
+
+    const program = new Command();
+    program.exitOverride();
+    registerConnectCommand(program);
+
+    let output = "";
+    const origLog = console.log;
+    console.log = (...args: unknown[]) => {
+      output += args.join(" ") + "\n";
+    };
+
+    try {
+      await program.parseAsync([
+        "node", "mnotes", "connect", "claude-code",
+        "--url", "http://localhost:3000",
+        "--api-key", "test-key-abc",
+        "--workspace", "ws-123",
+      ]);
+    } finally {
+      console.log = origLog;
+    }
+
+    // Verify .mcp.json
+    const mcpContent = JSON.parse(
+      fs.readFileSync(path.join(tmpDir, ".mcp.json"), "utf-8")
+    );
+    expect(mcpContent.mcpServers["m-notes"].url).toBe("http://localhost:3000/api/mcp");
+    expect(mcpContent.mcpServers["m-notes"].env.MNOTES_API_KEY).toBe("test-key-abc");
+
+    // Verify success output
+    expect(output).toContain("Claude Code connected to m-notes!");
+    expect(output).toContain("http://localhost:3000/api/mcp");
+    expect(output).toContain("ws-123");
+  });
+
+  it("writes CLAUDE.md with delimited block on success", async () => {
+    const configUtils = await import("../config-utils");
+    vi.spyOn(configUtils, "validateConnection").mockResolvedValue({ ok: true });
+
+    const program = new Command();
+    program.exitOverride();
+    registerConnectCommand(program);
+
+    const origLog = console.log;
+    console.log = () => {};
+
+    try {
+      await program.parseAsync([
+        "node", "mnotes", "connect", "claude-code",
+        "--url", "http://localhost:3000",
+        "--api-key", "test-key-abc",
+        "--workspace", "ws-123",
+      ]);
+    } finally {
+      console.log = origLog;
+    }
+
+    const claudeMd = fs.readFileSync(path.join(tmpDir, "CLAUDE.md"), "utf-8");
+    expect(claudeMd).toContain("<!-- m-notes:start -->");
+    expect(claudeMd).toContain("<!-- m-notes:end -->");
+    expect(claudeMd).toContain("m-notes AI Knowledge Base");
+    expect(claudeMd).toContain("ws-123");
+  });
+
+  it("replaces existing m-notes block on re-run", async () => {
+    // Write existing CLAUDE.md with old block
+    fs.writeFileSync(
+      path.join(tmpDir, "CLAUDE.md"),
+      "# My Project\n\n<!-- m-notes:start -->\nOld instructions\n<!-- m-notes:end -->\n\n## Other stuff\n",
+      "utf-8"
+    );
+
+    const configUtils = await import("../config-utils");
+    vi.spyOn(configUtils, "validateConnection").mockResolvedValue({ ok: true });
+
+    const program = new Command();
+    program.exitOverride();
+    registerConnectCommand(program);
+
+    const origLog = console.log;
+    console.log = () => {};
+
+    try {
+      await program.parseAsync([
+        "node", "mnotes", "connect", "claude-code",
+        "--url", "http://localhost:3000",
+        "--api-key", "test-key-abc",
+        "--workspace", "ws-new",
+      ]);
+    } finally {
+      console.log = origLog;
+    }
+
+    const claudeMd = fs.readFileSync(path.join(tmpDir, "CLAUDE.md"), "utf-8");
+    expect(claudeMd).not.toContain("Old instructions");
+    expect(claudeMd).toContain("ws-new");
+    expect(claudeMd).toContain("## Other stuff");
+    expect(claudeMd).toContain("# My Project");
+  });
+
+  it("exits with error when --api-key is missing", async () => {
+    const program = new Command();
+    program.exitOverride();
+    registerConnectCommand(program);
+
+    // Clear env vars
+    const origApiKey = process.env.MNOTES_API_KEY;
+    delete process.env.MNOTES_API_KEY;
+
+    let stderrOutput = "";
+    const origStderrWrite = process.stderr.write;
+    process.stderr.write = (chunk: string | Uint8Array) => {
+      stderrOutput += typeof chunk === "string" ? chunk : chunk.toString();
+      return true;
+    };
+
+    try {
+      await program.parseAsync([
+        "node", "mnotes", "connect", "claude-code",
+        "--workspace", "ws-123",
+      ]);
+    } catch {
+      // Expected — process.exit throws
+    } finally {
+      process.stderr.write = origStderrWrite;
+      if (origApiKey !== undefined) process.env.MNOTES_API_KEY = origApiKey;
+    }
+
+    expect(exitCode).toBe(1);
+    expect(stderrOutput).toContain("API key required");
+  });
+
+  it("exits with error when --workspace is missing", async () => {
+    const program = new Command();
+    program.exitOverride();
+    registerConnectCommand(program);
+
+    // Clear env vars
+    const origWorkspace = process.env.MNOTES_WORKSPACE_ID;
+    delete process.env.MNOTES_WORKSPACE_ID;
+
+    let stderrOutput = "";
+    const origStderrWrite = process.stderr.write;
+    process.stderr.write = (chunk: string | Uint8Array) => {
+      stderrOutput += typeof chunk === "string" ? chunk : chunk.toString();
+      return true;
+    };
+
+    try {
+      await program.parseAsync([
+        "node", "mnotes", "connect", "claude-code",
+        "--api-key", "test-key",
+      ]);
+    } catch {
+      // Expected — process.exit throws
+    } finally {
+      process.stderr.write = origStderrWrite;
+      if (origWorkspace !== undefined) process.env.MNOTES_WORKSPACE_ID = origWorkspace;
+    }
+
+    expect(exitCode).toBe(1);
+    expect(stderrOutput).toContain("Workspace ID required");
+  });
+
+  it("exits with error when validation fails", async () => {
+    const configUtils = await import("../config-utils");
+    vi.spyOn(configUtils, "validateConnection").mockResolvedValue({
+      ok: false,
+      error: "Connection refused",
+    });
+
+    const program = new Command();
+    program.exitOverride();
+    registerConnectCommand(program);
+
+    let stderrOutput = "";
+    const origStderrWrite = process.stderr.write;
+    process.stderr.write = (chunk: string | Uint8Array) => {
+      stderrOutput += typeof chunk === "string" ? chunk : chunk.toString();
+      return true;
+    };
+
+    try {
+      await program.parseAsync([
+        "node", "mnotes", "connect", "claude-code",
+        "--url", "http://localhost:3000",
+        "--api-key", "test-key",
+        "--workspace", "ws-123",
+      ]);
+    } catch {
+      // Expected — process.exit throws
+    } finally {
+      process.stderr.write = origStderrWrite;
+    }
+
+    expect(exitCode).toBe(1);
+    expect(stderrOutput).toContain("Cannot connect to");
+    expect(stderrOutput).toContain("Connection refused");
+  });
+
+  it("strips trailing slashes from URL when building MCP endpoint", async () => {
+    const configUtils = await import("../config-utils");
+    vi.spyOn(configUtils, "validateConnection").mockResolvedValue({ ok: true });
+
+    const program = new Command();
+    program.exitOverride();
+    registerConnectCommand(program);
+
+    const origLog = console.log;
+    console.log = () => {};
+
+    try {
+      await program.parseAsync([
+        "node", "mnotes", "connect", "claude-code",
+        "--url", "http://localhost:3000///",
+        "--api-key", "test-key-abc",
+        "--workspace", "ws-123",
+      ]);
+    } finally {
+      console.log = origLog;
+    }
+
+    const mcpContent = JSON.parse(
+      fs.readFileSync(path.join(tmpDir, ".mcp.json"), "utf-8")
+    );
+    expect(mcpContent.mcpServers["m-notes"].url).toBe("http://localhost:3000/api/mcp");
   });
 });
