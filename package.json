@@ -31,7 +31,8 @@
   "homepage": "https://github.com/frameworkby/remedy-pod-m-notes/tree/main/packages/cli",
   "license": "SEE LICENSE IN ../../LICENSE",
   "dependencies": {
-    "commander": "^4.1.1"
+    "commander": "^4.1.1",
+    "open": "^10.2.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
