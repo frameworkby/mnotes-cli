@@ -14,7 +14,7 @@ Set your API key and (optionally) the server URL:
 
 ```bash
 export MNOTES_API_KEY="your-api-key"
-export MNOTES_URL="https://your-instance.example.com"  # defaults to http://localhost:3000
+export MNOTES_URL="https://mnotes.framework.by"  # defaults to http://localhost:3000
 ```
 
 Or pass them as flags:
