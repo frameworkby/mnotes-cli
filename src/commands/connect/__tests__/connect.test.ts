@@ -679,6 +679,7 @@ describe("mnotes connect claude-code", () => {
         "--url", "http://localhost:3000",
         "--api-key", "test-key-abc",
         "--workspace", "ws-123",
+        "--no-wizard",
       ]);
     } finally {
       console.log = origLog;
@@ -714,6 +715,7 @@ describe("mnotes connect claude-code", () => {
         "--url", "http://localhost:3000",
         "--api-key", "test-key-abc",
         "--workspace", "ws-123",
+        "--no-wizard",
       ]);
     } finally {
       console.log = origLog;
@@ -750,6 +752,7 @@ describe("mnotes connect claude-code", () => {
         "--url", "http://localhost:3000",
         "--api-key", "test-key-abc",
         "--workspace", "ws-new",
+        "--no-wizard",
       ]);
     } finally {
       console.log = origLog;
@@ -876,6 +879,7 @@ describe("mnotes connect claude-code", () => {
         "--url", "http://localhost:3000///",
         "--api-key", "test-key-abc",
         "--workspace", "ws-123",
+        "--no-wizard",
       ]);
     } finally {
       console.log = origLog;

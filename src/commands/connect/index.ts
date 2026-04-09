@@ -6,6 +6,8 @@ import { resolveWorkspaceInteractively } from "./workspace-prompt";
 import { generateClaudeCodeTemplate } from "../../templates/claude-code";
 import { generateCodexTemplate } from "../../templates/codex";
 import { generateOpenClawTemplate } from "../../templates/openclaw";
+import { promptWizardSelection, scaffoldItems, ALL_WIZARD_ITEMS } from "./wizard";
+import type { WizardItem, ScaffoldResult } from "./wizard";
 
 /** Available integration targets with descriptions */
 export const INTEGRATION_TARGETS = [
@@ -86,10 +88,12 @@ async function resolveWorkspace(opts: {
 /**
  * Handles the `claude-code` integration target.
  */
-async function handleClaudeCode(opts: {
+export async function handleClaudeCode(opts: {
   url?: string;
   apiKey?: string;
   workspace?: string;
+  noWizard?: boolean;
+  all?: boolean;
 }): Promise<void> {
   const url = opts.url || process.env.MNOTES_URL || "http://localhost:3000";
   const apiKey = opts.apiKey || process.env.MNOTES_API_KEY;
@@ -110,6 +114,7 @@ async function handleClaudeCode(opts: {
   const dir = process.cwd();
   const mcpUrl = `${url.replace(/\/+$/, "")}/api/mcp`;
 
+  // Core setup — always runs
   writeMcpJson(dir, {
     "m-notes": {
       url: mcpUrl,
@@ -126,6 +131,44 @@ async function handleClaudeCode(opts: {
   console.log(`  .mcp.json  -> MCP server: ${mcpUrl}`);
   console.log(`  CLAUDE.md  -> Agent instructions added`);
   console.log(`  Workspace: ${workspaceId}`);
+
+  // Wizard phase — scaffold optional extras
+  if (opts.noWizard) {
+    return;
+  }
+
+  let selectedItems: WizardItem[];
+
+  if (opts.all) {
+    selectedItems = ALL_WIZARD_ITEMS;
+  } else {
+    selectedItems = await promptWizardSelection();
+  }
+
+  if (selectedItems.length === 0) {
+    return;
+  }
+
+  const results = scaffoldItems(dir, selectedItems, { url, workspaceId });
+  printScaffoldResults(results);
+}
+
+/**
+ * Prints a summary of scaffolded files.
+ */
+function printScaffoldResults(results: ScaffoldResult[]): void {
+  if (results.length === 0) return;
+
+  console.log("\nExtras installed:");
+  for (const result of results) {
+    if (result.filesWritten.length === 0) {
+      console.log(`  ${result.item}: skipped (existing files preserved)`);
+    } else {
+      for (const file of result.filesWritten) {
+        console.log(`  ${result.item}: ${file}`);
+      }
+    }
+  }
 }
 
 /**
@@ -241,6 +284,8 @@ export function registerConnectCommand(program: Command): void {
     .option("--api-key <key>", "API key (skip prompt)")
     .option("--workspace <id>", "Workspace ID")
     .option("--config-path <path>", "Config file path (openclaw only)")
+    .option("--no-wizard", "Skip the extras wizard (core setup only)")
+    .option("--all", "Install all extras without prompting")
     .action(
       async (
         target: string | undefined,
@@ -251,6 +296,8 @@ export function registerConnectCommand(program: Command): void {
           apiKey?: string;
           workspace?: string;
           configPath?: string;
+          wizard?: boolean;
+          all?: boolean;
         }
       ) => {
         if (opts.list) {
@@ -264,7 +311,11 @@ export function registerConnectCommand(program: Command): void {
         }
 
         if (target === "claude-code") {
-          await handleClaudeCode(opts);
+          await handleClaudeCode({
+            ...opts,
+            noWizard: opts.wizard === false,
+            all: opts.all,
+          });
           return;
         }
 
