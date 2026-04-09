@@ -10,6 +10,7 @@ export interface McpJsonConfig {
       command?: string;
       args?: string[];
       env?: Record<string, string>;
+      headers?: Record<string, string>;
       [key: string]: unknown;
     }
   >;
@@ -195,7 +196,7 @@ export function detectConnectedAgents(dir: string): Map<string, { connected: boo
   const mcpResult = readMcpJson(dir);
   const mcpServers = mcpResult.config?.mcpServers ?? {};
   const mnotesServer = mcpServers["m-notes"] ?? mcpServers["mnotes"] ?? null;
-  const mnotesUrl = mnotesServer?.url ?? mnotesServer?.env?.MNOTES_URL ?? undefined;
+  const mnotesUrl = mnotesServer?.url ?? undefined;
 
   // Read CLAUDE.md for claude-code integration
   const claudeMd = readClaudeMdBlock(dir);
@@ -217,7 +218,7 @@ export function detectConnectedAgents(dir: string): Map<string, { connected: boo
   const openclawServer = mcpServers["openclaw-mnotes"] ?? null;
   agents.set("openclaw", {
     connected: openclawServer !== null,
-    url: openclawServer?.url ?? openclawServer?.env?.MNOTES_URL ?? undefined,
+    url: openclawServer?.url ?? undefined,
   });
 
   return agents;

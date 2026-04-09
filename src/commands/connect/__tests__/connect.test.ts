@@ -689,7 +689,7 @@ describe("mnotes connect claude-code", () => {
       fs.readFileSync(path.join(tmpDir, ".mcp.json"), "utf-8")
     );
     expect(mcpContent.mcpServers["m-notes"].url).toBe("http://localhost:3000/api/mcp");
-    expect(mcpContent.mcpServers["m-notes"].env.MNOTES_API_KEY).toBe("test-key-abc");
+    expect(mcpContent.mcpServers["m-notes"].headers.Authorization).toBe("Bearer test-key-abc");
 
     // Verify success output
     expect(output).toContain("Claude Code connected to m-notes!");

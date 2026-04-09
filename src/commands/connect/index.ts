@@ -98,8 +98,8 @@ async function handleClaudeCode(opts: {
   writeMcpJson(dir, {
     "m-notes": {
       url: mcpUrl,
-      env: {
-        MNOTES_API_KEY: apiKey,
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
       },
     },
   });
@@ -147,8 +147,8 @@ async function handleCodex(opts: {
   const mcpEntry = {
     "m-notes": {
       url: mcpUrl,
-      env: {
-        MNOTES_API_KEY: apiKey,
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
       },
     },
   };
@@ -206,8 +206,8 @@ async function handleOpenClaw(opts: {
   writeMcpJson(configDir, {
     "openclaw-mnotes": {
       url: mcpUrl,
-      env: {
-        MNOTES_API_KEY: apiKey,
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
       },
     },
   });
