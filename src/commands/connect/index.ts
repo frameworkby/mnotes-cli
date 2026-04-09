@@ -2,6 +2,7 @@ import { Command } from "commander";
 import * as fs from "fs";
 import * as path from "path";
 import { detectConnectedAgents, validateConnection, writeMcpJson, writeClaudeMdBlock, writeInstructionBlock } from "./config-utils";
+import { resolveWorkspaceInteractively } from "./workspace-prompt";
 import { generateClaudeCodeTemplate } from "../../templates/claude-code";
 import { generateCodexTemplate } from "../../templates/codex";
 import { generateOpenClawTemplate } from "../../templates/openclaw";
@@ -65,6 +66,24 @@ function printConnectionStatus(): void {
 }
 
 /**
+ * Resolves the workspace ID — uses --workspace flag if provided, otherwise
+ * prompts interactively after validating the connection.
+ */
+async function resolveWorkspace(opts: {
+  url: string;
+  apiKey: string;
+  workspace?: string;
+}): Promise<string> {
+  // AC-5: --workspace flag works as before
+  const fromFlag = opts.workspace || process.env.MNOTES_WORKSPACE_ID;
+  if (fromFlag) return fromFlag;
+
+  // AC-1/AC-2/AC-3/AC-4: Interactive workspace selection/creation
+  const resolved = await resolveWorkspaceInteractively(opts.url, opts.apiKey);
+  return resolved.id;
+}
+
+/**
  * Handles the `claude-code` integration target.
  */
 async function handleClaudeCode(opts: {
@@ -74,15 +93,9 @@ async function handleClaudeCode(opts: {
 }): Promise<void> {
   const url = opts.url || process.env.MNOTES_URL || "http://localhost:3000";
   const apiKey = opts.apiKey || process.env.MNOTES_API_KEY;
-  const workspaceId = opts.workspace || process.env.MNOTES_WORKSPACE_ID;
 
   if (!apiKey) {
     process.stderr.write("Error: API key required. Use --api-key or set MNOTES_API_KEY\n");
-    process.exit(1);
-  }
-
-  if (!workspaceId) {
-    process.stderr.write("Error: Workspace ID required. Use --workspace or set MNOTES_WORKSPACE_ID\n");
     process.exit(1);
   }
 
@@ -91,6 +104,8 @@ async function handleClaudeCode(opts: {
     process.stderr.write(`Error: Cannot connect to ${url}: ${validation.error}\n`);
     process.exit(1);
   }
+
+  const workspaceId = await resolveWorkspace({ url, apiKey, workspace: opts.workspace });
 
   const dir = process.cwd();
   const mcpUrl = `${url.replace(/\/+$/, "")}/api/mcp`;
@@ -123,15 +138,9 @@ async function handleCodex(opts: {
 }): Promise<void> {
   const url = opts.url || process.env.MNOTES_URL || "http://localhost:3000";
   const apiKey = opts.apiKey || process.env.MNOTES_API_KEY;
-  const workspaceId = opts.workspace || process.env.MNOTES_WORKSPACE_ID;
 
   if (!apiKey) {
     process.stderr.write("Error: API key required. Use --api-key or set MNOTES_API_KEY\n");
-    process.exit(1);
-  }
-
-  if (!workspaceId) {
-    process.stderr.write("Error: Workspace ID required. Use --workspace or set MNOTES_WORKSPACE_ID\n");
     process.exit(1);
   }
 
@@ -140,6 +149,8 @@ async function handleCodex(opts: {
     process.stderr.write(`Error: Cannot connect to ${url}: ${validation.error}\n`);
     process.exit(1);
   }
+
+  const workspaceId = await resolveWorkspace({ url, apiKey, workspace: opts.workspace });
 
   const dir = process.cwd();
   const mcpUrl = `${url.replace(/\/+$/, "")}/api/mcp`;
@@ -178,16 +189,10 @@ async function handleOpenClaw(opts: {
 }): Promise<void> {
   const url = opts.url || process.env.MNOTES_URL || "http://localhost:3000";
   const apiKey = opts.apiKey || process.env.MNOTES_API_KEY;
-  const workspaceId = opts.workspace || process.env.MNOTES_WORKSPACE_ID;
   const configPath = opts.configPath || path.join(process.env.HOME || "~", ".openclaw", "mcp.json");
 
   if (!apiKey) {
     process.stderr.write("Error: API key required. Use --api-key or set MNOTES_API_KEY\n");
-    process.exit(1);
-  }
-
-  if (!workspaceId) {
-    process.stderr.write("Error: Workspace ID required. Use --workspace or set MNOTES_WORKSPACE_ID\n");
     process.exit(1);
   }
 
@@ -196,6 +201,8 @@ async function handleOpenClaw(opts: {
     process.stderr.write(`Error: Cannot connect to ${url}: ${validation.error}\n`);
     process.exit(1);
   }
+
+  const workspaceId = await resolveWorkspace({ url, apiKey, workspace: opts.workspace });
 
   const mcpUrl = `${url.replace(/\/+$/, "")}/api/mcp`;
   const configDir = path.dirname(configPath);

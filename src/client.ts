@@ -111,5 +111,41 @@ export function createClient(baseUrl: string, apiKey: string) {
         `/api/v1/notes/${encodeURIComponent(id)}`
       );
     },
+
+    async listWorkspaces(): Promise<{
+      data: Array<{
+        id: string;
+        name: string;
+        slug: string;
+        isDefault: boolean;
+      }>;
+    }> {
+      return request<{
+        data: Array<{
+          id: string;
+          name: string;
+          slug: string;
+          isDefault: boolean;
+        }>;
+      }>("GET", "/api/v1/workspaces");
+    },
+
+    async createWorkspace(name: string): Promise<{
+      data: {
+        id: string;
+        name: string;
+        slug: string;
+        isDefault: boolean;
+      };
+    }> {
+      return request<{
+        data: {
+          id: string;
+          name: string;
+          slug: string;
+          isDefault: boolean;
+        };
+      }>("POST", "/api/v1/workspaces", { name });
+    },
   };
 }

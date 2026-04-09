@@ -794,36 +794,33 @@ describe("mnotes connect claude-code", () => {
     expect(stderrOutput).toContain("API key required");
   });
 
-  it("exits with error when --workspace is missing", async () => {
+  it("uses --workspace flag when provided (AC-5, no interactive prompt)", async () => {
+    const configUtils = await import("../config-utils");
+    vi.spyOn(configUtils, "validateConnection").mockResolvedValue({ ok: true });
+
     const program = new Command();
     program.exitOverride();
     registerConnectCommand(program);
 
-    // Clear env vars
-    const origWorkspace = process.env.MNOTES_WORKSPACE_ID;
-    delete process.env.MNOTES_WORKSPACE_ID;
-
-    let stderrOutput = "";
-    const origStderrWrite = process.stderr.write;
-    process.stderr.write = (chunk: string | Uint8Array) => {
-      stderrOutput += typeof chunk === "string" ? chunk : chunk.toString();
-      return true;
+    let output = "";
+    const origLog = console.log;
+    console.log = (...args: unknown[]) => {
+      output += args.join(" ") + "\n";
     };
 
     try {
       await program.parseAsync([
         "node", "mnotes", "connect", "claude-code",
+        "--url", "http://localhost:3000",
         "--api-key", "test-key",
+        "--workspace", "ws-explicit-id",
       ]);
-    } catch {
-      // Expected — process.exit throws
     } finally {
-      process.stderr.write = origStderrWrite;
-      if (origWorkspace !== undefined) process.env.MNOTES_WORKSPACE_ID = origWorkspace;
+      console.log = origLog;
     }
 
-    expect(exitCode).toBe(1);
-    expect(stderrOutput).toContain("Workspace ID required");
+    expect(output).toContain("ws-explicit-id");
+    expect(output).toContain("Claude Code connected to m-notes!");
   });
 
   it("exits with error when validation fails", async () => {
