@@ -817,6 +817,7 @@ describe("mnotes connect claude-code", () => {
         "--url", "http://localhost:3000",
         "--api-key", "test-key",
         "--workspace", "ws-explicit-id",
+        "--no-wizard",
       ]);
     } finally {
       console.log = origLog;
