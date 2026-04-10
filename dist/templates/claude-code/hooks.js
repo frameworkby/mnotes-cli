@@ -10,14 +10,21 @@ exports.generateHooksTemplate = generateHooksTemplate;
 /**
  * Generates the hooks object to merge into `.claude/settings.json`.
  * Currently provides a SessionStart hook that auto-loads project context.
+ *
+ * Claude Code hooks format requires: { matcher, hooks[] } wrapper.
  */
 function generateHooksTemplate(opts) {
     const baseUrl = opts.url.replace(/\/+$/, "");
     return {
         SessionStart: [
             {
-                type: "command",
-                command: `curl -s -H "Authorization: Bearer $MNOTES_API_KEY" "${baseUrl}/api/mcp" -d '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"project_context_load","arguments":{"workspaceId":"${opts.workspaceId}","query":"session start"}},"id":1}' -H "Content-Type: application/json" > /dev/null 2>&1 || true`,
+                matcher: "",
+                hooks: [
+                    {
+                        type: "command",
+                        command: `curl -s -H "Authorization: Bearer $MNOTES_API_KEY" "${baseUrl}/api/mcp" -d '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"project_context_load","arguments":{"workspaceId":"${opts.workspaceId}","query":"session start"}},"id":1}' -H "Content-Type: application/json" > /dev/null 2>&1 || true`,
+                    },
+                ],
             },
         ],
     };

@@ -33,15 +33,17 @@ describe("hooks template", () => {
     const hooks = generateHooksTemplate(DEFAULT_OPTS);
     expect(hooks.SessionStart).toBeDefined();
     expect(hooks.SessionStart).toHaveLength(1);
-    expect(hooks.SessionStart![0].type).toBe("command");
-    expect(hooks.SessionStart![0].command).toContain("localhost:3000");
-    expect(hooks.SessionStart![0].command).toContain("ws-test-123");
+    expect(hooks.SessionStart![0].matcher).toBe("");
+    expect(hooks.SessionStart![0].hooks).toHaveLength(1);
+    expect(hooks.SessionStart![0].hooks[0].type).toBe("command");
+    expect(hooks.SessionStart![0].hooks[0].command).toContain("localhost:3000");
+    expect(hooks.SessionStart![0].hooks[0].command).toContain("ws-test-123");
   });
 
   it("strips trailing slashes from URL", () => {
     const hooks = generateHooksTemplate({ url: "http://example.com///", workspaceId: "ws-1" });
-    expect(hooks.SessionStart![0].command).toContain("http://example.com/api/mcp");
-    expect(hooks.SessionStart![0].command).not.toContain("///");
+    expect(hooks.SessionStart![0].hooks[0].command).toContain("http://example.com/api/mcp");
+    expect(hooks.SessionStart![0].hooks[0].command).not.toContain("///");
   });
 });
 

@@ -59,14 +59,16 @@ const DEFAULT_OPTS = {
         const hooks = (0, hooks_1.generateHooksTemplate)(DEFAULT_OPTS);
         (0, vitest_1.expect)(hooks.SessionStart).toBeDefined();
         (0, vitest_1.expect)(hooks.SessionStart).toHaveLength(1);
-        (0, vitest_1.expect)(hooks.SessionStart[0].type).toBe("command");
-        (0, vitest_1.expect)(hooks.SessionStart[0].command).toContain("localhost:3000");
-        (0, vitest_1.expect)(hooks.SessionStart[0].command).toContain("ws-test-123");
+        (0, vitest_1.expect)(hooks.SessionStart[0].matcher).toBe("");
+        (0, vitest_1.expect)(hooks.SessionStart[0].hooks).toHaveLength(1);
+        (0, vitest_1.expect)(hooks.SessionStart[0].hooks[0].type).toBe("command");
+        (0, vitest_1.expect)(hooks.SessionStart[0].hooks[0].command).toContain("localhost:3000");
+        (0, vitest_1.expect)(hooks.SessionStart[0].hooks[0].command).toContain("ws-test-123");
     });
     (0, vitest_1.it)("strips trailing slashes from URL", () => {
         const hooks = (0, hooks_1.generateHooksTemplate)({ url: "http://example.com///", workspaceId: "ws-1" });
-        (0, vitest_1.expect)(hooks.SessionStart[0].command).toContain("http://example.com/api/mcp");
-        (0, vitest_1.expect)(hooks.SessionStart[0].command).not.toContain("///");
+        (0, vitest_1.expect)(hooks.SessionStart[0].hooks[0].command).toContain("http://example.com/api/mcp");
+        (0, vitest_1.expect)(hooks.SessionStart[0].hooks[0].command).not.toContain("///");
     });
 });
 // =============================================================

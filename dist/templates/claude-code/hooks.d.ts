@@ -11,13 +11,19 @@ export interface ClaudeCodeHook {
     type: string;
     command: string;
 }
+export interface ClaudeCodeHookEntry {
+    matcher: string;
+    hooks: ClaudeCodeHook[];
+}
 export interface ClaudeCodeHooks {
-    SessionStart?: ClaudeCodeHook[];
-    [key: string]: ClaudeCodeHook[] | undefined;
+    SessionStart?: ClaudeCodeHookEntry[];
+    [key: string]: ClaudeCodeHookEntry[] | undefined;
 }
 /**
  * Generates the hooks object to merge into `.claude/settings.json`.
  * Currently provides a SessionStart hook that auto-loads project context.
+ *
+ * Claude Code hooks format requires: { matcher, hooks[] } wrapper.
  */
 export declare function generateHooksTemplate(opts: HooksTemplateOpts): ClaudeCodeHooks;
 /** Header comment for the hooks section, used for identification. */

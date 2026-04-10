@@ -118,18 +118,34 @@ function scaffoldHooks(dir, opts) {
         // File doesn't exist or invalid — start fresh
     }
     const newHooks = (0, index_1.generateHooksTemplate)(opts);
-    // Merge hooks: preserve existing hook entries, append new ones
+    // Merge hooks: preserve existing hook entries, append new ones.
+    // Claude Code hooks format: { "Event": [{ matcher, hooks: [{ type, command }] }] }
     const existingHooks = (existing.hooks ?? {});
     const mergedHooks = { ...existingHooks };
     for (const [event, hookList] of Object.entries(newHooks)) {
         if (!hookList)
             continue;
         const existingList = mergedHooks[event] ?? [];
-        // Only add hooks that aren't already present (compare by command string)
-        const existingCommands = new Set(existingList
-            .filter((h) => typeof h === "object" && h !== null && "command" in h)
-            .map((h) => h.command));
-        const newEntries = hookList.filter((h) => !existingCommands.has(h.command));
+        // Extract all existing commands for dedup (handles both new and legacy format)
+        const existingCommands = new Set();
+        for (const entry of existingList) {
+            if (typeof entry !== "object" || entry === null)
+                continue;
+            const e = entry;
+            // New format: { matcher, hooks: [{ command }] }
+            if (Array.isArray(e.hooks)) {
+                for (const h of e.hooks) {
+                    if (typeof h === "object" && h !== null && "command" in h) {
+                        existingCommands.add(h.command);
+                    }
+                }
+            }
+            // Legacy format: { type, command }
+            if ("command" in e && typeof e.command === "string") {
+                existingCommands.add(e.command);
+            }
+        }
+        const newEntries = hookList.filter((entry) => entry.hooks.every((h) => !existingCommands.has(h.command)));
         mergedHooks[event] = [...existingList, ...newEntries];
     }
     existing.hooks = mergedHooks;
