@@ -13,9 +13,6 @@ const login_1 = require("./commands/login");
 const workspace_1 = require("./commands/workspace");
 const program = new commander_1.Command();
 program
-    .storeOptionsAsProperties(false)
-    .passCommandToAction(false);
-program
     .name("mnotes")
     .description("CLI for m-notes AI knowledge base")
     .version(process.env.npm_package_version ?? "1.2.0")

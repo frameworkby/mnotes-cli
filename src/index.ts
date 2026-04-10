@@ -14,10 +14,6 @@ import { registerWorkspaceCommand } from "./commands/workspace";
 const program = new Command();
 
 program
-  .storeOptionsAsProperties(false)
-  .passCommandToAction(false);
-
-program
   .name("mnotes")
   .description("CLI for m-notes AI knowledge base")
   .version(process.env.npm_package_version ?? "1.2.0")
