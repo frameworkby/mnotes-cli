@@ -17,7 +17,7 @@ function registerSearchCommand(program) {
         const result = await client.searchNotes({
             query,
             mode: opts.semantic ? "semantic" : "fulltext",
-            workspaceId: opts.workspaceId,
+            workspaceId: opts.workspaceId || config.workspaceId,
         });
         if (globalOpts.json) {
             (0, output_1.printJson)(result.data.results);

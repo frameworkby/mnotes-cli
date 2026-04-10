@@ -33,7 +33,7 @@ function registerCreateCommand(program) {
             title: opts.title,
             content,
             folderId: opts.folderId,
-            workspaceId: opts.workspaceId,
+            workspaceId: opts.workspaceId || config.workspaceId,
         });
         if (globalOpts.json) {
             (0, output_1.printJson)(result.data);

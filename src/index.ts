@@ -9,6 +9,7 @@ import { registerUpdateCommand } from "./commands/update";
 import { registerDeleteCommand } from "./commands/delete";
 import { registerConnectCommand } from "./commands/connect";
 import { registerLoginCommand } from "./commands/login";
+import { registerWorkspaceCommand } from "./commands/workspace";
 
 const program = new Command();
 
@@ -32,6 +33,7 @@ registerUpdateCommand(program);
 registerDeleteCommand(program);
 registerConnectCommand(program);
 registerLoginCommand(program);
+registerWorkspaceCommand(program);
 
 program.parseAsync(process.argv).catch((err: Error) => {
   process.stderr.write(`Error: ${err.message}\n`);

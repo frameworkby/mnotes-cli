@@ -1,8 +1,9 @@
 import { Command } from "commander";
 /** Shape of ~/.mnotes/config.json */
-interface MnotesConfig {
+export interface MnotesConfig {
     apiKey: string;
     serverUrl: string;
+    workspaceId?: string;
 }
 export declare function configPath(): string;
 /**
@@ -28,4 +29,3 @@ export declare function startLocalServer(expectedState: string): Promise<{
     close: () => void;
 }>;
 export declare function registerLoginCommand(program: Command): void;
-export {};

@@ -17,7 +17,7 @@ function registerListCommand(program) {
         const config = (0, config_1.resolveConfig)(globalOpts);
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
         const result = await client.listNotes({
-            workspaceId: opts.workspaceId,
+            workspaceId: opts.workspaceId || config.workspaceId,
             folderId: opts.folderId,
             cursor: opts.cursor,
             limit: opts.limit,

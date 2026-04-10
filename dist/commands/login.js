@@ -62,7 +62,11 @@ function readConfig() {
         const raw = fs.readFileSync(configPath(), "utf-8");
         const parsed = JSON.parse(raw);
         if (typeof parsed.apiKey === "string" && typeof parsed.serverUrl === "string") {
-            return { apiKey: parsed.apiKey, serverUrl: parsed.serverUrl };
+            return {
+                apiKey: parsed.apiKey,
+                serverUrl: parsed.serverUrl,
+                workspaceId: typeof parsed.workspaceId === "string" ? parsed.workspaceId : undefined,
+            };
         }
         return null;
     }

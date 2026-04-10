@@ -3,13 +3,14 @@ import { readConfig } from "./commands/login";
 export interface Config {
   apiKey: string;
   baseUrl: string;
+  workspaceId?: string;
 }
 
 export function resolveConfig(opts: {
   apiKey?: string;
   url?: string;
+  workspaceId?: string;
 }): Config {
-  // Priority: CLI flag > env var > stored config from `mnotes login`
   const stored = readConfig();
   const apiKey = opts.apiKey || process.env.MNOTES_API_KEY || stored?.apiKey;
   if (!apiKey) {
@@ -20,6 +21,7 @@ export function resolveConfig(opts: {
   }
 
   const baseUrl = opts.url || process.env.MNOTES_URL || stored?.serverUrl || "https://mnotes.framework.by";
+  const workspaceId = opts.workspaceId || process.env.MNOTES_WORKSPACE_ID || stored?.workspaceId;
 
-  return { apiKey, baseUrl };
+  return { apiKey, baseUrl, workspaceId };
 }

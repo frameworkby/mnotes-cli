@@ -17,7 +17,7 @@ export function registerListCommand(program: Command): void {
       const client = createClient(config.baseUrl, config.apiKey);
 
       const result = await client.listNotes({
-        workspaceId: opts.workspaceId as string | undefined,
+        workspaceId: (opts.workspaceId as string | undefined) || config.workspaceId,
         folderId: opts.folderId as string | undefined,
         cursor: opts.cursor as string | undefined,
         limit: opts.limit as number | undefined,

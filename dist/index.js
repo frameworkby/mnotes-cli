@@ -10,6 +10,7 @@ const update_1 = require("./commands/update");
 const delete_1 = require("./commands/delete");
 const connect_1 = require("./commands/connect");
 const login_1 = require("./commands/login");
+const workspace_1 = require("./commands/workspace");
 const program = new commander_1.Command();
 program
     .storeOptionsAsProperties(false)
@@ -29,6 +30,7 @@ program
 (0, delete_1.registerDeleteCommand)(program);
 (0, connect_1.registerConnectCommand)(program);
 (0, login_1.registerLoginCommand)(program);
+(0, workspace_1.registerWorkspaceCommand)(program);
 program.parseAsync(process.argv).catch((err) => {
     process.stderr.write(`Error: ${err.message}\n`);
     process.exit(1);

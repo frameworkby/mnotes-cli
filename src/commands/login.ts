@@ -6,9 +6,10 @@ import * as os from "os";
 import * as crypto from "crypto";
 
 /** Shape of ~/.mnotes/config.json */
-interface MnotesConfig {
+export interface MnotesConfig {
   apiKey: string;
   serverUrl: string;
+  workspaceId?: string;
 }
 
 const DEFAULT_URL = "https://mnotes.framework.by";
@@ -32,7 +33,11 @@ export function readConfig(): MnotesConfig | null {
     const raw = fs.readFileSync(configPath(), "utf-8");
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     if (typeof parsed.apiKey === "string" && typeof parsed.serverUrl === "string") {
-      return { apiKey: parsed.apiKey, serverUrl: parsed.serverUrl };
+      return {
+        apiKey: parsed.apiKey,
+        serverUrl: parsed.serverUrl,
+        workspaceId: typeof parsed.workspaceId === "string" ? parsed.workspaceId : undefined,
+      };
     }
     return null;
   } catch {

@@ -35,7 +35,7 @@ export function registerCreateCommand(program: Command): void {
         title: opts.title as string,
         content,
         folderId: opts.folderId as string | undefined,
-        workspaceId: opts.workspaceId as string | undefined,
+        workspaceId: (opts.workspaceId as string | undefined) || config.workspaceId,
       });
 
       if (globalOpts.json) {
