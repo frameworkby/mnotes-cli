@@ -88,6 +88,14 @@ async function resolveWorkspace(opts: {
 /**
  * Handles the `claude-code` integration target.
  */
+/**
+ * Normalize the base URL: strip trailing slashes and /api/mcp suffix.
+ * Users often pass the full MCP endpoint URL, but the code appends /api/mcp.
+ */
+function normalizeBaseUrl(raw: string): string {
+  return raw.replace(/\/+$/, "").replace(/\/api\/mcp$/i, "");
+}
+
 export async function handleClaudeCode(opts: {
   url?: string;
   apiKey?: string;
@@ -95,7 +103,7 @@ export async function handleClaudeCode(opts: {
   noWizard?: boolean;
   all?: boolean;
 }): Promise<void> {
-  const url = opts.url || process.env.MNOTES_URL || "http://localhost:3000";
+  const url = normalizeBaseUrl(opts.url || process.env.MNOTES_URL || "http://localhost:3000");
   const apiKey = opts.apiKey || process.env.MNOTES_API_KEY;
 
   if (!apiKey) {
@@ -179,7 +187,7 @@ async function handleCodex(opts: {
   apiKey?: string;
   workspace?: string;
 }): Promise<void> {
-  const url = opts.url || process.env.MNOTES_URL || "http://localhost:3000";
+  const url = normalizeBaseUrl(opts.url || process.env.MNOTES_URL || "http://localhost:3000");
   const apiKey = opts.apiKey || process.env.MNOTES_API_KEY;
 
   if (!apiKey) {
@@ -230,7 +238,7 @@ async function handleOpenClaw(opts: {
   workspace?: string;
   configPath?: string;
 }): Promise<void> {
-  const url = opts.url || process.env.MNOTES_URL || "http://localhost:3000";
+  const url = normalizeBaseUrl(opts.url || process.env.MNOTES_URL || "http://localhost:3000");
   const apiKey = opts.apiKey || process.env.MNOTES_API_KEY;
   const configPath = opts.configPath || path.join(process.env.HOME || "~", ".openclaw", "mcp.json");
 
@@ -289,7 +297,7 @@ export function registerConnectCommand(program: Command): void {
     .action(
       async (
         target: string | undefined,
-        opts: {
+        localOpts: {
           list?: boolean;
           status?: boolean;
           url?: string;
@@ -300,6 +308,14 @@ export function registerConnectCommand(program: Command): void {
           all?: boolean;
         }
       ) => {
+        // Merge parent program options (--api-key, --url) with subcommand options.
+        // Commander v4 with passCommandToAction(false) passes parent-level flags
+        // to the parent opts, not the subcommand opts.
+        const globalOpts = program.opts() as { apiKey?: string; url?: string };
+        const opts = { ...localOpts };
+        if (!opts.apiKey && globalOpts.apiKey) opts.apiKey = globalOpts.apiKey;
+        if (!opts.url && globalOpts.url) opts.url = globalOpts.url;
+
         if (opts.list) {
           printIntegrationList();
           return;
