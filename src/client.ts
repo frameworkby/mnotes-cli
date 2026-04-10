@@ -130,6 +130,34 @@ export function createClient(baseUrl: string, apiKey: string) {
       }>("GET", "/api/v1/workspaces");
     },
 
+    async recallKnowledge(opts: {
+      query: string;
+      workspaceId?: string;
+      tags?: string[];
+      limit?: number;
+    }): Promise<{
+      data: {
+        results: Array<{
+          id: string;
+          title: string;
+          key: string | null;
+          excerpt: string;
+          importance: number | null;
+          tags: string[];
+          semanticScore: number;
+          freshnessScore: number;
+          finalScore: number;
+        }>;
+      };
+    }> {
+      return request("POST", "/api/v1/knowledge/recall", {
+        query: opts.query,
+        workspaceId: opts.workspaceId,
+        tags: opts.tags,
+        limit: opts.limit,
+      });
+    },
+
     async queryGraph(opts?: {
       workspaceId?: string;
       query?: string;

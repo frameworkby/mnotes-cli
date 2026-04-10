@@ -54,6 +54,43 @@ export function printSearchResults(
   }
 }
 
+export function printKnowledgeResults(
+  results: Array<{
+    id: string;
+    title: string;
+    key: string | null;
+    excerpt: string;
+    importance: number | null;
+    tags: string[];
+    semanticScore: number;
+    freshnessScore: number;
+    finalScore: number;
+  }>,
+): void {
+  if (results.length === 0) {
+    process.stderr.write("No knowledge entries found.\n");
+    return;
+  }
+
+  for (let i = 0; i < results.length; i++) {
+    const r = results[i]!;
+    const score = (r.finalScore * 100).toFixed(0);
+    const key = r.key ? ` [${r.key}]` : "";
+    const tags = r.tags.length > 0 ? ` (${r.tags.join(", ")})` : "";
+    const importance = r.importance !== null ? ` imp:${r.importance}` : "";
+
+    console.log(`${i + 1}. ${r.title}${key}  ${score}%${importance}${tags}`);
+    if (r.excerpt) {
+      const lines = r.excerpt.split("\n").slice(0, 3).join("\n   ");
+      console.log(`   ${lines}`);
+    }
+    if (i < results.length - 1) console.log("");
+  }
+
+  console.log("");
+  console.log(`${results.length} result(s)`);
+}
+
 export function printGraph(
   nodes: Array<{ id: string; noteId: string | null; label: string; nodeType: string; depth?: number }>,
   edges: Array<{ id: string; sourceId: string; targetId: string; edgeType: string; weight: number }>,
