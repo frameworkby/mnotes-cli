@@ -4,6 +4,8 @@ export interface MnotesConfig {
     apiKey: string;
     serverUrl: string;
     workspaceId?: string;
+    /** Map of absolute directory path → workspace ID */
+    workspaces?: Record<string, string>;
 }
 export declare function configPath(): string;
 /**

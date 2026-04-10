@@ -10,6 +10,8 @@ export interface MnotesConfig {
   apiKey: string;
   serverUrl: string;
   workspaceId?: string;
+  /** Map of absolute directory path → workspace ID */
+  workspaces?: Record<string, string>;
 }
 
 const DEFAULT_URL = "https://mnotes.framework.by";
@@ -33,10 +35,15 @@ export function readConfig(): MnotesConfig | null {
     const raw = fs.readFileSync(configPath(), "utf-8");
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     if (typeof parsed.apiKey === "string" && typeof parsed.serverUrl === "string") {
+      let workspaces: Record<string, string> | undefined;
+      if (typeof parsed.workspaces === "object" && parsed.workspaces !== null && !Array.isArray(parsed.workspaces)) {
+        workspaces = parsed.workspaces as Record<string, string>;
+      }
       return {
         apiKey: parsed.apiKey,
         serverUrl: parsed.serverUrl,
         workspaceId: typeof parsed.workspaceId === "string" ? parsed.workspaceId : undefined,
+        workspaces,
       };
     }
     return null;
