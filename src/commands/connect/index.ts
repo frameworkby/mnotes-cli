@@ -3,6 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { detectConnectedAgents, validateConnection, writeMcpJson, writeClaudeMdBlock, writeInstructionBlock } from "./config-utils";
 import { resolveWorkspaceInteractively } from "./workspace-prompt";
+import { resolveConfig } from "../../config";
 import { generateClaudeCodeTemplate } from "../../templates/claude-code";
 import { generateCodexTemplate } from "../../templates/codex";
 import { generateOpenClawTemplate } from "../../templates/openclaw";
@@ -76,11 +77,11 @@ async function resolveWorkspace(opts: {
   apiKey: string;
   workspace?: string;
 }): Promise<string> {
-  // AC-5: --workspace flag works as before
-  const fromFlag = opts.workspace || process.env.MNOTES_WORKSPACE_ID;
-  if (fromFlag) return fromFlag;
+  // Check flag, env, dir map, global config
+  const fromConfig = resolveConfig({ workspaceId: opts.workspace });
+  if (fromConfig.workspaceId) return fromConfig.workspaceId;
 
-  // AC-1/AC-2/AC-3/AC-4: Interactive workspace selection/creation
+  // Nothing stored — interactive selection/creation
   const resolved = await resolveWorkspaceInteractively(opts.url, opts.apiKey);
   return resolved.id;
 }
@@ -103,13 +104,9 @@ export async function handleClaudeCode(opts: {
   noWizard?: boolean;
   all?: boolean;
 }): Promise<void> {
-  const url = normalizeBaseUrl(opts.url || process.env.MNOTES_URL || "https://mnotes.framework.by");
-  const apiKey = opts.apiKey || process.env.MNOTES_API_KEY;
-
-  if (!apiKey) {
-    process.stderr.write("Error: API key required. Use --api-key or set MNOTES_API_KEY\n");
-    process.exit(1);
-  }
+  const config = resolveConfig(opts);
+  const url = normalizeBaseUrl(config.baseUrl);
+  const apiKey = config.apiKey;
 
   const validation = await validateConnection(url, apiKey);
   if (!validation.ok) {
@@ -188,13 +185,9 @@ async function handleCodex(opts: {
   apiKey?: string;
   workspace?: string;
 }): Promise<void> {
-  const url = normalizeBaseUrl(opts.url || process.env.MNOTES_URL || "https://mnotes.framework.by");
-  const apiKey = opts.apiKey || process.env.MNOTES_API_KEY;
-
-  if (!apiKey) {
-    process.stderr.write("Error: API key required. Use --api-key or set MNOTES_API_KEY\n");
-    process.exit(1);
-  }
+  const config = resolveConfig(opts);
+  const url = normalizeBaseUrl(config.baseUrl);
+  const apiKey = config.apiKey;
 
   const validation = await validateConnection(url, apiKey);
   if (!validation.ok) {
@@ -240,14 +233,10 @@ async function handleOpenClaw(opts: {
   workspace?: string;
   configPath?: string;
 }): Promise<void> {
-  const url = normalizeBaseUrl(opts.url || process.env.MNOTES_URL || "https://mnotes.framework.by");
-  const apiKey = opts.apiKey || process.env.MNOTES_API_KEY;
+  const config = resolveConfig(opts);
+  const url = normalizeBaseUrl(config.baseUrl);
+  const apiKey = config.apiKey;
   const configPath = opts.configPath || path.join(process.env.HOME || "~", ".openclaw", "mcp.json");
-
-  if (!apiKey) {
-    process.stderr.write("Error: API key required. Use --api-key or set MNOTES_API_KEY\n");
-    process.exit(1);
-  }
 
   const validation = await validateConnection(url, apiKey);
   if (!validation.ok) {
