@@ -15,7 +15,7 @@ const program = new commander_1.Command();
 program
     .name("mnotes")
     .description("CLI for m-notes AI knowledge base")
-    .version(process.env.npm_package_version ?? "1.2.0")
+    .version(require("../package.json").version)
     .option("--api-key <key>", "API key (or set MNOTES_API_KEY)")
     .option("--url <url>", "Base URL (or set MNOTES_URL)")
     .option("--json", "Output as JSON");

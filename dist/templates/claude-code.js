@@ -38,17 +38,70 @@ Recall knowledge **before acting**. Specifically:
 - At session start → \`project_context_load\` loads everything relevant
 - When the user asks about past work → \`session_context_resume\`
 
+## Notes — Your Working Documents
+
+m-notes is not just a knowledge base — it's a full note-taking system. **Use notes actively** to create and maintain living documents:
+
+### When to Create Notes
+- **Meeting notes** → \`create_note\` after any planning discussion or decision
+- **Investigation logs** → create a note when debugging, append findings as you go with \`append_to_note\`
+- **Design docs** → write architecture or design decisions as full notes, not just knowledge entries
+- **Task summaries** → after completing a story/task, create a note summarizing what was done
+- **Checklists and plans** → create notes with markdown checklists for multi-step work
+- **Daily notes** → use \`daily_note\` to create/get today's note for quick captures
+
+### When to Edit Notes
+- **Append progress** → use \`append_to_note\` to add to existing notes as work progresses
+- **Update docs** → when code changes invalidate existing notes, update them with \`update_note\`
+- **Tag and organize** → use \`manage_tags\` and folder tools to keep notes findable
+
+### Note vs Knowledge Entry
+| Use a **note** when... | Use **knowledge_store** when... |
+|---|---|
+| Content is long-form (paragraphs, lists, docs) | Content is a single fact or decision |
+| Document will be updated over time | Entry is a permanent record |
+| Needs folder organization | Needs key/tag retrieval |
+| Meeting notes, plans, investigations | Architecture decisions, gotchas, patterns |
+
+**When in doubt, create a note.** Notes are searchable, linkable, and visible in the UI.
+
 ## MCP Tools Reference
 
+### Session & Context
 | Tool | When to use |
 |------|------------|
 | \`project_context_load\` | Session start — loads project context |
 | \`session_context_resume\` | Resume from previous session |
-| \`knowledge_store\` | Store any knowledge entry (key, content, tags) |
+| \`session_log\` | Log session summary at end |
+
+### Knowledge (quick structured entries)
+| Tool | When to use |
+|------|------------|
+| \`knowledge_store\` | Store a knowledge entry (key, content, tags) |
 | \`recall_knowledge\` | Semantic search across stored knowledge |
 | \`bulk_knowledge_recall\` | Recall by tag patterns (e.g., all \`arch/*\`) |
 | \`knowledge_snapshot\` | Export all knowledge at once |
-| \`session_log\` | Log session summary at end |
+
+### Notes (full documents)
+| Tool | When to use |
+|------|------------|
+| \`create_note\` | Create a new note (title, content, folderId) |
+| \`update_note\` | Replace note content |
+| \`append_to_note\` | Add content to an existing note |
+| \`get_note\` | Read a note by ID |
+| \`get_note_by_title\` | Find a note by title |
+| \`search_notes\` | Full-text or semantic search |
+| \`list_notes\` | List notes in a folder |
+| \`daily_note\` | Create or get today's daily note |
+| \`manage_tags\` | Add/remove tags on notes |
+| \`pin_note\` / \`toggle_star\` | Pin or star important notes |
+
+### Organization
+| Tool | When to use |
+|------|------------|
+| \`list_folders\` | List folders in workspace |
+| \`create_folder\` | Create a new folder |
+| \`move_note\` | Move note to a different folder |
 | \`context_fetch\` | Search notes by query |
 
 All tools require \`workspaceId: "${opts.workspaceId}"\`.`;
