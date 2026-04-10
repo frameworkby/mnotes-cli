@@ -32,6 +32,19 @@ export interface ClaudeCodeHooks {
  */
 export function generateHooksTemplate(opts: HooksTemplateOpts): ClaudeCodeHooks {
   const baseUrl = opts.url.replace(/\/+$/, "");
+  const mcpUrl = `${baseUrl}/api/mcp`;
+  const authHeader = `Authorization: Bearer $MNOTES_API_KEY`;
+
+  function mcpCall(method: string, args: Record<string, unknown>): string {
+    const payload = JSON.stringify({
+      jsonrpc: "2.0",
+      method: "tools/call",
+      params: { name: method, arguments: args },
+      id: 1,
+    });
+    return `curl -s -H "${authHeader}" "${mcpUrl}" -d '${payload}' -H "Content-Type: application/json" > /dev/null 2>&1 || true`;
+  }
+
   return {
     SessionStart: [
       {
@@ -39,7 +52,26 @@ export function generateHooksTemplate(opts: HooksTemplateOpts): ClaudeCodeHooks 
         hooks: [
           {
             type: "command",
-            command: `curl -s -H "Authorization: Bearer $MNOTES_API_KEY" "${baseUrl}/api/mcp" -d '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"project_context_load","arguments":{"workspaceId":"${opts.workspaceId}","query":"session start"}},"id":1}' -H "Content-Type: application/json" > /dev/null 2>&1 || true`,
+            command: mcpCall("project_context_load", {
+              workspaceId: opts.workspaceId,
+              query: "session start",
+            }),
+          },
+        ],
+      },
+    ],
+    Stop: [
+      {
+        matcher: "",
+        hooks: [
+          {
+            type: "command",
+            command: mcpCall("session_log", {
+              workspaceId: opts.workspaceId,
+              summary: "Session ended",
+              decisions: [],
+              actions: [],
+            }),
           },
         ],
       },

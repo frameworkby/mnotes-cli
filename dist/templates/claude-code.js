@@ -2,63 +2,54 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateClaudeCodeTemplate = generateClaudeCodeTemplate;
 function generateClaudeCodeTemplate(opts) {
-    return `# m-notes AI Knowledge Base
+    return `# m-notes — Persistent Knowledge Base (MANDATORY)
 
 **Server**: ${opts.url}
 **Workspace**: ${opts.workspaceId}
 
-## Session Lifecycle
+> **IMPORTANT**: You MUST use m-notes tools throughout every session. This is your persistent memory across sessions — without it you start from zero every time. The instructions below are NOT optional.
 
-### Session Start
-At the beginning of each session, load project context:
-\`\`\`
-Call project_context_load with:
-  - workspaceId: "${opts.workspaceId}"
-  - query: "<describe what you're working on>"
-\`\`\`
+## Rules (follow strictly)
 
-To resume from a previous session:
-\`\`\`
-Call session_context_resume with:
-  - workspaceId: "${opts.workspaceId}"
-\`\`\`
+1. **ALWAYS recall before researching.** Before exploring the codebase, reading files, or making assumptions about architecture — call \`recall_knowledge\` first. Past you already figured things out; don't waste tokens rediscovering them.
+2. **ALWAYS store what you learn.** When you discover something non-obvious (architecture decisions, gotchas, patterns, bug root causes, dependency quirks) — store it immediately with \`knowledge_store\`. If it took effort to figure out, it's worth storing.
+3. **ALWAYS log sessions.** Before the session ends, call \`session_log\` with a summary of what was accomplished, decisions made, and next steps. Future sessions depend on this.
+4. **ALWAYS load context at session start.** Call \`project_context_load\` at the beginning of every session. The SessionStart hook does this automatically, but if you're resuming mid-conversation, call \`session_context_resume\`.
 
-### During Work
-Store important discoveries, decisions, and patterns:
-\`\`\`
-Call knowledge_store with:
-  - workspaceId: "${opts.workspaceId}"
-  - key: "<category>/<name>"
-  - content: "<what you learned>"
-  - tags: ["<category>"]
-\`\`\`
+## When to Store Knowledge
 
-### Key Naming Conventions
-- \`arch/{component}\` -- architecture decisions (e.g., arch/database, arch/auth)
-- \`pattern/{name}\` -- code patterns and idioms
-- \`bug/{id}\` -- bug investigations and fixes
-- \`dep/{package}\` -- dependency notes and version constraints
-- \`decision/{topic}\` -- product/tech decisions with rationale
-- \`context/{area}\` -- project context and domain knowledge
+Store knowledge **proactively** — don't wait for the user to ask. Store when you:
+- Make or discover an architecture decision → \`arch/{component}\`
+- Find a code pattern or convention → \`pattern/{name}\`
+- Debug and fix a bug → \`bug/{id-or-description}\`
+- Learn something about a dependency → \`dep/{package}\`
+- Make a product or tech decision → \`decision/{topic}\`
+- Build understanding of a domain area → \`context/{area}\`
+- Discover a gotcha or footgun → \`gotcha/{description}\`
+- Complete a task or story → \`task/{id}\`
 
-### Session End
-Log a summary of what happened:
-\`\`\`
-Call session_log with:
-  - workspaceId: "${opts.workspaceId}"
-  - sessionId: "<your session id>"
-  - summary: "<what was accomplished>"
-  - decisions: [{ decision: "...", rationale: "..." }]
-  - actions: [{ action: "...", target: "..." }]
-\`\`\`
+## When to Recall Knowledge
 
-## Available MCP Tools
-- \`project_context_load\` -- Load full project context at session start
-- \`session_context_resume\` -- Resume from a previous session
-- \`knowledge_store\` -- Store knowledge entries
-- \`recall_knowledge\` -- Semantic search for knowledge
-- \`bulk_knowledge_recall\` -- Recall by tag patterns
-- \`knowledge_snapshot\` -- Export all knowledge
-- \`session_log\` -- Log session summary
-- \`context_fetch\` -- Search notes by query`;
+Recall knowledge **before acting**. Specifically:
+- Before making a tech decision → recall \`arch/*\` and \`decision/*\`
+- Before touching a module → recall relevant \`pattern/*\` and \`context/*\`
+- Before debugging → recall \`bug/*\` for similar past issues
+- Before adding a dependency → recall \`dep/*\`
+- At session start → \`project_context_load\` loads everything relevant
+- When the user asks about past work → \`session_context_resume\`
+
+## MCP Tools Reference
+
+| Tool | When to use |
+|------|------------|
+| \`project_context_load\` | Session start — loads project context |
+| \`session_context_resume\` | Resume from previous session |
+| \`knowledge_store\` | Store any knowledge entry (key, content, tags) |
+| \`recall_knowledge\` | Semantic search across stored knowledge |
+| \`bulk_knowledge_recall\` | Recall by tag patterns (e.g., all \`arch/*\`) |
+| \`knowledge_snapshot\` | Export all knowledge at once |
+| \`session_log\` | Log session summary at end |
+| \`context_fetch\` | Search notes by query |
+
+All tools require \`workspaceId: "${opts.workspaceId}"\`.`;
 }

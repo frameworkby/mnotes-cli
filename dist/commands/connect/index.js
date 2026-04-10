@@ -127,6 +127,7 @@ async function handleClaudeCode(opts) {
     // Core setup — always runs
     (0, config_utils_1.writeMcpJson)(dir, {
         "m-notes": {
+            type: "http",
             url: mcpUrl,
             headers: {
                 Authorization: `Bearer ${apiKey}`,
@@ -194,6 +195,7 @@ async function handleCodex(opts) {
     const mcpUrl = `${url.replace(/\/+$/, "")}/api/mcp`;
     const mcpEntry = {
         "m-notes": {
+            type: "http",
             url: mcpUrl,
             headers: {
                 Authorization: `Bearer ${apiKey}`,
@@ -233,6 +235,7 @@ async function handleOpenClaw(opts) {
     fs.mkdirSync(configDir, { recursive: true });
     (0, config_utils_1.writeMcpJson)(configDir, {
         "openclaw-mnotes": {
+            type: "http",
             url: mcpUrl,
             headers: {
                 Authorization: `Bearer ${apiKey}`,
