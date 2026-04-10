@@ -67,6 +67,46 @@ m-notes is not just a knowledge base — it's a full note-taking system. **Use n
 
 **When in doubt, create a note.** Notes are searchable, linkable, and visible in the UI.
 
+## Knowledge Graph — Build Structured Memory
+
+Beyond flat knowledge entries, you have a **knowledge graph** for structured relationships between concepts. Use it to map how things connect — architecture components, dependencies, decisions, and patterns.
+
+### When to Build the Graph
+- **Session start**: If the graph is empty, call \`populate_graph\` to initialize from existing notes and wikilinks.
+- **Architecture decisions**: Create concept nodes for components, link them with "related" or "parent" edges.
+- **Dependency discovery**: Create nodes for packages, link to the components that use them.
+- **Bug investigations**: Link bug nodes to the components and patterns involved.
+- **Any time you see a relationship**: If A relates to B, create an edge. The graph gets more valuable over time.
+
+### Graph Tools
+| Tool | When to use |
+|------|------------|
+| \`populate_graph\` | Initialize graph from existing notes (idempotent, safe to re-run) |
+| \`create_node\` | Create a concept, tag, or note-linked node |
+| \`create_edge\` | Link two nodes (types: wikilink, related, parent, tagged, custom) |
+| \`query_graph\` | Search the graph by node type, label, or connectivity |
+| \`get_neighbors\` | Explore nodes connected to a specific node |
+| \`query_note_graph\` | Get the connection subgraph around a note |
+
+### Node Types
+- **note** — linked to an existing note (set \`noteId\`)
+- **tag** — represents a tag or category
+- **concept** — free-form concept (architecture component, pattern, decision)
+
+### Edge Types
+- **wikilink** — note links to another note
+- **related** — general relationship
+- **parent** — hierarchical (component contains sub-component)
+- **tagged** — node is tagged with a category
+- **custom** — any other relationship (describe in metadata)
+
+### Example: Mapping Architecture
+\`\`\`
+create_node({ label: "Auth Module", nodeType: "concept", workspaceId: "..." })
+create_node({ label: "PostgreSQL", nodeType: "concept", workspaceId: "..." })
+create_edge({ sourceId: authNodeId, targetId: pgNodeId, edgeType: "related", workspaceId: "..." })
+\`\`\`
+
 ## MCP Tools Reference
 
 ### Session & Context
@@ -105,6 +145,16 @@ m-notes is not just a knowledge base — it's a full note-taking system. **Use n
 | \`create_folder\` | Create a new folder |
 | \`move_note\` | Move note to a different folder |
 | \`context_fetch\` | Search notes by query |
+
+### Knowledge Graph
+| Tool | When to use |
+|------|------------|
+| \`populate_graph\` | Initialize graph from notes (run once at start) |
+| \`create_node\` | Add a concept, tag, or note-linked node |
+| \`create_edge\` | Link two nodes with a typed relationship |
+| \`query_graph\` | Search graph by type, label, or connectivity |
+| \`get_neighbors\` | Explore connections from a node |
+| \`query_note_graph\` | Get subgraph around a specific note |
 
 All tools require \`workspaceId: "${opts.workspaceId}"\`.`;
 }

@@ -33,6 +33,22 @@ Store discoveries, decisions, and patterns via \`knowledge_store\`:
 ### Session End
 Call \`session_log\` with workspaceId "${opts.workspaceId}", a summary, decisions, and actions.
 
+## Knowledge Graph
+
+Build structured relationships between concepts as you work. The graph maps how architecture components, dependencies, decisions, and patterns connect.
+
+### When to Build
+- Session start: call \`populate_graph\` if graph is empty (idempotent)
+- When you discover relationships between components, patterns, or decisions: create nodes and edges
+- Architecture decisions: create concept nodes, link with "related" or "parent" edges
+
+### Node types: note, tag, concept
+### Edge types: wikilink, related, parent, tagged, custom
+
+Example:
+  create_node({ label: "Auth Module", nodeType: "concept", workspaceId: "${opts.workspaceId}" })
+  create_edge({ sourceId: "...", targetId: "...", edgeType: "related", workspaceId: "${opts.workspaceId}" })
+
 ## Available MCP Tools
 - project_context_load -- load project context at session start
 - session_context_resume -- resume from previous session
@@ -41,5 +57,10 @@ Call \`session_log\` with workspaceId "${opts.workspaceId}", a summary, decision
 - bulk_knowledge_recall -- recall by tag patterns
 - knowledge_snapshot -- export all knowledge
 - session_log -- log session summary
-- context_fetch -- search notes by query`;
+- context_fetch -- search notes by query
+- populate_graph -- initialize knowledge graph from notes
+- create_node -- add a concept/tag/note node to the graph
+- create_edge -- link two nodes with a typed relationship
+- query_graph -- search graph by type, label, or connectivity
+- get_neighbors -- explore connections from a node`;
 }
