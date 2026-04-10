@@ -54,6 +54,42 @@ export function printSearchResults(
   }
 }
 
+export function printGraph(
+  nodes: Array<{ id: string; noteId: string | null; label: string; nodeType: string; depth?: number }>,
+  edges: Array<{ id: string; sourceId: string; targetId: string; edgeType: string; weight: number }>,
+): void {
+  if (nodes.length === 0) {
+    process.stderr.write("Knowledge graph is empty.\n");
+    return;
+  }
+
+  const idWidth = Math.max(4, ...nodes.map((n) => n.id.length));
+  const typeWidth = Math.max(4, ...nodes.map((n) => n.nodeType.length));
+  const labelWidth = Math.min(50, Math.max(5, ...nodes.map((n) => n.label.length)));
+
+  console.log(`${"ID".padEnd(idWidth)}  ${"TYPE".padEnd(typeWidth)}  LABEL`);
+  for (const node of nodes) {
+    const label = node.label.length > labelWidth
+      ? node.label.substring(0, labelWidth - 1) + "…"
+      : node.label;
+    const depthSuffix = node.depth !== undefined && node.depth > 0 ? `  (depth ${node.depth})` : "";
+    console.log(`${node.id.padEnd(idWidth)}  ${node.nodeType.padEnd(typeWidth)}  ${label}${depthSuffix}`);
+  }
+
+  if (edges.length > 0) {
+    console.log("");
+    console.log(`Edges (${edges.length}):`);
+    for (const edge of edges) {
+      const srcLabel = nodes.find((n) => n.id === edge.sourceId)?.label ?? edge.sourceId;
+      const tgtLabel = nodes.find((n) => n.id === edge.targetId)?.label ?? edge.targetId;
+      console.log(`  ${srcLabel} --[${edge.edgeType}]--> ${tgtLabel}`);
+    }
+  }
+
+  console.log("");
+  console.log(`${nodes.length} node(s), ${edges.length} edge(s)`);
+}
+
 export function printSuccess(msg: string): void {
   process.stderr.write(`${msg}\n`);
 }

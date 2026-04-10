@@ -130,6 +130,42 @@ export function createClient(baseUrl: string, apiKey: string) {
       }>("GET", "/api/v1/workspaces");
     },
 
+    async queryGraph(opts?: {
+      workspaceId?: string;
+      query?: string;
+      nodeType?: string;
+      neighbors?: string;
+      depth?: number;
+      limit?: number;
+    }): Promise<{
+      data: {
+        nodes: Array<{
+          id: string;
+          noteId: string | null;
+          label: string;
+          nodeType: string;
+          depth?: number;
+        }>;
+        edges: Array<{
+          id: string;
+          sourceId: string;
+          targetId: string;
+          edgeType: string;
+          weight: number;
+        }>;
+      };
+    }> {
+      const params = new URLSearchParams();
+      if (opts?.workspaceId) params.set("workspaceId", opts.workspaceId);
+      if (opts?.query) params.set("query", opts.query);
+      if (opts?.nodeType) params.set("nodeType", opts.nodeType);
+      if (opts?.neighbors) params.set("neighbors", opts.neighbors);
+      if (opts?.depth) params.set("depth", String(opts.depth));
+      if (opts?.limit) params.set("limit", String(opts.limit));
+      const qs = params.toString();
+      return request("GET", `/api/v1/graph${qs ? `?${qs}` : ""}`);
+    },
+
     async createWorkspace(name: string): Promise<{
       data: {
         id: string;

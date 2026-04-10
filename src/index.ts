@@ -10,6 +10,7 @@ import { registerDeleteCommand } from "./commands/delete";
 import { registerConnectCommand } from "./commands/connect";
 import { registerLoginCommand } from "./commands/login";
 import { registerWorkspaceCommand } from "./commands/workspace";
+import { registerRecallKnowledgeCommand } from "./commands/recall-knowledge";
 
 const program = new Command();
 
@@ -30,6 +31,7 @@ registerDeleteCommand(program);
 registerConnectCommand(program);
 registerLoginCommand(program);
 registerWorkspaceCommand(program);
+registerRecallKnowledgeCommand(program);
 
 program.parseAsync(process.argv).catch((err: Error) => {
   process.stderr.write(`Error: ${err.message}\n`);
