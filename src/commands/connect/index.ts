@@ -103,7 +103,7 @@ export async function handleClaudeCode(opts: {
   noWizard?: boolean;
   all?: boolean;
 }): Promise<void> {
-  const url = normalizeBaseUrl(opts.url || process.env.MNOTES_URL || "http://localhost:3000");
+  const url = normalizeBaseUrl(opts.url || process.env.MNOTES_URL || "https://mnotes.framework.by");
   const apiKey = opts.apiKey || process.env.MNOTES_API_KEY;
 
   if (!apiKey) {
@@ -187,7 +187,7 @@ async function handleCodex(opts: {
   apiKey?: string;
   workspace?: string;
 }): Promise<void> {
-  const url = normalizeBaseUrl(opts.url || process.env.MNOTES_URL || "http://localhost:3000");
+  const url = normalizeBaseUrl(opts.url || process.env.MNOTES_URL || "https://mnotes.framework.by");
   const apiKey = opts.apiKey || process.env.MNOTES_API_KEY;
 
   if (!apiKey) {
@@ -238,7 +238,7 @@ async function handleOpenClaw(opts: {
   workspace?: string;
   configPath?: string;
 }): Promise<void> {
-  const url = normalizeBaseUrl(opts.url || process.env.MNOTES_URL || "http://localhost:3000");
+  const url = normalizeBaseUrl(opts.url || process.env.MNOTES_URL || "https://mnotes.framework.by");
   const apiKey = opts.apiKey || process.env.MNOTES_API_KEY;
   const configPath = opts.configPath || path.join(process.env.HOME || "~", ".openclaw", "mcp.json");
 

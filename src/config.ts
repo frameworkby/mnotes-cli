@@ -19,7 +19,7 @@ export function resolveConfig(opts: {
     process.exit(1);
   }
 
-  const baseUrl = opts.url || process.env.MNOTES_URL || stored?.serverUrl || "http://localhost:3000";
+  const baseUrl = opts.url || process.env.MNOTES_URL || stored?.serverUrl || "https://mnotes.framework.by";
 
   return { apiKey, baseUrl };
 }

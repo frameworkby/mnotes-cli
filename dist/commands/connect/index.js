@@ -110,7 +110,7 @@ function normalizeBaseUrl(raw) {
     return raw.replace(/\/+$/, "").replace(/\/api\/mcp$/i, "");
 }
 async function handleClaudeCode(opts) {
-    const url = normalizeBaseUrl(opts.url || process.env.MNOTES_URL || "http://localhost:3000");
+    const url = normalizeBaseUrl(opts.url || process.env.MNOTES_URL || "https://mnotes.framework.by");
     const apiKey = opts.apiKey || process.env.MNOTES_API_KEY;
     if (!apiKey) {
         process.stderr.write("Error: API key required. Use --api-key or set MNOTES_API_KEY\n");
@@ -178,7 +178,7 @@ function printScaffoldResults(results) {
  * Handles the `codex` integration target.
  */
 async function handleCodex(opts) {
-    const url = normalizeBaseUrl(opts.url || process.env.MNOTES_URL || "http://localhost:3000");
+    const url = normalizeBaseUrl(opts.url || process.env.MNOTES_URL || "https://mnotes.framework.by");
     const apiKey = opts.apiKey || process.env.MNOTES_API_KEY;
     if (!apiKey) {
         process.stderr.write("Error: API key required. Use --api-key or set MNOTES_API_KEY\n");
@@ -214,7 +214,7 @@ async function handleCodex(opts) {
  * Handles the `openclaw` integration target.
  */
 async function handleOpenClaw(opts) {
-    const url = normalizeBaseUrl(opts.url || process.env.MNOTES_URL || "http://localhost:3000");
+    const url = normalizeBaseUrl(opts.url || process.env.MNOTES_URL || "https://mnotes.framework.by");
     const apiKey = opts.apiKey || process.env.MNOTES_API_KEY;
     const configPath = opts.configPath || path.join(process.env.HOME || "~", ".openclaw", "mcp.json");
     if (!apiKey) {

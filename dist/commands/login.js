@@ -44,7 +44,7 @@ const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const os = __importStar(require("os"));
 const crypto = __importStar(require("crypto"));
-const DEFAULT_URL = "http://localhost:3000";
+const DEFAULT_URL = "https://mnotes.framework.by";
 const LOGIN_TIMEOUT_MS = 120_000; // 2 minutes
 /** Resolved at call time so tests can override HOME */
 function configDir() {

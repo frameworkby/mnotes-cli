@@ -11,7 +11,7 @@ interface MnotesConfig {
   serverUrl: string;
 }
 
-const DEFAULT_URL = "http://localhost:3000";
+const DEFAULT_URL = "https://mnotes.framework.by";
 const LOGIN_TIMEOUT_MS = 120_000; // 2 minutes
 
 /** Resolved at call time so tests can override HOME */
