@@ -67,8 +67,10 @@ Call create_edge with:
 - \`recall_knowledge\` -- Semantic search
 - \`bulk_knowledge_recall\` -- Recall by tag pattern
 - \`knowledge_snapshot\` -- Export all knowledge
-- \`context_fetch\` -- Search notes by query
+- \`scan_knowledge_conflicts\` -- Lint: find contradictions
+- \`context_fetch\` / \`search_notes\` -- Search notes
+- \`create_note\` / \`update_note\` / \`append_to_note\` -- Note authoring
 - \`populate_graph\` -- Initialize graph
 - \`create_node\` / \`create_edge\` -- Build graph structure
-- \`query_graph\` / \`get_neighbors\` -- Explore graph`;
+- \`query_graph\` / \`get_neighbors\` / \`query_note_graph\` -- Explore graph`;
 }

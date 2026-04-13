@@ -493,13 +493,32 @@ describe("generateClaudeCodeTemplate", () => {
       "recall_knowledge",
       "bulk_knowledge_recall",
       "knowledge_snapshot",
+      "scan_knowledge_conflicts",
       "session_log",
       "context_fetch",
+      "create_note",
+      "update_note",
+      "append_to_note",
+      "search_notes",
+      "daily_note",
+      "populate_graph",
+      "query_note_graph",
     ];
 
     for (const tool of expectedTools) {
       expect(result).toContain(tool);
     }
+  });
+
+  it("does not reference phantom MCP tools", () => {
+    const result = generateClaudeCodeTemplate({
+      url: "http://localhost:3000",
+      workspaceId: "ws-test",
+    });
+
+    // These tool names don't exist in the MCP server — guard against regressions.
+    expect(result).not.toMatch(/\bcreate_folder\b/);
+    expect(result).not.toMatch(/\bmove_note\b/);
   });
 });
 

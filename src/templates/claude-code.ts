@@ -165,7 +165,7 @@ create_edge({ sourceId: authNodeId, targetId: pgNodeId, edgeType: "related", wor
 ### Organization
 | Tool | When to use |
 |------|------------|
-| \`list_folders\` / \`create_folder\` / \`move_note\` | Folder ops |
+| \`list_folders\` / \`manage_folders\` / \`move_folder\` / \`bulk_move\` | Folder + note-move ops |
 | \`context_fetch\` | Search notes by query |
 
 ### Knowledge Graph
