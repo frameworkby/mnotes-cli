@@ -451,15 +451,15 @@ describe("generateClaudeCodeTemplate", () => {
     expect(result).toContain("ws-abc-123");
   });
 
-  it("includes session lifecycle sections", () => {
+  it("includes session lifecycle tools and wiki framing", () => {
     const result = generateClaudeCodeTemplate({
       url: "http://localhost:3000",
       workspaceId: "ws-test",
     });
 
-    expect(result).toContain("Session Start");
-    expect(result).toContain("Session End");
-    expect(result).toContain("During Work");
+    expect(result).toContain("living wiki");
+    expect(result).toContain("Ingest Loop");
+    expect(result).toContain("Lint Loop");
     expect(result).toContain("project_context_load");
     expect(result).toContain("session_context_resume");
     expect(result).toContain("knowledge_store");
@@ -724,7 +724,7 @@ describe("mnotes connect claude-code", () => {
     const claudeMd = fs.readFileSync(path.join(tmpDir, "CLAUDE.md"), "utf-8");
     expect(claudeMd).toContain("<!-- m-notes:start -->");
     expect(claudeMd).toContain("<!-- m-notes:end -->");
-    expect(claudeMd).toContain("m-notes AI Knowledge Base");
+    expect(claudeMd).toContain("m-notes — Your Wiki");
     expect(claudeMd).toContain("ws-123");
   });
 

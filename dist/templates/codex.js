@@ -2,42 +2,67 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateCodexTemplate = generateCodexTemplate;
 function generateCodexTemplate(opts) {
-    return `# m-notes AI Knowledge Base
+    return `<!-- m-notes instructions v3 -->
+# m-notes — Your Wiki
 
 Server: ${opts.url}
 Workspace: ${opts.workspaceId}
 
+You are the author and maintainer of a living wiki. Raw sources are immutable inputs; your notes are the wiki; notes tagged \`type:config\` are the rules you follow when editing.
+
 ## Session Lifecycle
 
 ### Session Start
-Call \`project_context_load\` with workspaceId "${opts.workspaceId}" and a query describing your current task.
-To resume a previous session, call \`session_context_resume\` with workspaceId "${opts.workspaceId}".
+- Call \`project_context_load\` with workspaceId "${opts.workspaceId}".
+- To resume, call \`session_context_resume\`.
+- If the graph is empty, call \`populate_graph\` (idempotent).
+- Read any notes tagged \`type:config\` before editing.
 
 ### During Work
-Store discoveries, decisions, and patterns via \`knowledge_store\`:
-- workspaceId: "${opts.workspaceId}"
-- key: "<category>/<name>"
-- content: what you learned
-- tags: [category]
+- Recall before researching: \`recall_knowledge\`, \`search_notes\`.
+- Store discoveries via \`knowledge_store\` (key: \`<category>/<name>\`, tags: [category]).
+- When the user supplies a source (URL/paste/file), run the **ingest loop**:
+  1. \`search_notes\` + \`query_graph\` to find 3–15 related notes
+  2. Plan creates/updates with \`[[wikilinks]]\` connecting touched notes
+  3. Apply — each touched note gets a \`source/<slug>\` tag
+- Periodically run the **lint loop**: \`scan_knowledge_conflicts\`, find orphans via \`query_note_graph\`, fix broken \`[[wikilinks]]\`, update stale notes.
+- Every new or edited note must have at least one outbound \`[[wikilink]]\`.
 
 ### Key Naming Conventions
-- arch/{component} -- architecture decisions (e.g. arch/database, arch/auth)
+- arch/{component} -- architecture decisions
 - pattern/{name} -- code patterns and idioms
-- bug/{id} -- bug investigations and fixes
-- dep/{package} -- dependency notes and version constraints
-- decision/{topic} -- product/tech decisions with rationale
-- context/{area} -- project context and domain knowledge
+- bug/{id} -- bug investigations
+- dep/{package} -- dependency notes
+- decision/{topic} -- product/tech decisions
+- context/{area} -- domain knowledge
 
 ### Session End
-Call \`session_log\` with workspaceId "${opts.workspaceId}", a summary, decisions, and actions.
+- Call \`session_log\` with workspaceId "${opts.workspaceId}", summary, decisions, actions.
+
+## Knowledge Graph
+
+Every note belongs to the graph. Build relationships proactively.
+
+- Node types: note, tag, concept
+- Edge types: wikilink, related, parent, tagged, custom
+
+Example:
+  create_node({ label: "Auth Module", nodeType: "concept", workspaceId: "${opts.workspaceId}" })
+  create_edge({ sourceId: "...", targetId: "...", edgeType: "related", workspaceId: "${opts.workspaceId}" })
 
 ## Available MCP Tools
-- project_context_load -- load project context at session start
-- session_context_resume -- resume from previous session
-- knowledge_store -- store knowledge entries
-- recall_knowledge -- semantic search for knowledge
-- bulk_knowledge_recall -- recall by tag patterns
+- project_context_load -- load context at session start
+- session_context_resume -- resume previous session
+- knowledge_store -- store knowledge entry
+- recall_knowledge -- semantic search
+- bulk_knowledge_recall -- recall by tag pattern
 - knowledge_snapshot -- export all knowledge
+- scan_knowledge_conflicts -- lint for contradictions
 - session_log -- log session summary
-- context_fetch -- search notes by query`;
+- create_note / update_note / append_to_note -- note authoring
+- search_notes / get_note / list_notes -- note retrieval
+- context_fetch -- search notes by query
+- populate_graph -- initialize graph (idempotent)
+- create_node / create_edge -- build graph structure
+- query_graph / get_neighbors / query_note_graph -- explore graph`;
 }

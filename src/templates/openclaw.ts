@@ -4,10 +4,19 @@ export interface OpenClawTemplateOpts {
 }
 
 export function generateOpenClawTemplate(opts: OpenClawTemplateOpts): string {
-  return `# m-notes Knowledge Base
+  return `<!-- m-notes instructions v3 -->
+# m-notes — Your Wiki
 
 **Server**: ${opts.url}
 **Workspace**: ${opts.workspaceId}
+
+You are the author of a living wiki. Notes are interlinked with \`[[wikilinks]]\`. Sources are immutable; your writing is the wiki.
+
+## Core Loops
+
+**Ingest** — when given a source (URL/paste): find 3+ related notes via \`recall_knowledge\`, update or create, link them with \`[[wikilinks]]\`, tag each with \`source/<slug>\`.
+
+**Lint** — periodically check for contradictions, orphan notes, broken wikilinks, stale entries.
 
 ## Quick Reference
 
@@ -35,11 +44,11 @@ Call recall_knowledge with:
 
 ## Knowledge Graph
 
-Build structured relationships as you work:
+Every note should link to at least one other. Build the graph proactively:
 \`\`\`
 Call populate_graph with:
   - workspaceId: "${opts.workspaceId}"
-(initializes graph from existing notes — run once)
+(initializes from existing notes — idempotent)
 
 Call create_node with:
   - label: "<concept name>"
@@ -54,14 +63,12 @@ Call create_edge with:
 \`\`\`
 
 ## Available MCP Tools
-- \`knowledge_store\` -- Store knowledge entries
-- \`recall_knowledge\` -- Semantic search for knowledge
-- \`bulk_knowledge_recall\` -- Recall by tag patterns
+- \`knowledge_store\` -- Store knowledge
+- \`recall_knowledge\` -- Semantic search
+- \`bulk_knowledge_recall\` -- Recall by tag pattern
 - \`knowledge_snapshot\` -- Export all knowledge
 - \`context_fetch\` -- Search notes by query
-- \`populate_graph\` -- Initialize knowledge graph from notes
-- \`create_node\` -- Add concept/tag/note node to the graph
-- \`create_edge\` -- Link two nodes with a typed relationship
-- \`query_graph\` -- Search graph by type, label, or connectivity
-- \`get_neighbors\` -- Explore connections from a node`;
+- \`populate_graph\` -- Initialize graph
+- \`create_node\` / \`create_edge\` -- Build graph structure
+- \`query_graph\` / \`get_neighbors\` -- Explore graph`;
 }
