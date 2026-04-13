@@ -184,8 +184,9 @@ function scaffoldSkills(dir: string, opts: WizardOpts): ScaffoldResult {
   const filesWritten: string[] = [];
 
   for (const skill of skills) {
-    const filePath = path.join(skillsDir, skill.filename);
+    const filePath = path.join(skillsDir, skill.path);
     if (shouldWriteGeneratedFile(filePath)) {
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
       fs.writeFileSync(filePath, skill.content, "utf-8");
       filesWritten.push(filePath);
     }
