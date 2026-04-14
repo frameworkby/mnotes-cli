@@ -1,9 +1,11 @@
 import { Command } from "commander";
 import * as fs from "fs";
 import * as path from "path";
+import * as readline from "readline";
 import { detectConnectedAgents, validateConnection, writeMcpJson, writeClaudeMdBlock, writeInstructionBlock } from "./config-utils";
 import { resolveWorkspaceInteractively } from "./workspace-prompt";
 import { resolveConfig } from "../../config";
+import { createClient } from "../../client";
 import { generateClaudeCodeTemplate } from "../../templates/claude-code";
 import { generateCodexTemplate } from "../../templates/codex";
 import { generateOpenClawTemplate } from "../../templates/openclaw";
@@ -71,6 +73,9 @@ function printConnectionStatus(): void {
 /**
  * Resolves the workspace ID — uses --workspace flag if provided, otherwise
  * prompts interactively after validating the connection.
+ *
+ * When a workspace value is provided (flag, env, or config), validates it
+ * against the API by matching on ID or slug. If not found, prompts to create.
  */
 async function resolveWorkspace(opts: {
   url: string;
@@ -79,9 +84,51 @@ async function resolveWorkspace(opts: {
 }): Promise<string> {
   // Check flag, env, dir map, global config
   const fromConfig = resolveConfig({ workspaceId: opts.workspace });
-  if (fromConfig.workspaceId) return fromConfig.workspaceId;
+  const candidate = fromConfig.workspaceId;
 
-  // Nothing stored — interactive selection/creation
+  if (candidate) {
+    // Validate the candidate against the API
+    const client = createClient(opts.url, opts.apiKey);
+    let workspaces;
+    try {
+      const res = await client.listWorkspaces();
+      workspaces = res.data;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(`Failed to fetch workspaces: ${message}`);
+    }
+
+    // Match by ID or slug
+    const match = workspaces.find(
+      (ws) => ws.id === candidate || ws.slug === candidate
+    );
+
+    if (match) {
+      return match.id;
+    }
+
+    // Not found — ask user to create
+    process.stderr.write(
+      `\nWorkspace "${candidate}" not found.\n`
+    );
+
+    const rl = readline.createInterface({ input: process.stdin, output: process.stderr });
+    const answer = await new Promise<string>((resolve) =>
+      rl.question(`Create workspace "${candidate}"? [Y/n] `, resolve)
+    );
+    rl.close();
+
+    if (answer.trim() === "" || answer.trim().toLowerCase() === "y") {
+      const created = await client.createWorkspace(candidate);
+      process.stderr.write(`Created workspace "${created.data.name}" (${created.data.id})\n`);
+      return created.data.id;
+    }
+
+    // User declined — fall through to interactive
+    process.stderr.write("Falling back to interactive workspace selection.\n");
+  }
+
+  // Nothing stored or user declined — interactive selection/creation
   const resolved = await resolveWorkspaceInteractively(opts.url, opts.apiKey);
   return resolved.id;
 }

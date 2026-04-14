@@ -15,6 +15,22 @@ import { generateClaudeCodeTemplate } from "../../../templates/claude-code";
 import { generateCodexTemplate } from "../../../templates/codex";
 import { generateOpenClawTemplate } from "../../../templates/openclaw";
 
+// Mock createClient so resolveWorkspace can validate workspaces without a real server
+vi.mock("../../../client", () => ({
+  createClient: () => ({
+    listWorkspaces: async () => ({
+      data: [
+        { id: "ws-123", name: "Test", slug: "test-123", isDefault: true },
+        { id: "ws-explicit-id", name: "Explicit", slug: "explicit-id", isDefault: false },
+        { id: "ws-new", name: "New", slug: "new", isDefault: false },
+      ],
+    }),
+    createWorkspace: async (name: string) => ({
+      data: { id: name, name, slug: name, isDefault: false },
+    }),
+  }),
+}));
+
 // -- Helper: capture stdout --
 function captureStdout(fn: () => void): string {
   const chunks: string[] = [];

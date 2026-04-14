@@ -12,6 +12,20 @@ import { generateHooksTemplate, generateHookScripts, HOOKS_HEADER } from "../../
 import { generateSkillTemplates } from "../../../templates/claude-code/skills";
 import { generateAgentTemplates } from "../../../templates/claude-code/agents";
 
+// Mock createClient so resolveWorkspace can validate workspaces without a real server
+vi.mock("../../../client", () => ({
+  createClient: () => ({
+    listWorkspaces: async () => ({
+      data: [
+        { id: "ws-123", name: "Test", slug: "test-123", isDefault: true },
+      ],
+    }),
+    createWorkspace: async (name: string) => ({
+      data: { id: name, name, slug: name, isDefault: false },
+    }),
+  }),
+}));
+
 function makeTmpDir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "mnotes-wizard-test-"));
 }
