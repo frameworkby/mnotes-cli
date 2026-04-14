@@ -8,7 +8,7 @@ import {
   WIZARD_CHOICES,
 } from "../wizard";
 import type { WizardItem } from "../wizard";
-import { generateHooksTemplate, HOOKS_HEADER } from "../../../templates/claude-code/hooks";
+import { generateHooksTemplate, generateHookScripts, HOOKS_HEADER } from "../../../templates/claude-code/hooks";
 import { generateSkillTemplates } from "../../../templates/claude-code/skills";
 import { generateAgentTemplates } from "../../../templates/claude-code/agents";
 
@@ -29,21 +29,32 @@ const DEFAULT_OPTS = {
 // T-1: Template generation — hooks
 // =============================================================
 describe("hooks template", () => {
-  it("generates SessionStart hook with correct URL and workspaceId", () => {
+  it("generates SessionStart hook referencing bash script", () => {
     const hooks = generateHooksTemplate(DEFAULT_OPTS);
     expect(hooks.SessionStart).toBeDefined();
     expect(hooks.SessionStart).toHaveLength(1);
     expect(hooks.SessionStart![0].matcher).toBe("");
     expect(hooks.SessionStart![0].hooks).toHaveLength(1);
     expect(hooks.SessionStart![0].hooks[0].type).toBe("command");
-    expect(hooks.SessionStart![0].hooks[0].command).toContain("localhost:3000");
-    expect(hooks.SessionStart![0].hooks[0].command).toContain("ws-test-123");
+    expect(hooks.SessionStart![0].hooks[0].command).toBe(".claude/hooks/mnotes-session-start.sh");
   });
 
-  it("strips trailing slashes from URL", () => {
-    const hooks = generateHooksTemplate({ url: "http://example.com///", workspaceId: "ws-1" });
-    expect(hooks.SessionStart![0].hooks[0].command).toContain("http://example.com/api/mcp");
-    expect(hooks.SessionStart![0].hooks[0].command).not.toContain("///");
+  it("generates hook scripts with correct URL, workspaceId, and Accept headers", () => {
+    const scripts = generateHookScripts(DEFAULT_OPTS);
+    expect(scripts).toHaveLength(2);
+
+    const startScript = scripts.find((s) => s.filename === "mnotes-session-start.sh")!;
+    expect(startScript.content).toContain("localhost:3000/api/mcp");
+    expect(startScript.content).toContain("ws-test-123");
+    expect(startScript.content).toContain('Accept: text/event-stream');
+    expect(startScript.content).toContain('Accept: application/json');
+  });
+
+  it("strips trailing slashes from URL in hook scripts", () => {
+    const scripts = generateHookScripts({ url: "http://example.com///", workspaceId: "ws-1" });
+    const startScript = scripts.find((s) => s.filename === "mnotes-session-start.sh")!;
+    expect(startScript.content).toContain("http://example.com/api/mcp");
+    expect(startScript.content).not.toContain("///");
   });
 });
 
@@ -153,11 +164,12 @@ describe("scaffoldItems: hooks", () => {
     cleanTmpDir(tmpDir);
   });
 
-  it("creates .claude/settings.json with hooks (AC-4)", () => {
+  it("creates .claude/settings.json with hooks and bash scripts (AC-4)", () => {
     const results = scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
     expect(results).toHaveLength(1);
     expect(results[0].item).toBe("hooks");
-    expect(results[0].filesWritten).toHaveLength(1);
+    // 2 bash scripts + settings.json
+    expect(results[0].filesWritten).toHaveLength(3);
 
     const settingsPath = path.join(tmpDir, ".claude", "settings.json");
     expect(fs.existsSync(settingsPath)).toBe(true);
@@ -166,6 +178,16 @@ describe("scaffoldItems: hooks", () => {
     expect(settings.hooks).toBeDefined();
     expect(settings.hooks.SessionStart).toBeDefined();
     expect(settings.hooks.SessionStart).toHaveLength(1);
+
+    // Bash scripts exist and are executable
+    const startScript = path.join(tmpDir, ".claude", "hooks", "mnotes-session-start.sh");
+    const stopScript = path.join(tmpDir, ".claude", "hooks", "mnotes-session-stop.sh");
+    expect(fs.existsSync(startScript)).toBe(true);
+    expect(fs.existsSync(stopScript)).toBe(true);
+
+    const startContent = fs.readFileSync(startScript, "utf-8");
+    expect(startContent).toContain("Accept: text/event-stream");
+    expect(startContent).toContain("Accept: application/json");
   });
 
   it("merges hooks into existing settings.json (AC-5)", () => {

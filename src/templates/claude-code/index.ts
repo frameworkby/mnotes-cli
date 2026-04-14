@@ -1,5 +1,5 @@
-export { generateHooksTemplate, HOOKS_HEADER } from "./hooks";
-export type { HooksTemplateOpts, ClaudeCodeHooks, ClaudeCodeHook } from "./hooks";
+export { generateHooksTemplate, generateHookScripts, HOOKS_HEADER } from "./hooks";
+export type { HooksTemplateOpts, ClaudeCodeHooks, ClaudeCodeHook, HookScript } from "./hooks";
 
 export { generateSkillTemplates } from "./skills";
 export type { SkillTemplateOpts, SkillFile } from "./skills";

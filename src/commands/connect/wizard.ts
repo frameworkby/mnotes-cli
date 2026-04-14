@@ -2,6 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import {
   generateHooksTemplate,
+  generateHookScripts,
   HOOKS_HEADER,
   generateSkillTemplates,
   generateAgentTemplates,
@@ -105,15 +106,27 @@ export function scaffoldItems(
 }
 
 /**
- * Merges hooks into `.claude/settings.json`.
+ * Merges hooks into `.claude/settings.json` and writes bash scripts to `.claude/hooks/`.
  * Preserves all existing settings and hooks.
  */
 function scaffoldHooks(dir: string, opts: WizardOpts): ScaffoldResult {
   const settingsPath = path.join(dir, ".claude", "settings.json");
   const claudeDir = path.join(dir, ".claude");
+  const hooksDir = path.join(claudeDir, "hooks");
 
-  fs.mkdirSync(claudeDir, { recursive: true });
+  fs.mkdirSync(hooksDir, { recursive: true });
 
+  const filesWritten: string[] = [];
+
+  // 1. Write bash scripts to .claude/hooks/
+  const scripts = generateHookScripts(opts);
+  for (const script of scripts) {
+    const scriptPath = path.join(hooksDir, script.filename);
+    fs.writeFileSync(scriptPath, script.content, { mode: 0o755 });
+    filesWritten.push(scriptPath);
+  }
+
+  // 2. Merge hook entries into settings.json
   let existing: Record<string, unknown> = {};
   try {
     const raw = fs.readFileSync(settingsPath, "utf-8");
@@ -168,8 +181,9 @@ function scaffoldHooks(dir: string, opts: WizardOpts): ScaffoldResult {
   }
 
   fs.writeFileSync(settingsPath, JSON.stringify(existing, null, 2) + "\n", "utf-8");
+  filesWritten.push(settingsPath);
 
-  return { item: "hooks", filesWritten: [settingsPath] };
+  return { item: "hooks", filesWritten };
 }
 
 /**
