@@ -1,4 +1,4 @@
-export { generateHooksTemplate, generateHookScripts, HOOKS_HEADER } from "./hooks";
+export { generateHooksTemplate, generateHookScripts, HOOKS_HEADER, HOOK_SCRIPTS_DIR, getHookScriptsDir } from "./hooks";
 export type { HooksTemplateOpts, ClaudeCodeHooks, ClaudeCodeHook, HookScript } from "./hooks";
 
 export { generateSkillTemplates } from "./skills";

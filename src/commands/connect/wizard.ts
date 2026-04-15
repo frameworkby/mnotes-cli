@@ -4,6 +4,7 @@ import {
   generateHooksTemplate,
   generateHookScripts,
   HOOKS_HEADER,
+  getHookScriptsDir,
   generateSkillTemplates,
   generateAgentTemplates,
 } from "../../templates/claude-code/index";
@@ -106,22 +107,26 @@ export function scaffoldItems(
 }
 
 /**
- * Merges hooks into `.claude/settings.json` and writes bash scripts to `.claude/hooks/`.
+ * Merges hooks into `<project>/.claude/settings.json` and writes bash scripts to
+ * `~/.claude/hooks/mnotes/scripts/` (user-global, namespaced under `mnotes`).
+ * Scripts live globally so they're shared across projects; settings.json stays
+ * project-local so each project opts in independently.
  * Preserves all existing settings and hooks.
  */
 function scaffoldHooks(dir: string, opts: WizardOpts): ScaffoldResult {
   const settingsPath = path.join(dir, ".claude", "settings.json");
   const claudeDir = path.join(dir, ".claude");
-  const hooksDir = path.join(claudeDir, "hooks");
 
-  fs.mkdirSync(hooksDir, { recursive: true });
+  const hookScriptsDir = getHookScriptsDir();
+  fs.mkdirSync(claudeDir, { recursive: true });
+  fs.mkdirSync(hookScriptsDir, { recursive: true });
 
   const filesWritten: string[] = [];
 
-  // 1. Write bash scripts to .claude/hooks/
+  // 1. Write bash scripts to ~/.claude/hooks/mnotes/scripts/
   const scripts = generateHookScripts(opts);
   for (const script of scripts) {
-    const scriptPath = path.join(hooksDir, script.filename);
+    const scriptPath = path.join(hookScriptsDir, script.filename);
     fs.writeFileSync(scriptPath, script.content, { mode: 0o755 });
     filesWritten.push(scriptPath);
   }

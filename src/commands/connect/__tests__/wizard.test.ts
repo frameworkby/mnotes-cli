@@ -43,14 +43,18 @@ const DEFAULT_OPTS = {
 // T-1: Template generation — hooks
 // =============================================================
 describe("hooks template", () => {
-  it("generates SessionStart hook referencing bash script", () => {
+  it("generates SessionStart hook referencing global bash script path", () => {
     const hooks = generateHooksTemplate(DEFAULT_OPTS);
     expect(hooks.SessionStart).toBeDefined();
     expect(hooks.SessionStart).toHaveLength(1);
     expect(hooks.SessionStart![0].matcher).toBe("");
     expect(hooks.SessionStart![0].hooks).toHaveLength(1);
     expect(hooks.SessionStart![0].hooks[0].type).toBe("command");
-    expect(hooks.SessionStart![0].hooks[0].command).toBe(".claude/hooks/mnotes-session-start.sh");
+    // Global path — resolves at generation time via os.homedir()
+    expect(hooks.SessionStart![0].hooks[0].command).toContain(
+      path.join(".claude", "hooks", "mnotes", "scripts", "mnotes-session-start.sh")
+    );
+    expect(path.isAbsolute(hooks.SessionStart![0].hooks[0].command)).toBe(true);
   });
 
   it("generates hook scripts with correct URL, workspaceId, and Accept headers", () => {
@@ -169,22 +173,31 @@ describe("wizard choices", () => {
 // =============================================================
 describe("scaffoldItems: hooks", () => {
   let tmpDir: string;
+  let fakeHome: string;
+  let origHome: string | undefined;
 
   beforeEach(() => {
     tmpDir = makeTmpDir();
+    fakeHome = makeTmpDir();
+    origHome = process.env.HOME;
+    process.env.HOME = fakeHome;
   });
 
   afterEach(() => {
     cleanTmpDir(tmpDir);
+    cleanTmpDir(fakeHome);
+    if (origHome === undefined) delete process.env.HOME;
+    else process.env.HOME = origHome;
   });
 
-  it("creates .claude/settings.json with hooks and bash scripts (AC-4)", () => {
+  it("writes scripts to global ~/.claude/hooks/mnotes/scripts/ and settings.json to project (AC-4)", () => {
     const results = scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
     expect(results).toHaveLength(1);
     expect(results[0].item).toBe("hooks");
     // 2 bash scripts + settings.json
     expect(results[0].filesWritten).toHaveLength(3);
 
+    // settings.json is project-local
     const settingsPath = path.join(tmpDir, ".claude", "settings.json");
     expect(fs.existsSync(settingsPath)).toBe(true);
 
@@ -193,11 +206,18 @@ describe("scaffoldItems: hooks", () => {
     expect(settings.hooks.SessionStart).toBeDefined();
     expect(settings.hooks.SessionStart).toHaveLength(1);
 
-    // Bash scripts exist and are executable
-    const startScript = path.join(tmpDir, ".claude", "hooks", "mnotes-session-start.sh");
-    const stopScript = path.join(tmpDir, ".claude", "hooks", "mnotes-session-stop.sh");
+    // Bash scripts live under fake HOME at ~/.claude/hooks/mnotes/scripts/
+    const globalScriptsDir = path.join(fakeHome, ".claude", "hooks", "mnotes", "scripts");
+    const startScript = path.join(globalScriptsDir, "mnotes-session-start.sh");
+    const stopScript = path.join(globalScriptsDir, "mnotes-session-stop.sh");
     expect(fs.existsSync(startScript)).toBe(true);
     expect(fs.existsSync(stopScript)).toBe(true);
+
+    // Project directory must NOT contain scripts
+    expect(fs.existsSync(path.join(tmpDir, ".claude", "hooks"))).toBe(false);
+
+    // settings.json references the global absolute path
+    expect(settings.hooks.SessionStart[0].hooks[0].command).toBe(startScript);
 
     const startContent = fs.readFileSync(startScript, "utf-8");
     expect(startContent).toContain("Accept: text/event-stream");
@@ -421,12 +441,17 @@ describe("scaffoldItems: all items", () => {
 // =============================================================
 describe("handleClaudeCode with wizard flags", () => {
   let tmpDir: string;
+  let fakeHome: string;
+  let origHome: string | undefined;
   let origCwd: () => string;
   let origExit: (code?: number) => never;
   let exitCode: number | undefined;
 
   beforeEach(() => {
     tmpDir = makeTmpDir();
+    fakeHome = makeTmpDir();
+    origHome = process.env.HOME;
+    process.env.HOME = fakeHome;
     origCwd = process.cwd;
     process.cwd = () => tmpDir;
     exitCode = undefined;
@@ -441,6 +466,9 @@ describe("handleClaudeCode with wizard flags", () => {
     process.cwd = origCwd;
     process.exit = origExit;
     cleanTmpDir(tmpDir);
+    cleanTmpDir(fakeHome);
+    if (origHome === undefined) delete process.env.HOME;
+    else process.env.HOME = origHome;
     vi.restoreAllMocks();
   });
 
@@ -516,11 +544,16 @@ describe("handleClaudeCode with wizard flags", () => {
 // =============================================================
 describe("CLI flag integration", () => {
   let tmpDir: string;
+  let fakeHome: string;
+  let origHome: string | undefined;
   let origCwd: () => string;
   let origExit: (code?: number) => never;
 
   beforeEach(() => {
     tmpDir = makeTmpDir();
+    fakeHome = makeTmpDir();
+    origHome = process.env.HOME;
+    process.env.HOME = fakeHome;
     origCwd = process.cwd;
     process.cwd = () => tmpDir;
     origExit = process.exit;
@@ -533,6 +566,9 @@ describe("CLI flag integration", () => {
     process.cwd = origCwd;
     process.exit = origExit;
     cleanTmpDir(tmpDir);
+    cleanTmpDir(fakeHome);
+    if (origHome === undefined) delete process.env.HOME;
+    else process.env.HOME = origHome;
     vi.restoreAllMocks();
   });
 
