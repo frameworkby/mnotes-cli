@@ -50,20 +50,26 @@ describe("hooks template", () => {
     expect(hooks.SessionStart![0].matcher).toBe("");
     expect(hooks.SessionStart![0].hooks).toHaveLength(1);
     expect(hooks.SessionStart![0].hooks[0].type).toBe("command");
-    // Global path — resolves at generation time via os.homedir()
-    expect(hooks.SessionStart![0].hooks[0].command).toContain(
+    // Global path — resolves at generation time via os.homedir(), with workspaceId argument
+    const cmd = hooks.SessionStart![0].hooks[0].command;
+    expect(cmd).toContain(
       path.join(".claude", "hooks", "mnotes", "scripts", "mnotes-session-start.sh")
     );
-    expect(path.isAbsolute(hooks.SessionStart![0].hooks[0].command)).toBe(true);
+    expect(cmd).toContain(DEFAULT_OPTS.workspaceId);
+    // The script path portion (before the space + argument) is absolute
+    expect(path.isAbsolute(cmd.split(" ")[0])).toBe(true);
   });
 
-  it("generates hook scripts with correct URL, workspaceId, and Accept headers", () => {
+  it("generates hook scripts with correct URL, workspaceId placeholder, and Accept headers", () => {
     const scripts = generateHookScripts(DEFAULT_OPTS);
     expect(scripts).toHaveLength(2);
 
     const startScript = scripts.find((s) => s.filename === "mnotes-session-start.sh")!;
     expect(startScript.content).toContain("localhost:3000/api/mcp");
-    expect(startScript.content).toContain("ws-test-123");
+    // workspaceId is now a runtime argument, not hardcoded
+    expect(startScript.content).toContain("WORKSPACE_ID=");
+    expect(startScript.content).toContain("__WORKSPACE_ID__");
+    expect(startScript.content).not.toContain("ws-test-123");
     expect(startScript.content).toContain('Accept: text/event-stream');
     expect(startScript.content).toContain('Accept: application/json');
   });
@@ -216,8 +222,8 @@ describe("scaffoldItems: hooks", () => {
     // Project directory must NOT contain scripts
     expect(fs.existsSync(path.join(tmpDir, ".claude", "hooks"))).toBe(false);
 
-    // settings.json references the global absolute path
-    expect(settings.hooks.SessionStart[0].hooks[0].command).toBe(startScript);
+    // settings.json references the global absolute path with workspaceId argument
+    expect(settings.hooks.SessionStart[0].hooks[0].command).toBe(`${startScript} ${DEFAULT_OPTS.workspaceId}`);
 
     const startContent = fs.readFileSync(startScript, "utf-8");
     expect(startContent).toContain("Accept: text/event-stream");
