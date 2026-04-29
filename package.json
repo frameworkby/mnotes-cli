@@ -1,6 +1,6 @@
 {
   "name": "mnotes-cli",
-  "version": "1.13.0",
+  "version": "1.14.0",
   "description": "CLI for m-notes AI knowledge base — manage notes, search, and CRUD from the terminal",
   "bin": {
     "mnotes": "./dist/index.js"
@@ -32,7 +32,8 @@
   "license": "SEE LICENSE IN ../../LICENSE",
   "dependencies": {
     "commander": "^14.0.3",
-    "open": "^10.2.0"
+    "open": "^10.2.0",
+    "zod": "^3.24.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

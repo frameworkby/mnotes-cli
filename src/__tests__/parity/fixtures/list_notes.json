@@ -1,0 +1,19 @@
+{
+  "notes": [
+    {
+      "id": "note_01",
+      "title": "Sprint 53 kickoff",
+      "folderId": "folder_root",
+      "type": "note",
+      "updatedAt": "2026-04-29T10:00:00.000Z"
+    },
+    {
+      "id": "note_02",
+      "title": "CLI parity notes",
+      "folderId": null,
+      "type": "note",
+      "updatedAt": "2026-04-28T22:15:00.000Z"
+    }
+  ],
+  "nextCursor": "eyJ1cGRhdGVkQXQiOiIyMDI2LTA0LTI4VDIyOjE1OjAwLjAwMFoiLCJpZCI6Im5vdGVfMDIifQ=="
+}
