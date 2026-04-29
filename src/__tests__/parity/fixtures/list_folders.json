@@ -1,0 +1,19 @@
+{
+  "folders": [
+    {
+      "id": "folder_root",
+      "name": "Root",
+      "parentId": null,
+      "isRoot": true,
+      "noteCount": 0
+    },
+    {
+      "id": "folder_01",
+      "name": "Sprint 53",
+      "parentId": "folder_root",
+      "isRoot": false,
+      "noteCount": 4
+    }
+  ],
+  "nextCursor": null
+}

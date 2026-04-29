@@ -1,0 +1,16 @@
+[
+  {
+    "id": "note_01",
+    "title": "Sprint 53 kickoff",
+    "tags": ["cli", "parity"],
+    "folder": { "id": "folder_01", "name": "Sprint 53" },
+    "updatedAt": "2026-04-29T10:00:00.000Z"
+  },
+  {
+    "id": "note_03",
+    "title": "Orphan note",
+    "tags": ["cli"],
+    "folder": null,
+    "updatedAt": "2026-04-27T11:00:00.000Z"
+  }
+]

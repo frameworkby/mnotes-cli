@@ -3,6 +3,8 @@
 import { Command } from "commander";
 import { registerGroup } from "./commands/_register-group";
 import { listAction } from "./commands/note/list";
+import { registerFolderGroup } from "./commands/folder";
+import { registerFileGroup } from "./commands/file";
 import { registerReadCommand } from "./commands/read";
 import { registerSearchCommand } from "./commands/search";
 import { registerCreateCommand } from "./commands/create";
@@ -28,6 +30,8 @@ export function buildProgram(): Command {
   // New group-based registration. Hidden top-level alias `mnotes list` is kept
   // by `listAction.aliases`.
   registerGroup(program, "note", [listAction]);
+  registerFolderGroup(program);
+  registerFileGroup(program);
 
   // Legacy flat commands still register as before. They will migrate into
   // groups in subsequent sprint stories.

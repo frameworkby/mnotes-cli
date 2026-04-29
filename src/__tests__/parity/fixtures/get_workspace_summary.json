@@ -1,0 +1,29 @@
+{
+  "totalNotes": 42,
+  "totalFolders": 5,
+  "folderTree": [
+    {
+      "id": "folder_01",
+      "name": "Sprint 53",
+      "parentId": null,
+      "isRoot": false,
+      "noteCount": 4,
+      "children": []
+    }
+  ],
+  "recentActivity": [
+    {
+      "id": "note_01",
+      "title": "Sprint 53 kickoff",
+      "updatedAt": "2026-04-29T10:00:00.000Z"
+    }
+  ],
+  "tagCloud": [
+    { "name": "cli", "count": 7 },
+    { "name": "parity", "count": 3 }
+  ],
+  "noteTypes": {
+    "note": 40,
+    "knowledge": 2
+  }
+}

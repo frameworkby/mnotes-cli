@@ -33,6 +33,13 @@ mnotes --api-key <key> --url <url> <command>
 | `mnotes create` | Create a note |
 | `mnotes update <id>` | Update a note |
 | `mnotes delete <id>` | Delete a note |
+| `mnotes folder list` | List folders with hierarchy + note counts |
+| `mnotes folder summary` | High-level workspace overview (totals, tree, recent, tags) |
+| `mnotes folder manage --action <create\|rename\|delete>` | Folder lifecycle (mirrors MCP `manage_folders`) |
+| `mnotes folder recent --since <iso>` | Notes modified since a timestamp |
+| `mnotes folder search-tags --tags <a,b>` | Find notes matching given tags (`--match any\|all`) |
+| `mnotes folder move <id> --parent-id <id> \| --root` | Re-parent a folder |
+| `mnotes file upload --path <p> --mime-type <t>` | Upload an image or PDF; optional `--note-id` to embed |
 
 ### Options
 

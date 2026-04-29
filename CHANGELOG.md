@@ -3,6 +3,36 @@
 All notable changes to the CLI are documented here. The CLI follows semver
 independent of the app — see `feedback_release_versioning` in agent memory.
 
+## 1.15.0 — 2026-04-29
+
+### Added
+- `mnotes folder` group — six subcommands matching MCP `folder-tools.ts`:
+  - `folder list` (`list_folders`)
+  - `folder summary` (`get_workspace_summary`)
+  - `folder manage --action create|rename|delete` (`manage_folders`)
+  - `folder recent --since <iso>` (`get_recent_notes`)
+  - `folder search-tags --tags <csv>` (`search_by_tags`)
+  - `folder move <id> --parent-id <id> | --root` (`move_folder`)
+- `mnotes file upload` — mirrors MCP `upload_file`. Accepts `--path` (file is
+  read and base64-encoded for you) or `--content` (already-encoded base64).
+- Shared Zod schemas + parity fixtures for all seven tools under
+  `src/parity/schemas/` and `src/__tests__/parity/fixtures/`.
+- `parity.test.ts` refactored to iterate `<tool, schema, fixture, commandPath>`
+  cases; one test row per tool covering schema, registry binding, and manifest
+  presence.
+
+### Notes for downstream consumers
+- `get_recent_notes` and `search_by_tags` live in `folder-tools.ts` MCP-side
+  even though they return notes. To match the MCP grouping (parity contract),
+  the CLI mounts them under `mnotes folder` (`folder recent`,
+  `folder search-tags`). Underlying API path is `/api/v1/notes/...`.
+- `manage_folders` is action-overloaded (create/rename/delete); the CLI keeps
+  the 1:1 parity contract with one command (`folder manage --action ...`)
+  rather than splitting into three commands.
+- DELETE on a folder containing notes returns HTTP 409. The CLI surfaces this
+  as a non-zero exit with the server's error message; parity is structural and
+  defined on the success-case shape (`{ deleted: id }`).
+
 ## 1.14.0 — 2026-04-29
 
 ### Added
