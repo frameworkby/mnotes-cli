@@ -153,8 +153,9 @@ export function registerGroup(
 
     for (const alias of action.aliases ?? []) {
       const aliasCmd = program
-        .command(alias, { hidden: true })
+        .command(alias)
         .description(`Alias for ${group} ${action.name}`);
+      (aliasCmd as unknown as { hidden: boolean }).hidden = true;
       if (action.args) action.args(aliasCmd);
       aliasCmd.action(buildHandler());
     }
