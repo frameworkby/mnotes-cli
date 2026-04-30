@@ -739,7 +739,7 @@ function cleanTmpDir(dir) {
             console.log = origLog;
         }
         (0, vitest_1.expect)(output).toContain("ws-explicit-id");
-        (0, vitest_1.expect)(output).toContain("Claude Code connected to m-notes!");
+        (0, vitest_1.expect)(output).toContain("Connected. Your AI client is configured to use the m-notes v1 API.");
     });
     (0, vitest_1.it)("exits with error when validation fails", async () => {
         const configUtils = await Promise.resolve().then(() => __importStar(require("../config-utils")));

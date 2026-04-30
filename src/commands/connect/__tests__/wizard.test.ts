@@ -60,24 +60,27 @@ describe("hooks template", () => {
     expect(path.isAbsolute(cmd.split(" ")[0])).toBe(true);
   });
 
-  it("generates hook scripts with correct URL, workspaceId placeholder, and Accept headers", () => {
+  it("generates hook scripts targeting v1 endpoints with workspaceId arg and Accept header", () => {
     const scripts = generateHookScripts(DEFAULT_OPTS);
     expect(scripts).toHaveLength(2);
 
     const startScript = scripts.find((s) => s.filename === "mnotes-session-start.sh")!;
-    expect(startScript.content).toContain("localhost:3000/api/mcp");
-    // workspaceId is now a runtime argument, not hardcoded
+    expect(startScript.content).toContain("localhost:3000/api/v1/composites/project-context-load");
+    expect(startScript.content).not.toContain("/api/mcp");
+    // workspaceId is a runtime argument, not hardcoded
     expect(startScript.content).toContain("WORKSPACE_ID=");
-    expect(startScript.content).toContain("__WORKSPACE_ID__");
     expect(startScript.content).not.toContain("ws-test-123");
-    expect(startScript.content).toContain('Accept: text/event-stream');
     expect(startScript.content).toContain('Accept: application/json');
+
+    const stopScript = scripts.find((s) => s.filename === "mnotes-session-stop.sh")!;
+    expect(stopScript.content).toContain("localhost:3000/api/v1/sessions/log");
+    expect(stopScript.content).not.toContain("/api/mcp");
   });
 
   it("strips trailing slashes from URL in hook scripts", () => {
     const scripts = generateHookScripts({ url: "http://example.com///", workspaceId: "ws-1" });
     const startScript = scripts.find((s) => s.filename === "mnotes-session-start.sh")!;
-    expect(startScript.content).toContain("http://example.com/api/mcp");
+    expect(startScript.content).toContain("http://example.com/api/v1/composites/project-context-load");
     expect(startScript.content).not.toContain("///");
   });
 });
@@ -226,8 +229,8 @@ describe("scaffoldItems: hooks", () => {
     expect(settings.hooks.SessionStart[0].hooks[0].command).toBe(`${startScript} ${DEFAULT_OPTS.workspaceId}`);
 
     const startContent = fs.readFileSync(startScript, "utf-8");
-    expect(startContent).toContain("Accept: text/event-stream");
     expect(startContent).toContain("Accept: application/json");
+    expect(startContent).toContain("/api/v1/composites/project-context-load");
   });
 
   it("merges hooks into existing settings.json (AC-5)", () => {

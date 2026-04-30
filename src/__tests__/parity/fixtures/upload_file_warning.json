@@ -1,6 +1,0 @@
-{
-  "embed": "![x](/api/files/u/x.png)",
-  "fileUrl": "/api/files/u/x.png",
-  "key": "u/x.png",
-  "warning": "Provided noteId could not be linked"
-}

@@ -31,7 +31,6 @@ const update_1 = require("./commands/update");
 const delete_1 = require("./commands/delete");
 const connect_1 = require("./commands/connect");
 const login_1 = require("./commands/login");
-const parity_1 = require("./commands/parity");
 function buildProgram() {
     const program = new commander_1.Command();
     program
@@ -69,7 +68,6 @@ function buildProgram() {
     (0, delete_1.registerDeleteCommand)(program);
     (0, connect_1.registerConnectCommand)(program);
     (0, login_1.registerLoginCommand)(program);
-    (0, parity_1.registerParityCommand)(program);
     return program;
 }
 if (require.main === module) {

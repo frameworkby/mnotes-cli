@@ -29,7 +29,6 @@ import { registerUpdateCommand } from "./commands/update";
 import { registerDeleteCommand } from "./commands/delete";
 import { registerConnectCommand } from "./commands/connect";
 import { registerLoginCommand } from "./commands/login";
-import { registerParityCommand } from "./commands/parity";
 
 export function buildProgram(): Command {
   const program = new Command();
@@ -71,7 +70,6 @@ export function buildProgram(): Command {
   registerDeleteCommand(program);
   registerConnectCommand(program);
   registerLoginCommand(program);
-  registerParityCommand(program);
 
   return program;
 }
