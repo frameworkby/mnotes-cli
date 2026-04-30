@@ -318,6 +318,110 @@ export interface DeleteGraphEntityResult {
   id: string;
 }
 
+// ── Session / cluster / timeline / MoC / smart-folder / task types ───────
+
+export interface SessionSummary {
+  id: string;
+  sessionLabel: string | null;
+  startedAt: string;
+  endedAt: string | null;
+  toolCallCount: number;
+  noteIds: string[];
+}
+
+export interface SessionListResult {
+  sessions: SessionSummary[];
+  nextCursor: string | null;
+}
+
+export interface SessionLogResult {
+  noteId: string;
+  sessionId: string;
+  created: boolean;
+  timestamp: string;
+  decisions: number;
+  actions: number;
+}
+
+export interface SessionReplay {
+  id: string;
+  sessionLabel: string | null;
+  startedAt: string;
+  endedAt: string | null;
+  noteIds: string[];
+  toolCalls: unknown;
+}
+
+export interface SessionResumeResult {
+  session?: {
+    id: string;
+    label: string | null;
+    startedAt: string;
+    endedAt: string | null;
+  };
+  decisions?: Array<{ decision: string; rationale: string }>;
+  actions?: Array<{ action: string; target: string }>;
+  toolCallSummary?: Record<string, number>;
+  affectedNotes?: Array<{ title: string | null; key: string | null; excerpt: string }>;
+  message?: string;
+}
+
+export interface ClusterPoint {
+  noteId: string;
+  title: string;
+  x: number;
+  y: number;
+  clusterId: number;
+}
+
+export interface ClusterResult {
+  k?: number;
+  noteCount?: number;
+  computedAt?: string;
+  points?: ClusterPoint[];
+  clusters?: null;
+  message?: string;
+}
+
+export interface TimelineEntry {
+  id: string;
+  title: string;
+  createdAt: string;
+}
+
+export interface MocResult {
+  noteId: string | null;
+  noteCount: number;
+  created: boolean;
+}
+
+export interface SmartFolder {
+  id: string;
+  name: string;
+  query: string;
+  mode: "fulltext" | "semantic";
+}
+
+export interface SmartFolderDeleteResult {
+  id: string;
+  deleted: true;
+}
+
+export interface TaskItem {
+  noteId: string;
+  noteTitle: string;
+  line: number;
+  text: string;
+  done: boolean;
+}
+
+export interface TaskToggleResult {
+  noteId: string;
+  line: number;
+  done: boolean;
+  text: string;
+}
+
 export function createClient(baseUrl: string, apiKey: string) {
   const headers: Record<string, string> = {
     Authorization: `Bearer ${apiKey}`,
@@ -892,6 +996,177 @@ export function createClient(baseUrl: string, apiKey: string) {
         "DELETE",
         `/api/v1/graph/edges/${encodeURIComponent(id)}?${params.toString()}`,
       );
+    },
+
+    // ── Sessions ─────────────────────────────────────────────────────────
+
+    async listSessions(opts: {
+      workspaceId?: string;
+      limit?: number;
+      cursor?: string;
+    }): Promise<SessionListResult> {
+      const params = new URLSearchParams();
+      if (opts.workspaceId) params.set("workspaceId", opts.workspaceId);
+      if (opts.limit != null) params.set("limit", String(opts.limit));
+      if (opts.cursor) params.set("cursor", opts.cursor);
+      const qs = params.toString();
+      return request<SessionListResult>(
+        "GET",
+        `/api/v1/sessions${qs ? `?${qs}` : ""}`,
+      );
+    },
+
+    async sessionLog(opts: {
+      sessionId: string;
+      summary: string;
+      decisions?: Array<{ decision: string; rationale: string }>;
+      actions?: Array<{ action: string; target: string }>;
+      tags?: string[];
+      workspaceId: string;
+    }): Promise<SessionLogResult> {
+      return request<SessionLogResult>("POST", "/api/v1/sessions/log", opts);
+    },
+
+    async getSessionReplay(
+      id: string,
+      workspaceId?: string,
+    ): Promise<SessionReplay> {
+      const params = new URLSearchParams();
+      if (workspaceId) params.set("workspaceId", workspaceId);
+      const qs = params.toString();
+      return request<SessionReplay>(
+        "GET",
+        `/api/v1/sessions/${encodeURIComponent(id)}/replay${qs ? `?${qs}` : ""}`,
+      );
+    },
+
+    async sessionContextResume(opts: {
+      workspaceId: string;
+      sessionId?: string;
+      includeNotes?: boolean;
+    }): Promise<SessionResumeResult> {
+      const body: Record<string, unknown> = { workspaceId: opts.workspaceId };
+      if (opts.sessionId) body.sessionId = opts.sessionId;
+      if (opts.includeNotes !== undefined) body.include_notes = opts.includeNotes;
+      return request<SessionResumeResult>("POST", "/api/v1/sessions/resume", body);
+    },
+
+    // ── Clusters ─────────────────────────────────────────────────────────
+
+    async getClusters(workspaceId: string): Promise<ClusterResult> {
+      const params = new URLSearchParams({ workspaceId });
+      const res = await request<{ data: ClusterResult }>(
+        "GET",
+        `/api/v1/clusters?${params.toString()}`,
+      );
+      return res.data;
+    },
+
+    // ── Timeline ─────────────────────────────────────────────────────────
+
+    async listTimeline(opts: {
+      workspaceId: string;
+      from?: string;
+      to?: string;
+      limit?: number;
+    }): Promise<TimelineEntry[]> {
+      const params = new URLSearchParams({ workspaceId: opts.workspaceId });
+      if (opts.from) params.set("from", opts.from);
+      if (opts.to) params.set("to", opts.to);
+      if (opts.limit != null) params.set("limit", String(opts.limit));
+      const res = await request<{ data: TimelineEntry[] }>(
+        "GET",
+        `/api/v1/timeline?${params.toString()}`,
+      );
+      return res.data;
+    },
+
+    // ── MoC ──────────────────────────────────────────────────────────────
+
+    async generateMoc(opts: {
+      workspaceId: string;
+      scopeType: "folder" | "tag";
+      scopeId: string;
+      limit?: number;
+    }): Promise<MocResult> {
+      const res = await request<{ data: MocResult }>(
+        "POST",
+        "/api/v1/mocs",
+        opts,
+      );
+      return res.data;
+    },
+
+    // ── Smart folders ────────────────────────────────────────────────────
+
+    async listSmartFolders(workspaceId: string): Promise<SmartFolder[]> {
+      const params = new URLSearchParams({ workspaceId });
+      const res = await request<{ data: SmartFolder[] }>(
+        "GET",
+        `/api/v1/smart-folders?${params.toString()}`,
+      );
+      return res.data;
+    },
+
+    async createSmartFolder(opts: {
+      workspaceId: string;
+      name: string;
+      query: string;
+      mode: "fulltext" | "semantic";
+    }): Promise<SmartFolder> {
+      const res = await request<{ data: SmartFolder }>(
+        "POST",
+        "/api/v1/smart-folders",
+        opts,
+      );
+      return res.data;
+    },
+
+    async deleteSmartFolder(
+      id: string,
+      workspaceId: string,
+    ): Promise<SmartFolderDeleteResult> {
+      const params = new URLSearchParams({ workspaceId });
+      const res = await request<{ data: SmartFolderDeleteResult }>(
+        "DELETE",
+        `/api/v1/smart-folders/${encodeURIComponent(id)}?${params.toString()}`,
+      );
+      return res.data;
+    },
+
+    // ── Tasks ────────────────────────────────────────────────────────────
+
+    async listTasks(opts: {
+      workspaceId: string;
+      status?: "all" | "open" | "done";
+      tag?: string;
+      noteId?: string;
+      limit?: number;
+    }): Promise<TaskItem[]> {
+      const params = new URLSearchParams({ workspaceId: opts.workspaceId });
+      if (opts.status) params.set("status", opts.status);
+      if (opts.tag) params.set("tag", opts.tag);
+      if (opts.noteId) params.set("noteId", opts.noteId);
+      if (opts.limit != null) params.set("limit", String(opts.limit));
+      const res = await request<{ data: TaskItem[] }>(
+        "GET",
+        `/api/v1/tasks?${params.toString()}`,
+      );
+      return res.data;
+    },
+
+    async toggleTask(opts: {
+      noteId: string;
+      line: number;
+      workspaceId: string;
+      done?: boolean;
+    }): Promise<TaskToggleResult> {
+      const res = await request<{ data: TaskToggleResult }>(
+        "POST",
+        "/api/v1/tasks/toggle",
+        opts,
+      );
+      return res.data;
     },
 
     async createWorkspace(name: string): Promise<{

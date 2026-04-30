@@ -7,6 +7,12 @@ import { registerFolderGroup } from "./commands/folder";
 import { registerFileGroup } from "./commands/file";
 import { registerKbGroup } from "./commands/kb";
 import { registerGraphGroup } from "./commands/graph";
+import { registerSessionGroup } from "./commands/session";
+import { registerClusterGroup } from "./commands/cluster";
+import { registerTimelineGroup } from "./commands/timeline";
+import { registerMocGroup } from "./commands/moc";
+import { registerSmartFolderGroup } from "./commands/smart-folder";
+import { registerTaskGroup } from "./commands/task";
 import { registerReadCommand } from "./commands/read";
 import { registerSearchCommand } from "./commands/search";
 import { registerCreateCommand } from "./commands/create";
@@ -33,6 +39,12 @@ export function buildProgram(): Command {
   registerFileGroup(program);
   registerKbGroup(program);
   registerGraphGroup(program);
+  registerSessionGroup(program);
+  registerClusterGroup(program);
+  registerTimelineGroup(program);
+  registerMocGroup(program);
+  registerSmartFolderGroup(program);
+  registerTaskGroup(program);
 
   registerReadCommand(program);
   registerSearchCommand(program);

@@ -3,6 +3,28 @@
 All notable changes to the CLI are documented here. The CLI follows semver
 independent of the app — see `feedback_release_versioning` in agent memory.
 
+## 1.18.0 — 2026-04-30
+
+### Added
+- `mnotes session` group — 4 subcommands matching MCP session tools:
+  - `session list` (`list_sessions`) — paginated session traces (limit, cursor)
+  - `session log` (`session_log`) — append a session summary with decisions/actions
+  - `session replay <id>` (`get_session_replay`) — fetch a single trace
+  - `session resume` (`session_context_resume`) — restore decisions/actions/notes from the most recent (or given) session
+- `mnotes cluster` group — 1 subcommand:
+  - `cluster get` (`get_clusters`) — cached k-means clusters of notes
+- `mnotes timeline` group — 1 subcommand:
+  - `timeline list` (`list_timeline`) — notes by creation date with optional `--from`/`--to`/`--limit`
+- `mnotes moc` group — 1 subcommand:
+  - `moc generate --scope-type folder|tag --scope-id <id>` (`generate_moc`)
+- `mnotes smart-folder` group — 3 subcommands:
+  - `smart-folder list` (`list_smart_folders`)
+  - `smart-folder create --name --query --mode fulltext|semantic` (`create_smart_folder`)
+  - `smart-folder delete <id>` (`delete_smart_folder`)
+- `mnotes task` group — 2 subcommands:
+  - `task list` (`list_tasks`) — extract markdown checkboxes; filter by status/tag/note
+  - `task toggle --note-id --task-index <n> [--done|--not-done]` (`toggle_task`)
+
 ## 1.17.0 — 2026-04-30
 
 ### Added
