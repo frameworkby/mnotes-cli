@@ -419,8 +419,8 @@ const DEFAULT_OPTS = {
         finally {
             console.log = origLog;
         }
-        // Core setup files should exist
-        (0, vitest_1.expect)(fs.existsSync(path.join(tmpDir, ".mcp.json"))).toBe(true);
+        // Core setup file (CLAUDE.md) should exist; .mcp.json must NOT (#594, #777)
+        (0, vitest_1.expect)(fs.existsSync(path.join(tmpDir, ".mcp.json"))).toBe(false);
         (0, vitest_1.expect)(fs.existsSync(path.join(tmpDir, "CLAUDE.md"))).toBe(true);
         // Wizard extras should NOT exist
         (0, vitest_1.expect)(fs.existsSync(path.join(tmpDir, ".claude", "settings.json"))).toBe(false);
@@ -447,8 +447,8 @@ const DEFAULT_OPTS = {
         finally {
             console.log = origLog;
         }
-        // Core setup
-        (0, vitest_1.expect)(fs.existsSync(path.join(tmpDir, ".mcp.json"))).toBe(true);
+        // Core setup — CLAUDE.md only; .mcp.json must NOT be written (#594, #777)
+        (0, vitest_1.expect)(fs.existsSync(path.join(tmpDir, ".mcp.json"))).toBe(false);
         (0, vitest_1.expect)(fs.existsSync(path.join(tmpDir, "CLAUDE.md"))).toBe(true);
         // All extras should exist
         (0, vitest_1.expect)(fs.existsSync(path.join(tmpDir, ".claude", "settings.json"))).toBe(true);
@@ -513,8 +513,9 @@ const DEFAULT_OPTS = {
         finally {
             console.log = origLog;
         }
-        // Only core files, no extras
-        (0, vitest_1.expect)(fs.existsSync(path.join(tmpDir, ".mcp.json"))).toBe(true);
+        // Only CLAUDE.md (core), no .mcp.json (#594, #777), no wizard extras
+        (0, vitest_1.expect)(fs.existsSync(path.join(tmpDir, "CLAUDE.md"))).toBe(true);
+        (0, vitest_1.expect)(fs.existsSync(path.join(tmpDir, ".mcp.json"))).toBe(false);
         (0, vitest_1.expect)(fs.existsSync(path.join(tmpDir, ".claude", "settings.json"))).toBe(false);
     });
     (0, vitest_1.it)("--all flag is recognized by commander", async () => {

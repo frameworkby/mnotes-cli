@@ -591,7 +591,7 @@ function cleanTmpDir(dir) {
         cleanTmpDir(tmpDir);
         vitest_1.vi.restoreAllMocks();
     });
-    (0, vitest_1.it)("writes .mcp.json with correct structure on success", async () => {
+    (0, vitest_1.it)("does not write .mcp.json (API key must not leak to project files, #594)", async () => {
         // Mock validateConnection to return ok
         const configUtils = await Promise.resolve().then(() => __importStar(require("../config-utils")));
         vitest_1.vi.spyOn(configUtils, "validateConnection").mockResolvedValue({ ok: true });
@@ -615,14 +615,14 @@ function cleanTmpDir(dir) {
         finally {
             console.log = origLog;
         }
-        // Verify .mcp.json
-        const mcpContent = JSON.parse(fs.readFileSync(path.join(tmpDir, ".mcp.json"), "utf-8"));
-        (0, vitest_1.expect)(mcpContent.mcpServers["m-notes"].url).toBe("http://localhost:3000/api/mcp");
-        (0, vitest_1.expect)(mcpContent.mcpServers["m-notes"].headers.Authorization).toBe("Bearer test-key-abc");
-        // Verify success output
-        (0, vitest_1.expect)(output).toContain("Claude Code connected to m-notes!");
-        (0, vitest_1.expect)(output).toContain("http://localhost:3000/api/mcp");
+        // .mcp.json must NOT be created — the m-notes MCP endpoint is removed,
+        // and writing the API key into a project-level file is a leakage risk.
+        (0, vitest_1.expect)(fs.existsSync(path.join(tmpDir, ".mcp.json"))).toBe(false);
+        // Verify success output references v1 API, not MCP, and no API key leaks
+        (0, vitest_1.expect)(output).toContain("Connected. Your AI client is configured to use the m-notes v1 API.");
         (0, vitest_1.expect)(output).toContain("ws-123");
+        (0, vitest_1.expect)(output).not.toContain("/api/mcp");
+        (0, vitest_1.expect)(output).not.toContain("test-key-abc");
     });
     (0, vitest_1.it)("writes CLAUDE.md with delimited block on success", async () => {
         const configUtils = await Promise.resolve().then(() => __importStar(require("../config-utils")));
@@ -679,12 +679,17 @@ function cleanTmpDir(dir) {
         (0, vitest_1.expect)(claudeMd).toContain("# My Project");
     });
     (0, vitest_1.it)("exits with error when --api-key is missing", async () => {
+        // Ensure no stored config provides an API key (e.g. from a real local
+        // ~/.mnotes/config.json on the developer's machine, or an env var).
+        const loginModule = await Promise.resolve().then(() => __importStar(require("../../login")));
+        vitest_1.vi.spyOn(loginModule, "readConfig").mockReturnValue(null);
+        const origApiKey = process.env.MNOTES_API_KEY;
+        const origUrl = process.env.MNOTES_URL;
+        delete process.env.MNOTES_API_KEY;
+        delete process.env.MNOTES_URL;
         const program = new commander_1.Command();
         program.exitOverride();
         (0, index_1.registerConnectCommand)(program);
-        // Clear env vars
-        const origApiKey = process.env.MNOTES_API_KEY;
-        delete process.env.MNOTES_API_KEY;
         let stderrOutput = "";
         const origStderrWrite = process.stderr.write;
         process.stderr.write = (chunk) => {
@@ -704,6 +709,8 @@ function cleanTmpDir(dir) {
             process.stderr.write = origStderrWrite;
             if (origApiKey !== undefined)
                 process.env.MNOTES_API_KEY = origApiKey;
+            if (origUrl !== undefined)
+                process.env.MNOTES_URL = origUrl;
         }
         (0, vitest_1.expect)(exitCode).toBe(1);
         (0, vitest_1.expect)(stderrOutput).toContain("API key required");
@@ -767,14 +774,17 @@ function cleanTmpDir(dir) {
         (0, vitest_1.expect)(stderrOutput).toContain("Cannot connect to");
         (0, vitest_1.expect)(stderrOutput).toContain("Connection refused");
     });
-    (0, vitest_1.it)("strips trailing slashes from URL when building MCP endpoint", async () => {
+    (0, vitest_1.it)("normalizes trailing slashes in URL output", async () => {
         const configUtils = await Promise.resolve().then(() => __importStar(require("../config-utils")));
         vitest_1.vi.spyOn(configUtils, "validateConnection").mockResolvedValue({ ok: true });
         const program = new commander_1.Command();
         program.exitOverride();
         (0, index_1.registerConnectCommand)(program);
         const origLog = console.log;
-        console.log = () => { };
+        let output = "";
+        console.log = (...args) => {
+            output += args.join(" ") + "\n";
+        };
         try {
             await program.parseAsync([
                 "node", "mnotes", "connect", "claude-code",
@@ -787,7 +797,9 @@ function cleanTmpDir(dir) {
         finally {
             console.log = origLog;
         }
-        const mcpContent = JSON.parse(fs.readFileSync(path.join(tmpDir, ".mcp.json"), "utf-8"));
-        (0, vitest_1.expect)(mcpContent.mcpServers["m-notes"].url).toBe("http://localhost:3000/api/mcp");
+        // No .mcp.json written, and the printed API base has no trailing slashes.
+        (0, vitest_1.expect)(fs.existsSync(path.join(tmpDir, ".mcp.json"))).toBe(false);
+        (0, vitest_1.expect)(output).toContain("http://localhost:3000");
+        (0, vitest_1.expect)(output).not.toMatch(/http:\/\/localhost:3000\/+\s/);
     });
 });

@@ -497,8 +497,8 @@ describe("handleClaudeCode with wizard flags", () => {
       console.log = origLog;
     }
 
-    // Core setup files should exist
-    expect(fs.existsSync(path.join(tmpDir, ".mcp.json"))).toBe(true);
+    // Core setup file (CLAUDE.md) should exist; .mcp.json must NOT (#594, #777)
+    expect(fs.existsSync(path.join(tmpDir, ".mcp.json"))).toBe(false);
     expect(fs.existsSync(path.join(tmpDir, "CLAUDE.md"))).toBe(true);
 
     // Wizard extras should NOT exist
@@ -530,8 +530,8 @@ describe("handleClaudeCode with wizard flags", () => {
       console.log = origLog;
     }
 
-    // Core setup
-    expect(fs.existsSync(path.join(tmpDir, ".mcp.json"))).toBe(true);
+    // Core setup — CLAUDE.md only; .mcp.json must NOT be written (#594, #777)
+    expect(fs.existsSync(path.join(tmpDir, ".mcp.json"))).toBe(false);
     expect(fs.existsSync(path.join(tmpDir, "CLAUDE.md"))).toBe(true);
 
     // All extras should exist
@@ -603,8 +603,9 @@ describe("CLI flag integration", () => {
       console.log = origLog;
     }
 
-    // Only core files, no extras
-    expect(fs.existsSync(path.join(tmpDir, ".mcp.json"))).toBe(true);
+    // Only CLAUDE.md (core), no .mcp.json (#594, #777), no wizard extras
+    expect(fs.existsSync(path.join(tmpDir, "CLAUDE.md"))).toBe(true);
+    expect(fs.existsSync(path.join(tmpDir, ".mcp.json"))).toBe(false);
     expect(fs.existsSync(path.join(tmpDir, ".claude", "settings.json"))).toBe(false);
   });
 

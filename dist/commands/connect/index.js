@@ -138,8 +138,9 @@ async function resolveWorkspace(opts) {
  * Handles the `claude-code` integration target.
  */
 /**
- * Normalize the base URL: strip trailing slashes and /api/mcp suffix.
- * Users often pass the full MCP endpoint URL, but the code appends /api/mcp.
+ * Normalize the base URL: strip trailing slashes and any legacy /api/mcp suffix.
+ * Earlier versions of the CLI pointed at the MCP endpoint directly; we accept
+ * those URLs and reduce them back to the bare server origin.
  */
 function normalizeBaseUrl(raw) {
     return raw.replace(/\/+$/, "").replace(/\/api\/mcp$/i, "");
@@ -155,23 +156,18 @@ async function handleClaudeCode(opts) {
     }
     const workspaceId = await resolveWorkspace({ url, apiKey, workspace: opts.workspace });
     const dir = process.cwd();
-    const mcpUrl = `${url.replace(/\/+$/, "")}/api/mcp`;
-    // Core setup — always runs
-    (0, config_utils_1.writeMcpJson)(dir, {
-        "m-notes": {
-            type: "http",
-            url: mcpUrl,
-            headers: {
-                Authorization: `Bearer ${apiKey}`,
-            },
-        },
-    });
+    // Core setup — always runs.
+    // We deliberately do NOT write `.mcp.json` here: the m-notes server no longer
+    // exposes an MCP endpoint, and writing the API key into a project-level file
+    // is a credential-leakage risk (see #594). The CLI's own config file
+    // (`~/.mnotes/config.json`) remains the single source of truth for the API
+    // key — `mnotes login` writes it there.
     const template = (0, claude_code_1.generateClaudeCodeTemplate)({ url, workspaceId });
     (0, config_utils_1.writeClaudeMdBlock)(dir, template);
-    console.log("Claude Code connected to m-notes!");
-    console.log(`  .mcp.json  -> MCP server: ${mcpUrl}`);
+    console.log("Connected. Your AI client is configured to use the m-notes v1 API.");
     console.log(`  CLAUDE.md  -> Agent instructions added`);
-    console.log(`  Workspace: ${workspaceId}`);
+    console.log(`  API base   -> ${url}`);
+    console.log(`  Workspace  -> ${workspaceId}`);
     // Wizard phase — scaffold optional extras
     if (opts.noWizard) {
         return;
@@ -221,25 +217,15 @@ async function handleCodex(opts) {
     }
     const workspaceId = await resolveWorkspace({ url, apiKey, workspace: opts.workspace });
     const dir = process.cwd();
-    const mcpUrl = `${url.replace(/\/+$/, "")}/api/mcp`;
-    const mcpEntry = {
-        "m-notes": {
-            type: "http",
-            url: mcpUrl,
-            headers: {
-                Authorization: `Bearer ${apiKey}`,
-            },
-        },
-    };
-    (0, config_utils_1.writeMcpJson)(dir, mcpEntry);
+    // No `.mcp.json` written — the m-notes MCP endpoint was removed. The agent
+    // talks to the v1 HTTP API, and the API key lives only in the CLI config
+    // (`~/.mnotes/config.json`), never in a project-level file (#594).
     const template = (0, codex_1.generateCodexTemplate)({ url, workspaceId });
     (0, config_utils_1.writeInstructionBlock)(dir, "AGENTS.md", template);
-    console.log("Codex connected to m-notes!");
-    console.log(`  .mcp.json  -> MCP server: ${mcpUrl}`);
+    console.log("Connected. Your AI client is configured to use the m-notes v1 API.");
     console.log(`  AGENTS.md  -> Agent instructions added`);
-    console.log(`  Workspace: ${workspaceId}`);
-    console.log("\nMCP config (copy if auto-detection fails):");
-    console.log(JSON.stringify({ mcpServers: mcpEntry }, null, 2));
+    console.log(`  API base   -> ${url}`);
+    console.log(`  Workspace  -> ${workspaceId}`);
 }
 /**
  * Handles the `openclaw` integration target.
@@ -255,25 +241,17 @@ async function handleOpenClaw(opts) {
         process.exit(1);
     }
     const workspaceId = await resolveWorkspace({ url, apiKey, workspace: opts.workspace });
-    const mcpUrl = `${url.replace(/\/+$/, "")}/api/mcp`;
     const configDir = path.dirname(configPath);
     // Ensure config directory exists
     fs.mkdirSync(configDir, { recursive: true });
-    (0, config_utils_1.writeMcpJson)(configDir, {
-        "openclaw-mnotes": {
-            type: "http",
-            url: mcpUrl,
-            headers: {
-                Authorization: `Bearer ${apiKey}`,
-            },
-        },
-    });
+    // No `.mcp.json` written — see comment in handleClaudeCode. The m-notes MCP
+    // endpoint was removed, so OpenClaw should hit the v1 HTTP API directly.
     const template = (0, openclaw_1.generateOpenClawTemplate)({ url, workspaceId });
     (0, config_utils_1.writeInstructionBlock)(configDir, "instructions.md", template);
-    console.log("OpenClaw connected to m-notes!");
-    console.log(`  ${path.join(configDir, ".mcp.json")}  -> MCP server: ${mcpUrl}`);
+    console.log("Connected. Your AI client is configured to use the m-notes v1 API.");
     console.log(`  ${path.join(configDir, "instructions.md")}  -> Agent instructions added`);
-    console.log(`  Workspace: ${workspaceId}`);
+    console.log(`  API base   -> ${url}`);
+    console.log(`  Workspace  -> ${workspaceId}`);
 }
 /**
  * Registers the `connect` subcommand group on the root program.

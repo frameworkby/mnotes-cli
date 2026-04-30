@@ -693,7 +693,7 @@ describe("mnotes connect claude-code", () => {
     vi.restoreAllMocks();
   });
 
-  it("writes .mcp.json with correct structure on success", async () => {
+  it("does not write .mcp.json (API key must not leak to project files, #594)", async () => {
     // Mock validateConnection to return ok
     const configUtils = await import("../config-utils");
     vi.spyOn(configUtils, "validateConnection").mockResolvedValue({ ok: true });
@@ -720,17 +720,15 @@ describe("mnotes connect claude-code", () => {
       console.log = origLog;
     }
 
-    // Verify .mcp.json
-    const mcpContent = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, ".mcp.json"), "utf-8")
-    );
-    expect(mcpContent.mcpServers["m-notes"].url).toBe("http://localhost:3000/api/mcp");
-    expect(mcpContent.mcpServers["m-notes"].headers.Authorization).toBe("Bearer test-key-abc");
+    // .mcp.json must NOT be created — the m-notes MCP endpoint is removed,
+    // and writing the API key into a project-level file is a leakage risk.
+    expect(fs.existsSync(path.join(tmpDir, ".mcp.json"))).toBe(false);
 
-    // Verify success output
-    expect(output).toContain("Claude Code connected to m-notes!");
-    expect(output).toContain("http://localhost:3000/api/mcp");
+    // Verify success output references v1 API, not MCP, and no API key leaks
+    expect(output).toContain("Connected. Your AI client is configured to use the m-notes v1 API.");
     expect(output).toContain("ws-123");
+    expect(output).not.toContain("/api/mcp");
+    expect(output).not.toContain("test-key-abc");
   });
 
   it("writes CLAUDE.md with delimited block on success", async () => {
@@ -866,7 +864,7 @@ describe("mnotes connect claude-code", () => {
     }
 
     expect(output).toContain("ws-explicit-id");
-    expect(output).toContain("Claude Code connected to m-notes!");
+    expect(output).toContain("Connected. Your AI client is configured to use the m-notes v1 API.");
   });
 
   it("exits with error when validation fails", async () => {
@@ -905,7 +903,7 @@ describe("mnotes connect claude-code", () => {
     expect(stderrOutput).toContain("Connection refused");
   });
 
-  it("strips trailing slashes from URL when building MCP endpoint", async () => {
+  it("normalizes trailing slashes in URL output", async () => {
     const configUtils = await import("../config-utils");
     vi.spyOn(configUtils, "validateConnection").mockResolvedValue({ ok: true });
 
@@ -914,7 +912,10 @@ describe("mnotes connect claude-code", () => {
     registerConnectCommand(program);
 
     const origLog = console.log;
-    console.log = () => {};
+    let output = "";
+    console.log = (...args: unknown[]) => {
+      output += args.join(" ") + "\n";
+    };
 
     try {
       await program.parseAsync([
@@ -928,9 +929,9 @@ describe("mnotes connect claude-code", () => {
       console.log = origLog;
     }
 
-    const mcpContent = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, ".mcp.json"), "utf-8")
-    );
-    expect(mcpContent.mcpServers["m-notes"].url).toBe("http://localhost:3000/api/mcp");
+    // No .mcp.json written, and the printed API base has no trailing slashes.
+    expect(fs.existsSync(path.join(tmpDir, ".mcp.json"))).toBe(false);
+    expect(output).toContain("http://localhost:3000");
+    expect(output).not.toMatch(/http:\/\/localhost:3000\/+\s/);
   });
 });
