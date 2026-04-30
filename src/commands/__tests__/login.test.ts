@@ -11,6 +11,8 @@ import {
   maskKey,
   configPath,
   startLocalServer,
+  isSSHSession,
+  deviceLogin,
 } from "../login";
 import { resolveConfig } from "../../config";
 
@@ -495,5 +497,152 @@ describe("resolveConfig with stored login", () => {
 
   it("exits with error when no config source is available", () => {
     expect(() => resolveConfig({})).toThrow("process.exit(1)");
+  });
+});
+
+// =============================================================
+// isSSHSession — SSH environment detection
+// =============================================================
+describe("isSSHSession", () => {
+  let saved: Record<string, string | undefined>;
+
+  beforeEach(() => {
+    saved = {
+      SSH_CLIENT: process.env.SSH_CLIENT,
+      SSH_TTY: process.env.SSH_TTY,
+      SSH_CONNECTION: process.env.SSH_CONNECTION,
+    };
+    delete process.env.SSH_CLIENT;
+    delete process.env.SSH_TTY;
+    delete process.env.SSH_CONNECTION;
+  });
+
+  afterEach(() => {
+    for (const [k, v] of Object.entries(saved)) {
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
+  });
+
+  it("returns false when no SSH env vars are set", () => {
+    expect(isSSHSession()).toBe(false);
+  });
+
+  it("returns true when SSH_CLIENT is set", () => {
+    process.env.SSH_CLIENT = "1.2.3.4 12345 22";
+    expect(isSSHSession()).toBe(true);
+  });
+
+  it("returns true when SSH_TTY is set", () => {
+    process.env.SSH_TTY = "/dev/pts/0";
+    expect(isSSHSession()).toBe(true);
+  });
+
+  it("returns true when SSH_CONNECTION is set", () => {
+    process.env.SSH_CONNECTION = "1.2.3.4 12345 5.6.7.8 22";
+    expect(isSSHSession()).toBe(true);
+  });
+});
+
+// =============================================================
+// deviceLogin — device code polling flow
+// =============================================================
+describe("deviceLogin", () => {
+  let origFetch: typeof global.fetch;
+
+  beforeEach(() => {
+    origFetch = global.fetch;
+  });
+
+  afterEach(() => {
+    global.fetch = origFetch;
+    vi.restoreAllMocks();
+  });
+
+  it("returns API key when server approves on first poll", async () => {
+    const expectedKey = "mnk_devicetestkey1234567890abcdef";
+    let callCount = 0;
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      callCount++;
+      if (String(url).includes("/api/auth/device") && !String(url).includes("poll")) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ ok: true, expiresAt: new Date().toISOString() }) });
+      }
+      // Poll endpoint — approve immediately
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ status: "approved", apiKey: expectedKey }),
+      });
+    });
+
+    const origWrite = process.stderr.write;
+    process.stderr.write = () => true;
+
+    try {
+      const key = await deviceLogin("https://example.com");
+      expect(key).toBe(expectedKey);
+      expect(callCount).toBeGreaterThanOrEqual(2); // register + at least one poll
+    } finally {
+      process.stderr.write = origWrite;
+    }
+  });
+
+  it("throws when server returns expired status", async () => {
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (String(url).includes("/api/auth/device") && !String(url).includes("poll")) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ ok: true }) });
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ status: "expired" }),
+      });
+    });
+
+    const origWrite = process.stderr.write;
+    process.stderr.write = () => true;
+
+    try {
+      await expect(deviceLogin("https://example.com")).rejects.toThrow("expired");
+    } finally {
+      process.stderr.write = origWrite;
+    }
+  });
+
+  it("throws when registration request fails", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      statusText: "Internal Server Error",
+      json: () => Promise.resolve({ error: "server error" }),
+    });
+
+    const origWrite = process.stderr.write;
+    process.stderr.write = () => true;
+
+    try {
+      await expect(deviceLogin("https://example.com")).rejects.toThrow(
+        "Failed to start device auth",
+      );
+    } finally {
+      process.stderr.write = origWrite;
+    }
+  });
+
+  it("throws 'Not found' when poll returns 404", async () => {
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (String(url).includes("/api/auth/device") && !String(url).includes("poll")) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ ok: true }) });
+      }
+      return Promise.resolve({ ok: true, status: 404, json: () => Promise.resolve({}) });
+    });
+
+    const origWrite = process.stderr.write;
+    process.stderr.write = () => true;
+
+    try {
+      await expect(deviceLogin("https://example.com")).rejects.toThrow("not found");
+    } finally {
+      process.stderr.write = origWrite;
+    }
   });
 });

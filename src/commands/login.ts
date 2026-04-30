@@ -16,6 +16,8 @@ export interface MnotesConfig {
 
 const DEFAULT_URL = "https://mnotes.framework.by";
 const LOGIN_TIMEOUT_MS = 120_000; // 2 minutes
+const DEVICE_POLL_INTERVAL_MS = 3_000;
+const DEVICE_TIMEOUT_MS = 600_000; // 10 minutes
 
 /** Resolved at call time so tests can override HOME */
 function configDir(): string {
@@ -94,6 +96,75 @@ async function validateKey(
     const message = err instanceof Error ? err.message : String(err);
     return { ok: false, error: message };
   }
+}
+
+/** Returns true when the process is running inside an SSH session. */
+export function isSSHSession(): boolean {
+  return !!(
+    process.env.SSH_CLIENT ||
+    process.env.SSH_TTY ||
+    process.env.SSH_CONNECTION
+  );
+}
+
+/**
+ * Device code flow: register a pending auth, print URL, poll until approved.
+ * Works over SSH because the user opens the URL in their local browser.
+ */
+export async function deviceLogin(serverUrl: string): Promise<string> {
+  const base = serverUrl.replace(/\/+$/, "");
+  const deviceCode = crypto.randomBytes(32).toString("hex");
+  const state = crypto.randomBytes(32).toString("hex");
+
+  // Register pending auth on the server
+  const regRes = await fetch(`${base}/api/auth/device`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ deviceCode, state }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!regRes.ok) {
+    const body = (await regRes.json().catch(() => ({}))) as { error?: string };
+    throw new Error(`Failed to start device auth: ${body.error ?? regRes.statusText}`);
+  }
+
+  const authorizeUrl = `${base}/auth/device?code=${deviceCode}`;
+  process.stderr.write(
+    "\nOpen the following URL in your browser to authenticate:\n\n" +
+      `  ${authorizeUrl}\n\n` +
+      "Waiting for authorization (10 min timeout)...\n",
+  );
+
+  // Poll until approved or timeout
+  const deadline = Date.now() + DEVICE_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, DEVICE_POLL_INTERVAL_MS));
+
+    const pollRes = await fetch(
+      `${base}/api/auth/device-poll?code=${deviceCode}`,
+      { signal: AbortSignal.timeout(5_000) },
+    ).catch(() => null);
+
+    if (!pollRes) continue;
+
+    if (pollRes.status === 404) {
+      throw new Error("Device auth session not found — please run login again");
+    }
+
+    const data = (await pollRes.json()) as {
+      status: "pending" | "approved" | "expired";
+      apiKey?: string;
+    };
+
+    if (data.status === "approved" && data.apiKey) {
+      return data.apiKey;
+    }
+    if (data.status === "expired") {
+      throw new Error("Authorization request expired — please run login again");
+    }
+  }
+
+  throw new Error("Login timed out — no authorization received within 10 minutes");
 }
 
 /**
@@ -218,11 +289,13 @@ export function registerLoginCommand(program: Command): void {
     .option("--api-key <key>", "Set API key directly (skip browser flow)")
     .option("--status", "Show current authentication status")
     .option("--url <url>", "Server URL (default: http://localhost:3000)")
+    .option("--device", "Use device code flow (for SSH / headless environments)")
     .action(
       async (opts: {
         apiKey?: string;
         status?: boolean;
         url?: string;
+        device?: boolean;
       }) => {
         const serverUrl = opts.url
           ?? program.opts().url
@@ -277,9 +350,12 @@ export function registerLoginCommand(program: Command): void {
           return;
         }
 
-        // Default: browser login flow
+        // Default: browser login flow (device flow for SSH / --device flag)
+        const useDeviceFlow = opts.device || isSSHSession();
         try {
-          const key = await browserLogin(serverUrl);
+          const key = useDeviceFlow
+            ? await deviceLogin(serverUrl)
+            : await browserLogin(serverUrl);
 
           writeConfig({ apiKey: key, serverUrl });
           process.stderr.write(`\nLogged in successfully!\n`);

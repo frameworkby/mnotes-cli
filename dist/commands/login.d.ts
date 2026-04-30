@@ -22,6 +22,13 @@ export declare function writeConfig(config: MnotesConfig): void;
  * e.g. "mnk_abc...ef01"
  */
 export declare function maskKey(key: string): string;
+/** Returns true when the process is running inside an SSH session. */
+export declare function isSSHSession(): boolean;
+/**
+ * Device code flow: register a pending auth, print URL, poll until approved.
+ * Works over SSH because the user opens the URL in their local browser.
+ */
+export declare function deviceLogin(serverUrl: string): Promise<string>;
 /**
  * Starts the local HTTP server and returns port + a promise for the key.
  */
