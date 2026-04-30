@@ -43,6 +43,21 @@ const config_utils_1 = require("../config-utils");
 const claude_code_1 = require("../../../templates/claude-code");
 const codex_1 = require("../../../templates/codex");
 const openclaw_1 = require("../../../templates/openclaw");
+// Mock createClient so resolveWorkspace can validate workspaces without a real server
+vitest_1.vi.mock("../../../client", () => ({
+    createClient: () => ({
+        listWorkspaces: async () => ({
+            data: [
+                { id: "ws-123", name: "Test", slug: "test-123", isDefault: true },
+                { id: "ws-explicit-id", name: "Explicit", slug: "explicit-id", isDefault: false },
+                { id: "ws-new", name: "New", slug: "new", isDefault: false },
+            ],
+        }),
+        createWorkspace: async (name) => ({
+            data: { id: name, name, slug: name, isDefault: false },
+        }),
+    }),
+}));
 // -- Helper: capture stdout --
 function captureStdout(fn) {
     const chunks = [];
@@ -380,14 +395,14 @@ function cleanTmpDir(dir) {
         (0, vitest_1.expect)(result).toContain("https://notes.example.com");
         (0, vitest_1.expect)(result).toContain("ws-abc-123");
     });
-    (0, vitest_1.it)("includes session lifecycle sections", () => {
+    (0, vitest_1.it)("includes session lifecycle tools and wiki framing", () => {
         const result = (0, claude_code_1.generateClaudeCodeTemplate)({
             url: "http://localhost:3000",
             workspaceId: "ws-test",
         });
-        (0, vitest_1.expect)(result).toContain("Session Start");
-        (0, vitest_1.expect)(result).toContain("Session End");
-        (0, vitest_1.expect)(result).toContain("During Work");
+        (0, vitest_1.expect)(result).toContain("living wiki");
+        (0, vitest_1.expect)(result).toContain("Ingest Loop");
+        (0, vitest_1.expect)(result).toContain("Lint Loop");
         (0, vitest_1.expect)(result).toContain("project_context_load");
         (0, vitest_1.expect)(result).toContain("session_context_resume");
         (0, vitest_1.expect)(result).toContain("knowledge_store");
@@ -417,12 +432,29 @@ function cleanTmpDir(dir) {
             "recall_knowledge",
             "bulk_knowledge_recall",
             "knowledge_snapshot",
+            "scan_knowledge_conflicts",
             "session_log",
             "context_fetch",
+            "create_note",
+            "update_note",
+            "append_to_note",
+            "search_notes",
+            "daily_note",
+            "populate_graph",
+            "query_note_graph",
         ];
         for (const tool of expectedTools) {
             (0, vitest_1.expect)(result).toContain(tool);
         }
+    });
+    (0, vitest_1.it)("does not reference phantom MCP tools", () => {
+        const result = (0, claude_code_1.generateClaudeCodeTemplate)({
+            url: "http://localhost:3000",
+            workspaceId: "ws-test",
+        });
+        // These tool names don't exist in the MCP server — guard against regressions.
+        (0, vitest_1.expect)(result).not.toMatch(/\bcreate_folder\b/);
+        (0, vitest_1.expect)(result).not.toMatch(/\bmove_note\b/);
     });
 });
 // =============================================================
@@ -615,7 +647,7 @@ function cleanTmpDir(dir) {
         const claudeMd = fs.readFileSync(path.join(tmpDir, "CLAUDE.md"), "utf-8");
         (0, vitest_1.expect)(claudeMd).toContain("<!-- m-notes:start -->");
         (0, vitest_1.expect)(claudeMd).toContain("<!-- m-notes:end -->");
-        (0, vitest_1.expect)(claudeMd).toContain("m-notes AI Knowledge Base");
+        (0, vitest_1.expect)(claudeMd).toContain("m-notes — Your Wiki");
         (0, vitest_1.expect)(claudeMd).toContain("ws-123");
     });
     (0, vitest_1.it)("replaces existing m-notes block on re-run", async () => {

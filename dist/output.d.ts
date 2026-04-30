@@ -14,4 +14,28 @@ export declare function printSearchResults(results: Array<{
     title: string;
     snippet?: string;
 }>): void;
+export declare function printKnowledgeResults(results: Array<{
+    id: string;
+    title: string;
+    key: string | null;
+    excerpt: string;
+    importance: number | null;
+    tags: string[];
+    semanticScore: number;
+    freshnessScore: number;
+    finalScore: number;
+}>): void;
+export declare function printGraph(nodes: Array<{
+    id: string;
+    noteId: string | null;
+    label: string;
+    nodeType: string;
+    depth?: number;
+}>, edges: Array<{
+    id: string;
+    sourceId: string;
+    targetId: string;
+    edgeType: string;
+    weight: number;
+}>): void;
 export declare function printSuccess(msg: string): void;

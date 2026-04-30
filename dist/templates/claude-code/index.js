@@ -1,9 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateAgentTemplates = exports.generateSkillTemplates = exports.HOOKS_HEADER = exports.generateHooksTemplate = void 0;
+exports.generateAgentTemplates = exports.generateSkillTemplates = exports.getHookScriptsDir = exports.HOOK_SCRIPTS_DIR = exports.HOOKS_HEADER = exports.generateHookScripts = exports.generateHooksTemplate = void 0;
 var hooks_1 = require("./hooks");
 Object.defineProperty(exports, "generateHooksTemplate", { enumerable: true, get: function () { return hooks_1.generateHooksTemplate; } });
+Object.defineProperty(exports, "generateHookScripts", { enumerable: true, get: function () { return hooks_1.generateHookScripts; } });
 Object.defineProperty(exports, "HOOKS_HEADER", { enumerable: true, get: function () { return hooks_1.HOOKS_HEADER; } });
+Object.defineProperty(exports, "HOOK_SCRIPTS_DIR", { enumerable: true, get: function () { return hooks_1.HOOK_SCRIPTS_DIR; } });
+Object.defineProperty(exports, "getHookScriptsDir", { enumerable: true, get: function () { return hooks_1.getHookScriptsDir; } });
 var skills_1 = require("./skills");
 Object.defineProperty(exports, "generateSkillTemplates", { enumerable: true, get: function () { return skills_1.generateSkillTemplates; } });
 var agents_1 = require("./agents");

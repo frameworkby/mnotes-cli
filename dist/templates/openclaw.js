@@ -10,6 +10,28 @@ function generateOpenClawTemplate(opts) {
 
 You are the author of a living wiki. Notes are interlinked with \`[[wikilinks]]\`. Sources are immutable; your writing is the wiki.
 
+## Non-Negotiable Checklist
+
+Skip any step and the wiki degrades.
+
+**Session Start (before ANY work):**
+- [ ] \`recall_knowledge\` for the user's topic
+- [ ] \`search_notes\` for related pages
+- [ ] \`populate_graph\` if graph is empty
+
+Do not skip this. Do not assume you know what's in the wiki.
+
+**During Work:**
+- [ ] Non-obvious discovery → \`knowledge_store\` immediately
+- [ ] Decision made → \`decision/{topic}\`
+- [ ] Bug fixed → \`bug/{id}\` with root cause
+- [ ] User correction → store it
+
+**What NOT to store:** trivial changes, info obvious from code, duplicates.
+
+**Session End:**
+- [ ] If you did meaningful work and stored nothing — go back and store it
+
 ## Core Loops
 
 **Ingest** — when given a source (URL/paste): find 3+ related notes via \`recall_knowledge\`, update or create, link them with \`[[wikilinks]]\`, tag each with \`source/<slug>\`.

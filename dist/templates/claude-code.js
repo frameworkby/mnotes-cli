@@ -27,6 +27,38 @@ function generateClaudeCodeTemplate(opts) {
 7. **READ schema before editing.** Before creating or updating notes, call \`search_notes\` for \`type:config\` notes. Follow their conventions. If none exist, offer to create a starter schema note.
 8. **EVERY note must link.** Outbound \`[[wikilinks]]\` are mandatory — an orphan note is invisible.
 
+## Non-Negotiable Checklist
+
+These are not suggestions. Skip any step and the wiki degrades.
+
+### Session Start (before ANY work)
+- [ ] Call \`project_context_load\` with workspaceId "${opts.workspaceId}"
+- [ ] Call \`recall_knowledge\` for the user's topic — past you already figured things out
+- [ ] Call \`search_notes\` for related wiki pages
+- [ ] If the graph is empty, call \`populate_graph\` (idempotent)
+- [ ] Read any \`type:config\` schema notes before editing the wiki
+
+Do not skip this. Do not say "I'll check later." Do not assume you know what's in the wiki.
+
+### During Work (every time you learn something)
+- [ ] Non-obvious discovery? → \`knowledge_store\` immediately, do not batch
+- [ ] User drops a URL/paste/file? → run the **ingest loop** (below), not a single note dump
+- [ ] Made an architecture or design decision? → store with key \`arch/{component}\`
+- [ ] Fixed a bug? → store with key \`bug/{id}\`, include root cause
+- [ ] Found a gotcha or footgun? → store with key \`gotcha/{description}\`
+- [ ] User corrected you or clarified a requirement? → store it
+
+### What NOT to Store
+- Trivial changes (typo fixes, formatting)
+- Information obvious from reading the code
+- Duplicates — call \`recall_knowledge\` first to check
+
+### Session End (before finishing)
+- [ ] Call \`session_log\` with summary, decisions made, and follow-up actions
+- [ ] If you did meaningful work and didn't store anything yet — you forgot. Go back and store it.
+
+If you think "this isn't worth saving" — save it anyway. Future you has no context.
+
 ## The Ingest Loop
 
 When the user supplies a source (URL, paste, file):

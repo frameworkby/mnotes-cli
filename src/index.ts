@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { registerGroup } from "./commands/_register-group";
-import { listAction } from "./commands/note/list";
+import { registerNoteGroup } from "./commands/note";
+import { registerWorkspaceGroup } from "./commands/workspace";
 import { registerFolderGroup } from "./commands/folder";
 import { registerFileGroup } from "./commands/file";
 import { registerKbGroup } from "./commands/kb";
@@ -29,7 +29,6 @@ import { registerUpdateCommand } from "./commands/update";
 import { registerDeleteCommand } from "./commands/delete";
 import { registerConnectCommand } from "./commands/connect";
 import { registerLoginCommand } from "./commands/login";
-import { registerWorkspaceCommand } from "./commands/workspace";
 import { registerParityCommand } from "./commands/parity";
 
 export function buildProgram(): Command {
@@ -43,7 +42,8 @@ export function buildProgram(): Command {
     .option("--url <url>", "Base URL (or set MNOTES_URL)")
     .option("--json", "Output as JSON");
 
-  registerGroup(program, "note", [listAction]);
+  registerNoteGroup(program);
+  registerWorkspaceGroup(program);
   registerFolderGroup(program);
   registerFileGroup(program);
   registerKbGroup(program);
@@ -71,7 +71,6 @@ export function buildProgram(): Command {
   registerDeleteCommand(program);
   registerConnectCommand(program);
   registerLoginCommand(program);
-  registerWorkspaceCommand(program);
   registerParityCommand(program);
 
   return program;

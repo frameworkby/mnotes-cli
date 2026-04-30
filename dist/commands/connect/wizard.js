@@ -102,13 +102,27 @@ function scaffoldItems(dir, items, opts) {
     return results;
 }
 /**
- * Merges hooks into `.claude/settings.json`.
+ * Merges hooks into `<project>/.claude/settings.json` and writes bash scripts to
+ * `~/.claude/hooks/mnotes/scripts/` (user-global, namespaced under `mnotes`).
+ * Scripts live globally so they're shared across projects; settings.json stays
+ * project-local so each project opts in independently.
  * Preserves all existing settings and hooks.
  */
 function scaffoldHooks(dir, opts) {
     const settingsPath = path.join(dir, ".claude", "settings.json");
     const claudeDir = path.join(dir, ".claude");
+    const hookScriptsDir = (0, index_1.getHookScriptsDir)();
     fs.mkdirSync(claudeDir, { recursive: true });
+    fs.mkdirSync(hookScriptsDir, { recursive: true });
+    const filesWritten = [];
+    // 1. Write bash scripts to ~/.claude/hooks/mnotes/scripts/
+    const scripts = (0, index_1.generateHookScripts)(opts);
+    for (const script of scripts) {
+        const scriptPath = path.join(hookScriptsDir, script.filename);
+        fs.writeFileSync(scriptPath, script.content, { mode: 0o755 });
+        filesWritten.push(scriptPath);
+    }
+    // 2. Merge hook entries into settings.json
     let existing = {};
     try {
         const raw = fs.readFileSync(settingsPath, "utf-8");
@@ -158,7 +172,8 @@ function scaffoldHooks(dir, opts) {
         mnotesMetadata.items.push("hooks");
     }
     fs.writeFileSync(settingsPath, JSON.stringify(existing, null, 2) + "\n", "utf-8");
-    return { item: "hooks", filesWritten: [settingsPath] };
+    filesWritten.push(settingsPath);
+    return { item: "hooks", filesWritten };
 }
 /**
  * Writes skill files to `.claude/skills/`.
@@ -170,8 +185,9 @@ function scaffoldSkills(dir, opts) {
     const skills = (0, index_1.generateSkillTemplates)(opts);
     const filesWritten = [];
     for (const skill of skills) {
-        const filePath = path.join(skillsDir, skill.filename);
+        const filePath = path.join(skillsDir, skill.path);
         if (shouldWriteGeneratedFile(filePath)) {
+            fs.mkdirSync(path.dirname(filePath), { recursive: true });
             fs.writeFileSync(filePath, skill.content, "utf-8");
             filesWritten.push(filePath);
         }

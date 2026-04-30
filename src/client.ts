@@ -616,6 +616,7 @@ export function createClient(baseUrl: string, apiKey: string) {
       title: string;
       content?: string;
       folderId?: string;
+      tags?: string[];
       workspaceId?: string;
     }): Promise<{ data: { id: string; title: string } }> {
       return request<{ data: { id: string; title: string } }>(
@@ -627,7 +628,7 @@ export function createClient(baseUrl: string, apiKey: string) {
 
     async updateNote(
       id: string,
-      opts: { title?: string; content?: string }
+      opts: { title?: string; content?: string; folderId?: string | null; tags?: string[] }
     ): Promise<{ data: { id: string; title: string } }> {
       return request<{ data: { id: string; title: string } }>(
         "PUT",
@@ -1302,7 +1303,30 @@ export function createClient(baseUrl: string, apiKey: string) {
       return res.data;
     },
 
-    async createWorkspace(name: string): Promise<{
+    async createWorkspace(
+      name: string,
+      opts?: { description?: string | null },
+    ): Promise<{
+      data: {
+        id: string;
+        name: string;
+        slug: string;
+        isDefault: boolean;
+      };
+    }> {
+      const body: { name: string; description?: string | null } = { name };
+      if (opts?.description !== undefined) body.description = opts.description;
+      return request<{
+        data: {
+          id: string;
+          name: string;
+          slug: string;
+          isDefault: boolean;
+        };
+      }>("POST", "/api/v1/workspaces", body);
+    },
+
+    async setActiveWorkspace(id: string): Promise<{
       data: {
         id: string;
         name: string;
@@ -1317,7 +1341,9 @@ export function createClient(baseUrl: string, apiKey: string) {
           slug: string;
           isDefault: boolean;
         };
-      }>("POST", "/api/v1/workspaces", { name });
+      }>("PATCH", `/api/v1/workspaces/${encodeURIComponent(id)}`, {
+        isDefault: true,
+      });
     },
 
     // ── Note extension, recipe, object-type, bulk (added by #751) ─────────
