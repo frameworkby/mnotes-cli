@@ -67,6 +67,147 @@ export interface UploadResult {
   warning?: string;
 }
 
+// ── Knowledge tool shapes (for typing only; parity is enforced via Zod). ──
+
+export interface RecallEntry {
+  id: string;
+  title: string;
+  key: string | null;
+  excerpt: string;
+  importance: number | null;
+  tags: string[];
+  semanticScore: number;
+  freshnessScore: number;
+  finalScore: number;
+}
+
+export interface KnowledgeStoreResult {
+  created: boolean;
+  id: string;
+  key: string | null;
+}
+
+export interface MemoryUpsertResult {
+  status: "created" | "updated";
+  id: string;
+  key: string | null;
+  previousContent: string | null;
+}
+
+export interface KnowledgeIngestEntry {
+  key: string;
+  content: string;
+  source?: string;
+  confidence?: number;
+  tags?: string[];
+}
+
+export interface KnowledgeIngestRow {
+  key: string;
+  status: "created" | "updated";
+  noteId: string;
+}
+
+export interface DecayEntry {
+  key: string | null;
+  title: string;
+  importance: number | null;
+  updatedAt: string;
+  decayScore: number;
+  daysSinceUpdate: number;
+}
+
+export interface ArchiveStaleEntry {
+  noteId: string;
+  title: string;
+  decayScore: number;
+  importance: number | null;
+}
+
+export interface ArchiveStaleResult {
+  archivedCount: number;
+  entries: ArchiveStaleEntry[];
+}
+
+export interface ConsolidateResult {
+  consolidatedNoteId: string;
+  archivedNoteIds: string[];
+  strategy: "merge" | "summarize";
+}
+
+export interface SnapshotEntry {
+  key: string | null;
+  title: string;
+  content: string;
+  source: string | null;
+  confidence: number | null;
+  importance: number | null;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+  decayScore: number;
+}
+
+export interface SnapshotJson {
+  entries: SnapshotEntry[];
+  metadata: {
+    workspaceId: string;
+    exportedAt: string;
+    entryCount: number;
+    totalTokens: number;
+    truncated: boolean;
+    totalAvailable?: number;
+  };
+}
+
+export interface AskResult {
+  answer: string;
+  confidence: number;
+  sources: Array<{
+    noteId: string;
+    title: string;
+    excerpt: string;
+    relevanceScore: number;
+    chunkIndex?: number;
+    totalChunks?: number;
+  }>;
+}
+
+export interface KnowledgeLinkResult {
+  edgeId: string;
+  relationType: string;
+  source: { noteId: string; title: string };
+  target: { noteId: string; title: string };
+  created: boolean;
+}
+
+export interface ScanConflictsResult {
+  scanId: string;
+  estimatedPairs: number;
+  status: "scanning";
+}
+
+export interface ConflictRow {
+  id: string;
+  noteA: { id: string; title: string | null; key: string | null };
+  noteB: { id: string; title: string | null; key: string | null };
+  similarity: number;
+  classification: string;
+  confidence: number;
+  description: string | null;
+  scannedAt: string;
+  stale: boolean;
+}
+
+export interface KbStats {
+  totalNotes: number;
+  totalTags: number;
+  orphanCount: number;
+  staleCount: number;
+  conflictCount: number;
+  embeddingCoverage: number;
+}
+
 export function createClient(baseUrl: string, apiKey: string) {
   const headers: Record<string, string> = {
     Authorization: `Bearer ${apiKey}`,
@@ -322,6 +463,162 @@ export function createClient(baseUrl: string, apiKey: string) {
       return request<TaggedNoteItem[]>(
         "GET",
         `/api/v1/notes/search-by-tags?${params.toString()}`,
+      );
+    },
+
+    // ── Knowledge ──────────────────────────────────────────────────────
+
+    async knowledgeStore(opts: {
+      key: string;
+      content: string;
+      workspaceId: string;
+      source?: string;
+      confidence?: number;
+      tags?: string[];
+    }): Promise<KnowledgeStoreResult> {
+      return request<KnowledgeStoreResult>("POST", "/api/v1/knowledge/store", opts);
+    },
+
+    async memoryUpsert(opts: {
+      key: string;
+      content: string;
+      workspaceId: string;
+      source?: string;
+      confidence?: number;
+      tags?: string[];
+    }): Promise<MemoryUpsertResult> {
+      return request<MemoryUpsertResult>("POST", "/api/v1/knowledge/memory", opts);
+    },
+
+    async knowledgeIngest(opts: {
+      entries: KnowledgeIngestEntry[];
+      workspaceId: string;
+    }): Promise<KnowledgeIngestRow[]> {
+      return request<KnowledgeIngestRow[]>("POST", "/api/v1/knowledge/ingest", opts);
+    },
+
+    async knowledgeDecay(opts: {
+      workspaceId: string;
+      threshold?: number;
+      limit?: number;
+      decayWindow?: number;
+      tags?: string[];
+      maxImportance?: number;
+    }): Promise<DecayEntry[]> {
+      return request<DecayEntry[]>("POST", "/api/v1/knowledge/decay", opts);
+    },
+
+    async archiveStaleMemories(opts: {
+      workspaceId: string;
+      maxDecayScore?: number;
+      maxImportance?: number;
+      dryRun?: boolean;
+    }): Promise<ArchiveStaleResult> {
+      return request<ArchiveStaleResult>(
+        "POST",
+        "/api/v1/knowledge/archive-stale",
+        opts,
+      );
+    },
+
+    async consolidateMemories(opts: {
+      noteIds: string[];
+      targetTitle: string;
+      strategy: "merge" | "summarize";
+      workspaceId: string;
+    }): Promise<ConsolidateResult> {
+      return request<ConsolidateResult>(
+        "POST",
+        "/api/v1/knowledge/consolidate",
+        opts,
+      );
+    },
+
+    /**
+     * `format=markdown` returns `text/markdown`, not JSON. We surface the raw
+     * text so the CLI can either print it (human mode) or wrap it in a JSON
+     * envelope with `{ markdown }` if a future tool wants structured output.
+     * `format=json` (default) returns the structured envelope.
+     */
+    async knowledgeSnapshot(opts: {
+      workspaceId: string;
+      tags?: string[];
+      format?: "json" | "markdown";
+    }): Promise<SnapshotJson | { markdown: string }> {
+      const url = `${baseUrl}/api/v1/knowledge/snapshot`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(opts),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
+      }
+      const ct = res.headers.get("content-type") ?? "";
+      if (ct.includes("text/markdown")) {
+        return { markdown: await res.text() };
+      }
+      return (await res.json()) as SnapshotJson;
+    },
+
+    async askNotes(opts: {
+      question: string;
+      workspaceId: string;
+      limit?: number;
+    }): Promise<AskResult> {
+      return request<AskResult>("POST", "/api/v1/knowledge/ask", opts);
+    },
+
+    async knowledgeLink(opts: {
+      relationType:
+        | "supports"
+        | "contradicts"
+        | "extends"
+        | "replaces"
+        | "depends_on"
+        | "related";
+      workspaceId: string;
+      sourceKey?: string;
+      sourceNoteId?: string;
+      targetKey?: string;
+      targetNoteId?: string;
+      description?: string;
+      confidence?: number;
+    }): Promise<KnowledgeLinkResult> {
+      return request<KnowledgeLinkResult>("POST", "/api/v1/knowledge/link", opts);
+    },
+
+    async scanKnowledgeConflicts(opts: {
+      workspaceId: string;
+      similarityThreshold?: number;
+      pairCap?: number;
+      tags?: string[];
+    }): Promise<ScanConflictsResult> {
+      return request<ScanConflictsResult>(
+        "POST",
+        "/api/v1/knowledge/scan-conflicts",
+        opts,
+      );
+    },
+
+    async getKnowledgeConflicts(opts: {
+      workspaceId: string;
+      classification?: "contradicting" | "complementary" | "unrelated" | "all";
+    }): Promise<ConflictRow[]> {
+      const params = new URLSearchParams({ workspaceId: opts.workspaceId });
+      if (opts.classification) params.set("classification", opts.classification);
+      return request<ConflictRow[]>(
+        "GET",
+        `/api/v1/knowledge/conflicts?${params.toString()}`,
+      );
+    },
+
+    async getKbStats(workspaceId: string): Promise<KbStats> {
+      const params = new URLSearchParams({ workspaceId });
+      return request<KbStats>(
+        "GET",
+        `/api/v1/knowledge/stats?${params.toString()}`,
       );
     },
 

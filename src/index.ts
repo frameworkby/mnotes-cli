@@ -5,6 +5,7 @@ import { registerGroup } from "./commands/_register-group";
 import { listAction } from "./commands/note/list";
 import { registerFolderGroup } from "./commands/folder";
 import { registerFileGroup } from "./commands/file";
+import { registerKbGroup } from "./commands/kb";
 import { registerReadCommand } from "./commands/read";
 import { registerSearchCommand } from "./commands/search";
 import { registerCreateCommand } from "./commands/create";
@@ -13,7 +14,6 @@ import { registerDeleteCommand } from "./commands/delete";
 import { registerConnectCommand } from "./commands/connect";
 import { registerLoginCommand } from "./commands/login";
 import { registerWorkspaceCommand } from "./commands/workspace";
-import { registerRecallKnowledgeCommand } from "./commands/recall-knowledge";
 import { registerParityCommand } from "./commands/parity";
 
 export function buildProgram(): Command {
@@ -32,6 +32,7 @@ export function buildProgram(): Command {
   registerGroup(program, "note", [listAction]);
   registerFolderGroup(program);
   registerFileGroup(program);
+  registerKbGroup(program);
 
   // Legacy flat commands still register as before. They will migrate into
   // groups in subsequent sprint stories.
@@ -43,7 +44,6 @@ export function buildProgram(): Command {
   registerConnectCommand(program);
   registerLoginCommand(program);
   registerWorkspaceCommand(program);
-  registerRecallKnowledgeCommand(program);
   registerParityCommand(program);
 
   return program;

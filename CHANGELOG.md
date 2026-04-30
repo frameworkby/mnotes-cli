@@ -3,6 +3,32 @@
 All notable changes to the CLI are documented here. The CLI follows semver
 independent of the app — see `feedback_release_versioning` in agent memory.
 
+## 1.16.0 — 2026-04-30
+
+### Added
+- `mnotes kb` group — 13 subcommands matching MCP knowledge tools:
+  - `kb recall` (`recall_knowledge`) — also keeps hidden aliases
+    `recall-knowledge` / `recall_knowledge` for backward compat with the legacy
+    flat command, which has been removed from top-level registration.
+  - `kb store` (`knowledge_store`)
+  - `kb memory` (`memory_upsert`)
+  - `kb ingest` (`knowledge_ingest`)
+  - `kb decay` (`knowledge_decay`)
+  - `kb archive` (`archive_stale_memories`)
+  - `kb consolidate --strategy merge|summarize` (`consolidate_memories`)
+  - `kb snapshot --format json|markdown` (`knowledge_snapshot`)
+  - `kb ask --question <q>` (`ask_notes`)
+  - `kb link --relation-type ...` (`knowledge_link`)
+  - `kb scan-conflicts` (`scan_knowledge_conflicts`)
+  - `kb conflicts` (`get_knowledge_conflicts`)
+  - `kb stats` (`get_kb_stats`)
+
+### Notes for downstream consumers
+- `extract_entities` is intentionally deferred to a follow-up story (#760) and
+  is not part of this release.
+- The legacy top-level `mnotes recall-knowledge` keeps working through hidden
+  aliases on `kb recall`; prefer the namespaced form going forward.
+
 ## 1.15.0 — 2026-04-29
 
 ### Added
