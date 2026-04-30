@@ -34,7 +34,7 @@ export interface HookScript {
 /**
  * Generates bash scripts to be written to `.claude/hooks/`.
  */
-export declare function generateHookScripts(opts: HooksTemplateOpts): HookScript[];
+export declare function generateHookScripts(_opts: HooksTemplateOpts): HookScript[];
 /**
  * Generates the hooks object to merge into `.claude/settings.json`.
  * References bash scripts in `~/.claude/hooks/mnotes/scripts/` (absolute path
