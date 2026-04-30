@@ -3,6 +3,25 @@
 All notable changes to the CLI are documented here. The CLI follows semver
 independent of the app — see `feedback_release_versioning` in agent memory.
 
+## 1.20.0 — 2026-04-30
+
+### Added
+- `mnotes session save-conversation --messages <json>` (`save_conversation`) — persist an AI chat transcript as a new note.
+- `mnotes note-ops` group — 20 per-note actions matching the remaining MCP note tools:
+  - State: `archive`, `pin`, `unpin`, `star` (use `--no-starred` to unstar)
+  - Editing: `append`, `frontmatter-get`, `frontmatter-set`, `set-type`
+  - Versioning: `versions`, `restore-version`
+  - Lookup: `by-title`, `batch`, `pinned`, `starred`, `stale`, `orphan`, `duplicates`
+  - Daily: `daily`, `daily-digest`
+  - AI: `note-summary`
+- `mnotes tag` group — `list`, `manage` (rename/merge/delete), `extract` (AI entity extraction)
+- `mnotes ws` group — extended workspace ops: `context`, `role`, `update`, `delete`, `setup`, `team`
+- `mnotes info` group — `version` (server version) and `instructions` (`generate_agent_instructions`)
+- `mnotes composite` group — `context-fetch` and `project-load` for token-budgeted hybrid retrieval
+
+### Parity audit
+Sprint 53 exit gate: 103/104 MCP tools surfaced (96 in registered groups, 7 via legacy flat commands). Only `set_active_workspace` is excluded — the HTTP API is stateless. See `docs/implementation/reviews/sprint-53-parity-audit.md` for the full table.
+
 ## 1.19.0 — 2026-04-30
 
 ### Added

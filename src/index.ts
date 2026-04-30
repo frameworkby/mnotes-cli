@@ -17,6 +17,11 @@ import { registerNoteExtGroup } from "./commands/note-ext";
 import { registerRecipeGroup } from "./commands/recipe";
 import { registerObjectTypeGroup } from "./commands/object-type";
 import { registerBulkGroup } from "./commands/bulk";
+import { registerNoteOpsGroup } from "./commands/note-ops";
+import { registerTagGroup } from "./commands/tag";
+import { registerWsGroup } from "./commands/ws";
+import { registerInfoGroup } from "./commands/info";
+import { registerCompositeGroup } from "./commands/composite";
 import { registerReadCommand } from "./commands/read";
 import { registerSearchCommand } from "./commands/search";
 import { registerCreateCommand } from "./commands/create";
@@ -53,6 +58,11 @@ export function buildProgram(): Command {
   registerRecipeGroup(program);
   registerObjectTypeGroup(program);
   registerBulkGroup(program);
+  registerNoteOpsGroup(program);
+  registerTagGroup(program);
+  registerWsGroup(program);
+  registerInfoGroup(program);
+  registerCompositeGroup(program);
 
   registerReadCommand(program);
   registerSearchCommand(program);

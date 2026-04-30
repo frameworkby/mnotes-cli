@@ -40,6 +40,23 @@ mnotes --api-key <key> --url <url> <command>
 | `mnotes folder search-tags --tags <a,b>` | Find notes matching given tags (`--match any\|all`) |
 | `mnotes folder move <id> --parent-id <id> \| --root` | Re-parent a folder |
 | `mnotes file upload --path <p> --mime-type <t>` | Upload an image or PDF; optional `--note-id` to embed |
+| `mnotes kb <action>` | Knowledge-base ops: `recall`, `store`, `memory`, `ingest`, `decay`, `archive`, `consolidate`, `snapshot`, `ask`, `link`, `scan-conflicts`, `conflicts`, `stats` |
+| `mnotes graph <action>` | Graph: `get`, `neighbors`, `traverse`, `find-path`, `query`, `query-note`, `populate`, `related`, `backlinks`, `links`, `create-node`, `delete-node`, `create-edge`, `delete-edge` |
+| `mnotes session <action>` | Sessions: `list`, `log`, `replay`, `resume`, `save-conversation` |
+| `mnotes cluster get` | KMeans cluster layout for the note graph |
+| `mnotes timeline list` | Time-bucketed activity timeline |
+| `mnotes moc generate` | Generate a Map-of-Content note for a folder or tag |
+| `mnotes smart-folder <action>` | `list`, `create`, `delete` saved searches |
+| `mnotes task <action>` | `list` and `toggle` tasks parsed from notes |
+| `mnotes note-ext <action>` | AI per-note: `suggest-tags`, `suggest-tags-links`, `set-importance`, `set-provenance`, `get-provenance`, `split`, `synthesize` |
+| `mnotes recipe <action>` | `list` and `run` recipes |
+| `mnotes object-type <action>` | `list` and `query` notes by object type |
+| `mnotes bulk <action>` | Bulk: `archive`, `move`, `tag`, `knowledge-recall` |
+| `mnotes note-ops <action>` | Per-note ops: `append`, `archive`, `pin`, `unpin`, `star`, `frontmatter-get`, `frontmatter-set`, `set-type`, `versions`, `restore-version`, `by-title`, `batch`, `pinned`, `starred`, `stale`, `orphan`, `duplicates`, `daily`, `daily-digest`, `note-summary` |
+| `mnotes tag <action>` | Tags: `list`, `manage`, `extract` |
+| `mnotes ws <action>` | Workspaces (extended): `context`, `role`, `update`, `delete`, `setup`, `team` |
+| `mnotes info <action>` | `version`, `instructions` (generate AI-client setup) |
+| `mnotes composite <action>` | Composite tools: `context-fetch`, `project-load` |
 
 ### Options
 

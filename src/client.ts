@@ -1511,5 +1511,319 @@ export function createClient(baseUrl: string, apiKey: string) {
       return res.data;
     },
 
+    // ── Save conversation (#752) ───────────────────────────────────────────
+
+    async saveConversation(opts: {
+      workspaceId: string;
+      messages: Array<{ role: "user" | "assistant"; content: string }>;
+      title?: string;
+      source?: string;
+    }): Promise<{ data: { id: string; title: string; createdAt: string } }> {
+      return request<{ data: { id: string; title: string; createdAt: string } }>(
+        "POST",
+        "/api/v1/save-conversation",
+        opts,
+      );
+    },
+
+    // ── Note ops (#752) ────────────────────────────────────────────────────
+
+    async appendToNote(
+      id: string,
+      opts: { workspaceId: string; content: string },
+    ): Promise<unknown> {
+      return request("POST", `/api/v1/notes/${encodeURIComponent(id)}/append`, opts);
+    },
+
+    async archiveNote(
+      id: string,
+      workspaceId: string,
+    ): Promise<unknown> {
+      return request("POST", `/api/v1/notes/${encodeURIComponent(id)}/archive`, {
+        workspaceId,
+      });
+    },
+
+    async pinNote(id: string, workspaceId: string): Promise<unknown> {
+      return request("POST", `/api/v1/notes/${encodeURIComponent(id)}/pin`, {
+        workspaceId,
+      });
+    },
+
+    async unpinNote(id: string, workspaceId: string): Promise<unknown> {
+      const params = new URLSearchParams({ workspaceId });
+      return request(
+        "DELETE",
+        `/api/v1/notes/${encodeURIComponent(id)}/pin?${params.toString()}`,
+      );
+    },
+
+    async toggleStar(
+      id: string,
+      opts: { workspaceId: string; starred: boolean },
+    ): Promise<unknown> {
+      return request("POST", `/api/v1/notes/${encodeURIComponent(id)}/star`, opts);
+    },
+
+    async getNoteFrontmatter(
+      id: string,
+      workspaceId: string,
+    ): Promise<unknown> {
+      const params = new URLSearchParams({ workspaceId });
+      return request(
+        "GET",
+        `/api/v1/notes/${encodeURIComponent(id)}/frontmatter?${params.toString()}`,
+      );
+    },
+
+    async setNoteFrontmatter(
+      id: string,
+      opts: { workspaceId: string; fields: Record<string, unknown> },
+    ): Promise<unknown> {
+      return request(
+        "PUT",
+        `/api/v1/notes/${encodeURIComponent(id)}/frontmatter`,
+        opts,
+      );
+    },
+
+    async setNoteType(
+      id: string,
+      opts: { workspaceId: string; type: string },
+    ): Promise<unknown> {
+      return request(
+        "PUT",
+        `/api/v1/notes/${encodeURIComponent(id)}/type`,
+        { workspaceId: opts.workspaceId, type: opts.type },
+      );
+    },
+
+    async listVersions(
+      id: string,
+      opts: { workspaceId: string; limit?: number },
+    ): Promise<unknown> {
+      const params = new URLSearchParams({ workspaceId: opts.workspaceId });
+      if (opts.limit != null) params.set("limit", String(opts.limit));
+      return request(
+        "GET",
+        `/api/v1/notes/${encodeURIComponent(id)}/versions?${params.toString()}`,
+      );
+    },
+
+    async restoreVersion(
+      id: string,
+      opts: { workspaceId: string; versionId: string },
+    ): Promise<unknown> {
+      return request(
+        "POST",
+        `/api/v1/notes/${encodeURIComponent(id)}/restore-version`,
+        opts,
+      );
+    },
+
+    async getNoteByTitle(opts: {
+      workspaceId: string;
+      title: string;
+    }): Promise<unknown> {
+      const params = new URLSearchParams({
+        workspaceId: opts.workspaceId,
+        title: opts.title,
+      });
+      return request("GET", `/api/v1/notes/by-title?${params.toString()}`);
+    },
+
+    async getNotesBatch(opts: {
+      workspaceId: string;
+      ids: string[];
+    }): Promise<unknown> {
+      return request("POST", "/api/v1/notes/batch", opts);
+    },
+
+    async listPinned(workspaceId: string): Promise<unknown> {
+      const params = new URLSearchParams({ workspaceId });
+      return request("GET", `/api/v1/notes/pinned?${params.toString()}`);
+    },
+
+    async listStarred(workspaceId: string): Promise<unknown> {
+      const params = new URLSearchParams({ workspaceId });
+      return request("GET", `/api/v1/notes/starred?${params.toString()}`);
+    },
+
+    async staleNotes(opts: {
+      workspaceId: string;
+      daysSince?: number;
+      limit?: number;
+    }): Promise<unknown> {
+      const params = new URLSearchParams({ workspaceId: opts.workspaceId });
+      if (opts.daysSince != null) params.set("daysSince", String(opts.daysSince));
+      if (opts.limit != null) params.set("limit", String(opts.limit));
+      return request("GET", `/api/v1/notes/stale?${params.toString()}`);
+    },
+
+    async orphanNotes(opts: {
+      workspaceId: string;
+      limit?: number;
+    }): Promise<unknown> {
+      const params = new URLSearchParams({ workspaceId: opts.workspaceId });
+      if (opts.limit != null) params.set("limit", String(opts.limit));
+      return request("GET", `/api/v1/notes/orphan?${params.toString()}`);
+    },
+
+    async findDuplicates(opts: {
+      workspaceId: string;
+      noteId: string;
+      threshold?: number;
+      limit?: number;
+    }): Promise<unknown> {
+      const params = new URLSearchParams({
+        workspaceId: opts.workspaceId,
+        noteId: opts.noteId,
+      });
+      if (opts.threshold != null) params.set("threshold", String(opts.threshold));
+      if (opts.limit != null) params.set("limit", String(opts.limit));
+      return request("GET", `/api/v1/notes/duplicates?${params.toString()}`);
+    },
+
+    async dailyNote(opts: {
+      workspaceId: string;
+      date?: string;
+    }): Promise<unknown> {
+      return request("POST", "/api/v1/notes/daily", opts);
+    },
+
+    async dailyDigest(opts: {
+      workspaceId: string;
+      date?: string;
+    }): Promise<unknown> {
+      const params = new URLSearchParams({ workspaceId: opts.workspaceId });
+      if (opts.date) params.set("date", opts.date);
+      return request("GET", `/api/v1/notes/daily-digest?${params.toString()}`);
+    },
+
+    async noteSummary(
+      id: string,
+      opts: { workspaceId: string; maxLength?: number },
+    ): Promise<unknown> {
+      const params = new URLSearchParams({ workspaceId: opts.workspaceId });
+      if (opts.maxLength != null) params.set("maxLength", String(opts.maxLength));
+      return request(
+        "GET",
+        `/api/v1/notes/${encodeURIComponent(id)}/summary?${params.toString()}`,
+      );
+    },
+
+    // ── Tags (#752) ────────────────────────────────────────────────────────
+
+    async listTags(workspaceId: string): Promise<unknown> {
+      const params = new URLSearchParams({ workspaceId });
+      return request("GET", `/api/v1/tags?${params.toString()}`);
+    },
+
+    async manageTags(opts: {
+      op: "rename" | "merge" | "delete";
+      workspaceId: string;
+      fromTag: string;
+      toTag?: string;
+    }): Promise<unknown> {
+      return request("POST", "/api/v1/tags/manage", opts);
+    },
+
+    async extractEntities(opts: {
+      noteId: string;
+      workspaceId: string;
+    }): Promise<unknown> {
+      return request("POST", "/api/v1/tags/extract-entities", opts);
+    },
+
+    // ── Workspace extended (#752) ──────────────────────────────────────────
+
+    async getWorkspaceContext(workspaceId: string): Promise<unknown> {
+      const params = new URLSearchParams({ workspaceId });
+      return request("GET", `/api/v1/workspaces/context?${params.toString()}`);
+    },
+
+    async getWorkspaceRole(id: string): Promise<unknown> {
+      return request(
+        "GET",
+        `/api/v1/workspaces/${encodeURIComponent(id)}/role`,
+      );
+    },
+
+    async updateWorkspace(
+      id: string,
+      opts: { name?: string; description?: string | null; icon?: string | null },
+    ): Promise<unknown> {
+      return request(
+        "PATCH",
+        `/api/v1/workspaces/${encodeURIComponent(id)}`,
+        opts,
+      );
+    },
+
+    async deleteWorkspace(id: string): Promise<unknown> {
+      return request(
+        "DELETE",
+        `/api/v1/workspaces/${encodeURIComponent(id)}`,
+      );
+    },
+
+    async setupWorkspace(opts: {
+      name: string;
+      template?: string;
+      description?: string;
+      icon?: string;
+    }): Promise<unknown> {
+      return request("POST", "/api/v1/workspaces/setup", opts);
+    },
+
+    async listTeamMembers(id: string): Promise<unknown> {
+      return request(
+        "GET",
+        `/api/v1/workspaces/${encodeURIComponent(id)}/team-members`,
+      );
+    },
+
+    // ── Info (#752) ────────────────────────────────────────────────────────
+
+    async getVersion(): Promise<unknown> {
+      return request("GET", "/api/v1/version");
+    },
+
+    async contextFetch(opts: {
+      workspaceId: string;
+      query: string;
+      limit?: number;
+      tokenBudget?: number;
+      types?: string[];
+      tags?: string[];
+    }): Promise<unknown> {
+      return request("POST", "/api/v1/composites/context-fetch", opts);
+    },
+
+    async projectContextLoad(opts: {
+      workspaceId: string;
+      query?: string;
+      path?: string;
+      [k: string]: unknown;
+    }): Promise<unknown> {
+      return request("POST", "/api/v1/composites/project-context-load", opts);
+    },
+
+    async generateAgentInstructions(opts: {
+      workspaceId?: string;
+      client?: string;
+      baseUrl?: string;
+    }): Promise<unknown> {
+      const params = new URLSearchParams();
+      if (opts.workspaceId) params.set("workspaceId", opts.workspaceId);
+      if (opts.client) params.set("client", opts.client);
+      if (opts.baseUrl) params.set("baseUrl", opts.baseUrl);
+      const qs = params.toString();
+      return request(
+        "GET",
+        `/api/v1/agent-instructions${qs ? `?${qs}` : ""}`,
+      );
+    },
+
   };
 }
