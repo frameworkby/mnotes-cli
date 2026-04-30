@@ -13,6 +13,10 @@ import { registerTimelineGroup } from "./commands/timeline";
 import { registerMocGroup } from "./commands/moc";
 import { registerSmartFolderGroup } from "./commands/smart-folder";
 import { registerTaskGroup } from "./commands/task";
+import { registerNoteExtGroup } from "./commands/note-ext";
+import { registerRecipeGroup } from "./commands/recipe";
+import { registerObjectTypeGroup } from "./commands/object-type";
+import { registerBulkGroup } from "./commands/bulk";
 import { registerReadCommand } from "./commands/read";
 import { registerSearchCommand } from "./commands/search";
 import { registerCreateCommand } from "./commands/create";
@@ -45,6 +49,10 @@ export function buildProgram(): Command {
   registerMocGroup(program);
   registerSmartFolderGroup(program);
   registerTaskGroup(program);
+  registerNoteExtGroup(program);
+  registerRecipeGroup(program);
+  registerObjectTypeGroup(program);
+  registerBulkGroup(program);
 
   registerReadCommand(program);
   registerSearchCommand(program);

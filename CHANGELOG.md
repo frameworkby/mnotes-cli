@@ -3,6 +3,29 @@
 All notable changes to the CLI are documented here. The CLI follows semver
 independent of the app — see `feedback_release_versioning` in agent memory.
 
+## 1.19.0 — 2026-04-30
+
+### Added
+- `mnotes note-ext` group — 7 subcommands matching MCP per-note AI/annotation tools:
+  - `note-ext suggest-tags <id>` (`suggest_tags`) — top-5 frequent tags from semantically similar notes
+  - `note-ext suggest-tags-links <id>` (`suggest_tags_links`) — AI tag + wikilink suggestions
+  - `note-ext set-importance <id> --importance <n>` (`set_importance`) — set 0-1 retrieval weight
+  - `note-ext set-provenance <id> --source <type> --ref <text>` (`set_provenance`) — append a provenance entry
+  - `note-ext get-provenance <id>` (`get_provenance`) — read the provenance chain
+  - `note-ext split <id>` (`split_note`) — AI-driven split proposal
+  - `note-ext synthesize --note-ids <csv>` (`synthesize_notes`) — synthesise 2-20 notes into a new note
+- `mnotes recipe` group — 2 subcommands matching MCP recipe tools:
+  - `recipe list` (`list_recipes`)
+  - `recipe run <id> --note-id <id>` (`run_recipe`)
+- `mnotes object-type` group — 2 subcommands matching MCP supertag tools:
+  - `object-type list` (`list_object_types`)
+  - `object-type query <type>` (`query_by_type`) — optional `--property-filters <json>` and `--limit`
+- `mnotes bulk` group — 4 subcommands matching MCP bulk tools:
+  - `bulk archive --note-ids <csv>` (`bulk_archive`)
+  - `bulk move --note-ids <csv> --target-folder-id <id>` (`bulk_move`)
+  - `bulk tag --note-ids <csv> --tags <csv> --op <add|remove>` (`bulk_tag`)
+  - `bulk knowledge-recall --queries <csv>` (`bulk_knowledge_recall`)
+
 ## 1.18.0 — 2026-04-30
 
 ### Added

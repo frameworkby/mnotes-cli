@@ -422,6 +422,139 @@ export interface TaskToggleResult {
   text: string;
 }
 
+
+// ── Note extension types ────────────────────────────────────────────────
+
+export interface SuggestTagsResult {
+  tags: string[];
+}
+
+export interface SuggestionWikilink {
+  noteId: string;
+  title: string;
+  score: number;
+}
+
+export interface SuggestionsResult {
+  wikilinks: SuggestionWikilink[];
+  tags: string[];
+}
+
+export interface SetImportanceResult {
+  noteId: string;
+  importance: number;
+  title: string;
+}
+
+export interface ProvenanceEntry {
+  source: string;
+  ref: string;
+  addedAt: string;
+}
+
+export interface SetProvenanceResult {
+  success: true;
+  entryCount: number;
+  added: ProvenanceEntry;
+}
+
+export interface GetProvenanceResult {
+  noteId: string;
+  provenance: ProvenanceEntry[];
+}
+
+export interface SplitNoteResult {
+  splits: Array<{ title: string; content: string }>;
+  [k: string]: unknown;
+}
+
+export interface SynthesizeNotesResult {
+  id: string;
+  title: string;
+  content: string;
+  sourceNoteIds: string[];
+}
+
+// ── Recipe types ────────────────────────────────────────────────────────
+
+export interface RecipeListItem {
+  id: string;
+  name: string;
+  description: string | null;
+}
+
+export interface ListRecipesResult {
+  recipes: RecipeListItem[];
+  count: number;
+}
+
+export interface RunRecipeResult {
+  recipeId: string;
+  recipeName: string;
+  noteId: string;
+  noteTitle: string;
+  result: string;
+}
+
+// ── Object type types ───────────────────────────────────────────────────
+
+export interface ObjectTypeListItem {
+  id: string;
+  name: string;
+  icon: string | null;
+  color: string | null;
+  properties: unknown;
+  noteCount: number;
+}
+
+export interface ListObjectTypesResult {
+  objectTypes: ObjectTypeListItem[];
+  count: number;
+}
+
+export interface ObjectTypeNoteRow {
+  id: string;
+  title: string;
+  objectTypeId: string | null;
+  properties: unknown;
+  tags: string[];
+  updatedAt: string;
+}
+
+export interface QueryByTypeResult {
+  notes: ObjectTypeNoteRow[];
+  count: number;
+}
+
+// ── Bulk types ──────────────────────────────────────────────────────────
+
+export interface BulkOpResult {
+  totalRequested: number;
+  successCount: number;
+  failedCount: number;
+}
+
+export interface BulkKnowledgeRecallEntry {
+  id: string;
+  title: string;
+  key: string | null;
+  excerpt: string;
+  importance: number | null;
+  tags: string[];
+  updatedAt: string;
+}
+
+export interface BulkKnowledgeRecallGroup {
+  pattern: string;
+  entries: BulkKnowledgeRecallEntry[];
+  count: number;
+}
+
+export interface BulkKnowledgeRecallResult {
+  groups: BulkKnowledgeRecallGroup[];
+  totalEntries: number;
+}
+
 export function createClient(baseUrl: string, apiKey: string) {
   const headers: Record<string, string> = {
     Authorization: `Bearer ${apiKey}`,
@@ -1186,5 +1319,197 @@ export function createClient(baseUrl: string, apiKey: string) {
         };
       }>("POST", "/api/v1/workspaces", { name });
     },
+
+    // ── Note extension, recipe, object-type, bulk (added by #751) ─────────
+
+    async suggestTags(
+      id: string,
+      workspaceId: string,
+    ): Promise<SuggestTagsResult> {
+      const params = new URLSearchParams({ workspaceId });
+      const res = await request<{ data: SuggestTagsResult }>(
+        "GET",
+        `/api/v1/notes/${encodeURIComponent(id)}/suggest-tags?${params.toString()}`,
+      );
+      return res.data;
+    },
+
+    async suggestTagsLinks(
+      id: string,
+      workspaceId: string,
+    ): Promise<SuggestionsResult> {
+      const params = new URLSearchParams({ workspaceId });
+      const res = await request<{ data: SuggestionsResult }>(
+        "GET",
+        `/api/v1/notes/${encodeURIComponent(id)}/suggest-tags-links?${params.toString()}`,
+      );
+      return res.data;
+    },
+
+    async setImportance(
+      id: string,
+      opts: { importance: number; workspaceId: string },
+    ): Promise<SetImportanceResult> {
+      const res = await request<{ data: SetImportanceResult }>(
+        "PUT",
+        `/api/v1/notes/${encodeURIComponent(id)}/importance`,
+        opts,
+      );
+      return res.data;
+    },
+
+    async setProvenance(
+      id: string,
+      opts: { source: "url" | "mcp_tool" | "conversation" | "manual"; ref: string; workspaceId: string },
+    ): Promise<SetProvenanceResult> {
+      const res = await request<{ data: SetProvenanceResult }>(
+        "PUT",
+        `/api/v1/notes/${encodeURIComponent(id)}/provenance`,
+        opts,
+      );
+      return res.data;
+    },
+
+    async getProvenance(
+      id: string,
+      workspaceId: string,
+    ): Promise<GetProvenanceResult> {
+      const params = new URLSearchParams({ workspaceId });
+      const res = await request<{ data: GetProvenanceResult }>(
+        "GET",
+        `/api/v1/notes/${encodeURIComponent(id)}/provenance?${params.toString()}`,
+      );
+      return res.data;
+    },
+
+    async splitNote(
+      id: string,
+      opts: { workspaceId: string; splitPoint?: number; title2?: string },
+    ): Promise<SplitNoteResult> {
+      const res = await request<{ data: SplitNoteResult }>(
+        "POST",
+        `/api/v1/notes/${encodeURIComponent(id)}/split`,
+        opts,
+      );
+      return res.data;
+    },
+
+    async synthesizeNotes(opts: {
+      noteIds: string[];
+      title?: string;
+      workspaceId: string;
+    }): Promise<SynthesizeNotesResult> {
+      const res = await request<{ data: SynthesizeNotesResult }>(
+        "POST",
+        "/api/v1/notes/synthesize",
+        opts,
+      );
+      return res.data;
+    },
+
+    // ── Recipes ────────────────────────────────────────────────────────
+
+    async listRecipes(_workspaceId: string): Promise<ListRecipesResult> {
+      // workspaceId is accepted by the route but recipes are user-scoped; we
+      // forward it for forward-compat with future workspace-scoped recipes.
+      const params = new URLSearchParams({ workspaceId: _workspaceId });
+      const res = await request<{ data: ListRecipesResult }>(
+        "GET",
+        `/api/v1/recipes?${params.toString()}`,
+      );
+      return res.data;
+    },
+
+    async runRecipe(
+      id: string,
+      opts: { workspaceId: string; noteId?: string },
+    ): Promise<RunRecipeResult> {
+      const res = await request<{ data: RunRecipeResult }>(
+        "POST",
+        `/api/v1/recipes/${encodeURIComponent(id)}/run`,
+        opts,
+      );
+      return res.data;
+    },
+
+    // ── Object types ───────────────────────────────────────────────────
+
+    async listObjectTypes(workspaceId: string): Promise<ListObjectTypesResult> {
+      const params = new URLSearchParams({ workspaceId });
+      const res = await request<{ data: ListObjectTypesResult }>(
+        "GET",
+        `/api/v1/object-types?${params.toString()}`,
+      );
+      return res.data;
+    },
+
+    async queryByType(
+      type: string,
+      opts: { workspaceId: string; limit?: number; propertyFilters?: string },
+    ): Promise<QueryByTypeResult> {
+      const params = new URLSearchParams({ workspaceId: opts.workspaceId });
+      if (opts.limit != null) params.set("limit", String(opts.limit));
+      if (opts.propertyFilters) params.set("propertyFilters", opts.propertyFilters);
+      const res = await request<{ data: QueryByTypeResult }>(
+        "GET",
+        `/api/v1/object-types/${encodeURIComponent(type)}/query?${params.toString()}`,
+      );
+      return res.data;
+    },
+
+    // ── Bulk ───────────────────────────────────────────────────────────
+
+    async bulkArchive(opts: {
+      noteIds: string[];
+      workspaceId: string;
+    }): Promise<BulkOpResult> {
+      const res = await request<{ data: BulkOpResult }>(
+        "POST",
+        "/api/v1/bulk/archive",
+        opts,
+      );
+      return res.data;
+    },
+
+    async bulkMove(opts: {
+      noteIds: string[];
+      targetFolderId: string;
+      workspaceId: string;
+    }): Promise<BulkOpResult> {
+      const res = await request<{ data: BulkOpResult }>(
+        "POST",
+        "/api/v1/bulk/move",
+        opts,
+      );
+      return res.data;
+    },
+
+    async bulkTag(opts: {
+      noteIds: string[];
+      tags: string[];
+      op: "add" | "remove";
+      workspaceId: string;
+    }): Promise<BulkOpResult> {
+      const res = await request<{ data: BulkOpResult }>(
+        "POST",
+        "/api/v1/bulk/tag",
+        opts,
+      );
+      return res.data;
+    },
+
+    async bulkKnowledgeRecall(opts: {
+      queries: string[];
+      workspaceId: string;
+      limit?: number;
+    }): Promise<BulkKnowledgeRecallResult> {
+      const res = await request<{ data: BulkKnowledgeRecallResult }>(
+        "POST",
+        "/api/v1/bulk/knowledge-recall",
+        opts,
+      );
+      return res.data;
+    },
+
   };
 }
