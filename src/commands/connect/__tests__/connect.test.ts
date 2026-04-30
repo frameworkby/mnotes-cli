@@ -801,13 +801,19 @@ describe("mnotes connect claude-code", () => {
   });
 
   it("exits with error when --api-key is missing", async () => {
+    // Ensure no stored config provides an API key (e.g. from a real local
+    // ~/.mnotes/config.json on the developer's machine, or an env var).
+    const loginModule = await import("../../login");
+    vi.spyOn(loginModule, "readConfig").mockReturnValue(null);
+
+    const origApiKey = process.env.MNOTES_API_KEY;
+    const origUrl = process.env.MNOTES_URL;
+    delete process.env.MNOTES_API_KEY;
+    delete process.env.MNOTES_URL;
+
     const program = new Command();
     program.exitOverride();
     registerConnectCommand(program);
-
-    // Clear env vars
-    const origApiKey = process.env.MNOTES_API_KEY;
-    delete process.env.MNOTES_API_KEY;
 
     let stderrOutput = "";
     const origStderrWrite = process.stderr.write;
@@ -826,6 +832,7 @@ describe("mnotes connect claude-code", () => {
     } finally {
       process.stderr.write = origStderrWrite;
       if (origApiKey !== undefined) process.env.MNOTES_API_KEY = origApiKey;
+      if (origUrl !== undefined) process.env.MNOTES_URL = origUrl;
     }
 
     expect(exitCode).toBe(1);
