@@ -3,6 +3,25 @@
 All notable changes to the CLI are documented here. The CLI follows semver
 independent of the app — see `feedback_release_versioning` in agent memory.
 
+## 1.17.0 — 2026-04-30
+
+### Added
+- `mnotes graph` group — 14 subcommands matching MCP graph tools:
+  - `graph get` (`get_graph`) — workspace graph with optional label/type filters
+  - `graph neighbors --node-id <id>` (`get_neighbors`) — BFS neighbors of a node
+  - `graph traverse --start-node-id <id>` (`graph_traverse`) — recursive traversal with edge/node-type filters
+  - `graph find-path --from-node-id <id> --to-node-id <id>` (`find_path`) — shortest path between two nodes
+  - `graph query` (`query_graph`) — advanced query (node/edge type, label substring, connected-to expansion)
+  - `graph query-note --note-id <id>` (`query_note_graph`) — local graph around a note
+  - `graph populate` (`populate_graph`) — sync nodes/edges from notes/wikilinks
+  - `graph related <id>` (`related_notes`) — semantic neighbors via embeddings
+  - `graph backlinks <id>` (`get_backlinks`) — incoming wikilinks
+  - `graph links <id>` (`get_note_links`) — outgoing + incoming wikilinks
+  - `graph create-node` (`create_node`) — create note/tag/concept node
+  - `graph delete-node <id>` (`delete_node`) — delete a node and its edges
+  - `graph create-edge --source-id <id> --target-id <id>` (`create_edge`)
+  - `graph delete-edge <id>` (`delete_edge`)
+
 ## 1.16.0 — 2026-04-30
 
 ### Added
@@ -24,10 +43,8 @@ independent of the app — see `feedback_release_versioning` in agent memory.
   - `kb stats` (`get_kb_stats`)
 
 ### Notes for downstream consumers
-- `extract_entities` is intentionally deferred to a follow-up story (#760) and
-  is not part of this release.
-- The legacy top-level `mnotes recall-knowledge` keeps working through hidden
-  aliases on `kb recall`; prefer the namespaced form going forward.
+- `extract_entities` deferred to #760.
+- Legacy `mnotes recall-knowledge` still works via hidden alias on `kb recall`.
 
 ## 1.15.0 — 2026-04-29
 

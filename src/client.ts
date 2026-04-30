@@ -208,6 +208,116 @@ export interface KbStats {
   embeddingCoverage: number;
 }
 
+// ── Graph types ──────────────────────────────────────────────────────────
+
+export interface GraphNode {
+  id: string;
+  noteId: string | null;
+  label: string;
+  nodeType: string;
+  depth?: number;
+}
+
+export interface GraphEdge {
+  id: string;
+  sourceId: string;
+  targetId: string;
+  edgeType: string;
+  weight: number;
+}
+
+export interface GraphResult {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
+export interface GraphTraverseResult {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  nodeCount: number;
+  edgeCount: number;
+}
+
+export interface FindPathResult {
+  found: boolean;
+  path: GraphNode[];
+  edges: GraphEdge[];
+}
+
+export interface QueryNoteGraphNode {
+  id: string;
+  noteId: string | null;
+  label: string;
+  type: string;
+  depth: number;
+}
+
+export interface QueryNoteGraphEdge {
+  source: string;
+  target: string;
+  type: string;
+}
+
+export interface QueryNoteGraphResult {
+  startNote: { id: string; title: string };
+  nodes: QueryNoteGraphNode[];
+  edges: QueryNoteGraphEdge[];
+  nodeCount: number;
+  edgeCount: number;
+}
+
+export interface PopulateGraphResult {
+  nodes: number;
+  edges: number;
+}
+
+export interface RelatedNote {
+  noteId: string;
+  title: string;
+  similarityScore: number;
+}
+
+export interface BacklinkNote {
+  id: string;
+  title: string;
+  excerpt?: string;
+}
+
+export interface NoteLinksResult {
+  outgoing: Array<{ id: string; title: string }>;
+  backlinks: Array<{ id: string; title: string }>;
+}
+
+export interface GraphNodeRecord {
+  id: string;
+  label: string;
+  nodeType: string;
+  noteId: string | null;
+  metadata: Record<string, unknown> | null;
+  userId: string;
+  workspaceId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GraphEdgeRecord {
+  id: string;
+  sourceId: string;
+  targetId: string;
+  edgeType: string;
+  weight: number;
+  metadata: Record<string, unknown> | null;
+  userId: string;
+  workspaceId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DeleteGraphEntityResult {
+  success: true;
+  id: string;
+}
+
 export function createClient(baseUrl: string, apiKey: string) {
   const headers: Record<string, string> = {
     Authorization: `Bearer ${apiKey}`,
@@ -629,6 +739,159 @@ export function createClient(baseUrl: string, apiKey: string) {
       noteId?: string;
     }): Promise<UploadResult> {
       return request<UploadResult>("POST", "/api/v1/files", opts);
+    },
+
+    // ── Graph ────────────────────────────────────────────────────────────
+
+    async getGraph(opts: {
+      workspaceId: string;
+      query?: string;
+      nodeType?: string;
+      limit?: number;
+    }): Promise<GraphResult> {
+      const params = new URLSearchParams({ workspaceId: opts.workspaceId });
+      if (opts.query) params.set("query", opts.query);
+      if (opts.nodeType) params.set("nodeType", opts.nodeType);
+      if (opts.limit != null) params.set("limit", String(opts.limit));
+      const res = await request<{ data: GraphResult }>(
+        "GET",
+        `/api/v1/graph?${params.toString()}`,
+      );
+      return res.data;
+    },
+
+    async getNeighbors(opts: {
+      nodeId: string;
+      depth?: number;
+      workspaceId: string;
+    }): Promise<GraphResult> {
+      const params = new URLSearchParams({
+        workspaceId: opts.workspaceId,
+        neighbors: opts.nodeId,
+      });
+      if (opts.depth != null) params.set("depth", String(opts.depth));
+      const res = await request<{ data: GraphResult }>(
+        "GET",
+        `/api/v1/graph?${params.toString()}`,
+      );
+      return res.data;
+    },
+
+    async graphTraverse(opts: {
+      startNodeId: string;
+      maxDepth?: number;
+      edgeTypes?: string[];
+      nodeTypes?: string[];
+      workspaceId: string;
+    }): Promise<GraphTraverseResult> {
+      return request<GraphTraverseResult>("POST", "/api/v1/graph/traverse", opts);
+    },
+
+    async findPath(opts: {
+      fromNodeId: string;
+      toNodeId: string;
+      maxDepth?: number;
+      workspaceId: string;
+    }): Promise<FindPathResult> {
+      return request<FindPathResult>("POST", "/api/v1/graph/find-path", opts);
+    },
+
+    async queryGraphAdvanced(opts: {
+      nodeType?: string;
+      labelContains?: string;
+      edgeType?: string;
+      connectedTo?: string;
+      depth?: number;
+      limit?: number;
+      workspaceId: string;
+    }): Promise<GraphResult> {
+      return request<GraphResult>("POST", "/api/v1/graph/query", opts);
+    },
+
+    async queryNoteGraph(opts: {
+      noteId: string;
+      depth?: number;
+      workspaceId: string;
+    }): Promise<QueryNoteGraphResult> {
+      return request<QueryNoteGraphResult>("POST", "/api/v1/graph/query-note", opts);
+    },
+
+    async populateGraph(opts: {
+      workspaceId: string;
+    }): Promise<PopulateGraphResult> {
+      return request<PopulateGraphResult>("POST", "/api/v1/graph/populate", opts);
+    },
+
+    async relatedNotes(
+      id: string,
+      opts: { workspaceId: string; limit?: number; minSimilarity?: number },
+    ): Promise<RelatedNote[]> {
+      const params = new URLSearchParams({ workspaceId: opts.workspaceId });
+      if (opts.limit != null) params.set("limit", String(opts.limit));
+      if (opts.minSimilarity != null) params.set("minSimilarity", String(opts.minSimilarity));
+      return request<RelatedNote[]>(
+        "GET",
+        `/api/v1/graph/related/${encodeURIComponent(id)}?${params.toString()}`,
+      );
+    },
+
+    async getBacklinks(id: string, workspaceId: string): Promise<BacklinkNote[]> {
+      const params = new URLSearchParams({ workspaceId });
+      return request<BacklinkNote[]>(
+        "GET",
+        `/api/v1/graph/backlinks/${encodeURIComponent(id)}?${params.toString()}`,
+      );
+    },
+
+    async getNoteLinks(id: string, workspaceId: string): Promise<NoteLinksResult> {
+      const params = new URLSearchParams({ workspaceId });
+      return request<NoteLinksResult>(
+        "GET",
+        `/api/v1/graph/links/${encodeURIComponent(id)}?${params.toString()}`,
+      );
+    },
+
+    async createGraphNode(opts: {
+      label: string;
+      nodeType?: "note" | "tag" | "concept";
+      noteId?: string;
+      metadata?: Record<string, unknown>;
+      workspaceId: string;
+    }): Promise<GraphNodeRecord> {
+      return request<GraphNodeRecord>("POST", "/api/v1/graph/nodes", opts);
+    },
+
+    async deleteGraphNode(
+      id: string,
+      workspaceId: string,
+    ): Promise<DeleteGraphEntityResult> {
+      const params = new URLSearchParams({ workspaceId });
+      return request<DeleteGraphEntityResult>(
+        "DELETE",
+        `/api/v1/graph/nodes/${encodeURIComponent(id)}?${params.toString()}`,
+      );
+    },
+
+    async createGraphEdge(opts: {
+      sourceId: string;
+      targetId: string;
+      edgeType?: "wikilink" | "related" | "parent" | "tagged" | "custom";
+      weight?: number;
+      metadata?: Record<string, unknown>;
+      workspaceId: string;
+    }): Promise<GraphEdgeRecord> {
+      return request<GraphEdgeRecord>("POST", "/api/v1/graph/edges", opts);
+    },
+
+    async deleteGraphEdge(
+      id: string,
+      workspaceId: string,
+    ): Promise<DeleteGraphEntityResult> {
+      const params = new URLSearchParams({ workspaceId });
+      return request<DeleteGraphEntityResult>(
+        "DELETE",
+        `/api/v1/graph/edges/${encodeURIComponent(id)}?${params.toString()}`,
+      );
     },
 
     async createWorkspace(name: string): Promise<{

@@ -6,6 +6,7 @@ import { listAction } from "./commands/note/list";
 import { registerFolderGroup } from "./commands/folder";
 import { registerFileGroup } from "./commands/file";
 import { registerKbGroup } from "./commands/kb";
+import { registerGraphGroup } from "./commands/graph";
 import { registerReadCommand } from "./commands/read";
 import { registerSearchCommand } from "./commands/search";
 import { registerCreateCommand } from "./commands/create";
@@ -27,15 +28,12 @@ export function buildProgram(): Command {
     .option("--url <url>", "Base URL (or set MNOTES_URL)")
     .option("--json", "Output as JSON");
 
-  // New group-based registration. Hidden top-level alias `mnotes list` is kept
-  // by `listAction.aliases`.
   registerGroup(program, "note", [listAction]);
   registerFolderGroup(program);
   registerFileGroup(program);
   registerKbGroup(program);
+  registerGraphGroup(program);
 
-  // Legacy flat commands still register as before. They will migrate into
-  // groups in subsequent sprint stories.
   registerReadCommand(program);
   registerSearchCommand(program);
   registerCreateCommand(program);
