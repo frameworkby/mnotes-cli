@@ -43,7 +43,7 @@ export const listWorkspacesAction: ActionDescriptor<Record<string, never>, ListO
       if (w.id === dirMapped) markers.push("linked");
       else if (w.id === globalDefault) markers.push("global");
       const suffix = markers.length > 0 ? `  (${markers.join(", ")})` : "";
-      console.log(`  ${w.name} [${w.slug}]${suffix}`);
+      console.log(`  ${w.name} [${w.slug}] (id: ${w.id})${suffix}`);
     }
   },
 };
