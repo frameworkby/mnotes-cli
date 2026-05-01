@@ -476,10 +476,10 @@ describe("generateClaudeCodeTemplate", () => {
     expect(result).toContain("living wiki");
     expect(result).toContain("Ingest Loop");
     expect(result).toContain("Lint Loop");
-    expect(result).toContain("project_context_load");
-    expect(result).toContain("session_context_resume");
-    expect(result).toContain("knowledge_store");
-    expect(result).toContain("session_log");
+    expect(result).toContain("mnotes composite project-load");
+    expect(result).toContain("mnotes session resume");
+    expect(result).toContain("mnotes kb store");
+    expect(result).toContain("mnotes session log");
   });
 
   it("includes all six key naming conventions (AC-6.2)", () => {
@@ -503,22 +503,22 @@ describe("generateClaudeCodeTemplate", () => {
     });
 
     const expectedTools = [
-      "project_context_load",
-      "session_context_resume",
-      "knowledge_store",
-      "recall_knowledge",
-      "bulk_knowledge_recall",
-      "knowledge_snapshot",
-      "scan_knowledge_conflicts",
-      "session_log",
-      "context_fetch",
-      "create_note",
-      "update_note",
-      "append_to_note",
-      "search_notes",
-      "daily_note",
-      "populate_graph",
-      "query_note_graph",
+      "mnotes composite project-load",
+      "mnotes session resume",
+      "mnotes kb store",
+      "mnotes kb recall",
+      "mnotes bulk knowledge-recall",
+      "mnotes kb snapshot",
+      "mnotes kb scan-conflicts",
+      "mnotes session log",
+      "mnotes composite context-fetch",
+      "mnotes note create",
+      "mnotes note update",
+      "mnotes note-ops append",
+      "mnotes note search",
+      "mnotes note-ops daily",
+      "mnotes graph populate",
+      "mnotes graph query-note",
     ];
 
     for (const tool of expectedTools) {

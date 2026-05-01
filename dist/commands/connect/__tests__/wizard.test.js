@@ -86,20 +86,19 @@ const DEFAULT_OPTS = {
         const scripts = (0, hooks_1.generateHookScripts)(DEFAULT_OPTS);
         (0, vitest_1.expect)(scripts).toHaveLength(2);
         const startScript = scripts.find((s) => s.filename === "mnotes-session-start.sh");
-        (0, vitest_1.expect)(startScript.content).toContain("localhost:3000/api/v1/composites/project-context-load");
+        (0, vitest_1.expect)(startScript.content).toContain("mnotes composite project-load");
         (0, vitest_1.expect)(startScript.content).not.toContain("/api/mcp");
         // workspaceId is a runtime argument, not hardcoded
         (0, vitest_1.expect)(startScript.content).toContain("WORKSPACE_ID=");
         (0, vitest_1.expect)(startScript.content).not.toContain("ws-test-123");
-        (0, vitest_1.expect)(startScript.content).toContain('Accept: application/json');
         const stopScript = scripts.find((s) => s.filename === "mnotes-session-stop.sh");
-        (0, vitest_1.expect)(stopScript.content).toContain("localhost:3000/api/v1/sessions/log");
+        (0, vitest_1.expect)(stopScript.content).toContain("mnotes session log");
         (0, vitest_1.expect)(stopScript.content).not.toContain("/api/mcp");
     });
     (0, vitest_1.it)("strips trailing slashes from URL in hook scripts", () => {
         const scripts = (0, hooks_1.generateHookScripts)({ url: "http://example.com///", workspaceId: "ws-1" });
         const startScript = scripts.find((s) => s.filename === "mnotes-session-start.sh");
-        (0, vitest_1.expect)(startScript.content).toContain("http://example.com/api/v1/composites/project-context-load");
+        (0, vitest_1.expect)(startScript.content).toContain("mnotes composite project-load");
         (0, vitest_1.expect)(startScript.content).not.toContain("///");
     });
 });
@@ -228,8 +227,8 @@ const DEFAULT_OPTS = {
         // settings.json references the global absolute path with workspaceId argument
         (0, vitest_1.expect)(settings.hooks.SessionStart[0].hooks[0].command).toBe(`${startScript} ${DEFAULT_OPTS.workspaceId}`);
         const startContent = fs.readFileSync(startScript, "utf-8");
-        (0, vitest_1.expect)(startContent).toContain("Accept: application/json");
-        (0, vitest_1.expect)(startContent).toContain("/api/v1/composites/project-context-load");
+        (0, vitest_1.expect)(startContent).toContain("mnotes composite project-load");
+        (0, vitest_1.expect)(startContent).toContain("--workspace-id");
     });
     (0, vitest_1.it)("merges hooks into existing settings.json (AC-5)", () => {
         const claudeDir = path.join(tmpDir, ".claude");

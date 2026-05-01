@@ -403,10 +403,10 @@ function cleanTmpDir(dir) {
         (0, vitest_1.expect)(result).toContain("living wiki");
         (0, vitest_1.expect)(result).toContain("Ingest Loop");
         (0, vitest_1.expect)(result).toContain("Lint Loop");
-        (0, vitest_1.expect)(result).toContain("project_context_load");
-        (0, vitest_1.expect)(result).toContain("session_context_resume");
-        (0, vitest_1.expect)(result).toContain("knowledge_store");
-        (0, vitest_1.expect)(result).toContain("session_log");
+        (0, vitest_1.expect)(result).toContain("mnotes composite project-load");
+        (0, vitest_1.expect)(result).toContain("mnotes session resume");
+        (0, vitest_1.expect)(result).toContain("mnotes kb store");
+        (0, vitest_1.expect)(result).toContain("mnotes session log");
     });
     (0, vitest_1.it)("includes all six key naming conventions (AC-6.2)", () => {
         const result = (0, claude_code_1.generateClaudeCodeTemplate)({
@@ -426,22 +426,22 @@ function cleanTmpDir(dir) {
             workspaceId: "ws-test",
         });
         const expectedTools = [
-            "project_context_load",
-            "session_context_resume",
-            "knowledge_store",
-            "recall_knowledge",
-            "bulk_knowledge_recall",
-            "knowledge_snapshot",
-            "scan_knowledge_conflicts",
-            "session_log",
-            "context_fetch",
-            "create_note",
-            "update_note",
-            "append_to_note",
-            "search_notes",
-            "daily_note",
-            "populate_graph",
-            "query_note_graph",
+            "mnotes composite project-load",
+            "mnotes session resume",
+            "mnotes kb store",
+            "mnotes kb recall",
+            "mnotes bulk knowledge-recall",
+            "mnotes kb snapshot",
+            "mnotes kb scan-conflicts",
+            "mnotes session log",
+            "mnotes composite context-fetch",
+            "mnotes note create",
+            "mnotes note update",
+            "mnotes note-ops append",
+            "mnotes note search",
+            "mnotes note-ops daily",
+            "mnotes graph populate",
+            "mnotes graph query-note",
         ];
         for (const tool of expectedTools) {
             (0, vitest_1.expect)(result).toContain(tool);

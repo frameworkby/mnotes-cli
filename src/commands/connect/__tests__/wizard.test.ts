@@ -65,22 +65,21 @@ describe("hooks template", () => {
     expect(scripts).toHaveLength(2);
 
     const startScript = scripts.find((s) => s.filename === "mnotes-session-start.sh")!;
-    expect(startScript.content).toContain("localhost:3000/api/v1/composites/project-context-load");
+    expect(startScript.content).toContain("mnotes composite project-load");
     expect(startScript.content).not.toContain("/api/mcp");
     // workspaceId is a runtime argument, not hardcoded
     expect(startScript.content).toContain("WORKSPACE_ID=");
     expect(startScript.content).not.toContain("ws-test-123");
-    expect(startScript.content).toContain('Accept: application/json');
 
     const stopScript = scripts.find((s) => s.filename === "mnotes-session-stop.sh")!;
-    expect(stopScript.content).toContain("localhost:3000/api/v1/sessions/log");
+    expect(stopScript.content).toContain("mnotes session log");
     expect(stopScript.content).not.toContain("/api/mcp");
   });
 
   it("strips trailing slashes from URL in hook scripts", () => {
     const scripts = generateHookScripts({ url: "http://example.com///", workspaceId: "ws-1" });
     const startScript = scripts.find((s) => s.filename === "mnotes-session-start.sh")!;
-    expect(startScript.content).toContain("http://example.com/api/v1/composites/project-context-load");
+    expect(startScript.content).toContain("mnotes composite project-load");
     expect(startScript.content).not.toContain("///");
   });
 });
@@ -229,8 +228,8 @@ describe("scaffoldItems: hooks", () => {
     expect(settings.hooks.SessionStart[0].hooks[0].command).toBe(`${startScript} ${DEFAULT_OPTS.workspaceId}`);
 
     const startContent = fs.readFileSync(startScript, "utf-8");
-    expect(startContent).toContain("Accept: application/json");
-    expect(startContent).toContain("/api/v1/composites/project-context-load");
+    expect(startContent).toContain("mnotes composite project-load");
+    expect(startContent).toContain("--workspace-id");
   });
 
   it("merges hooks into existing settings.json (AC-5)", () => {
