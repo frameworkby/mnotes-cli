@@ -6,6 +6,7 @@ import { detectConnectedAgents, validateConnection, writeClaudeMdBlock, writeIns
 import { resolveWorkspaceInteractively } from "./workspace-prompt";
 import { resolveConfig } from "../../config";
 import { createClient } from "../../client";
+import { sendTelemetry } from "./telemetry";
 import { generateClaudeCodeTemplate } from "../../templates/claude-code";
 import { generateCodexTemplate } from "../../templates/codex";
 import { generateOpenClawTemplate } from "../../templates/openclaw";
@@ -218,6 +219,7 @@ export async function handleClaude(opts: {
   fs.writeFileSync(mcpJsonPath, JSON.stringify(existingGlobal, null, 2) + "\n", "utf-8");
 
   console.log(`✓ Claude Code is now connected to workspace '${workspaceName}'. Config written to ${mcpJsonPath}.`);
+  void sendTelemetry({ event: "cli_connect_success", target: "claude" });
 }
 
 /**
@@ -275,6 +277,7 @@ export async function handleCursor(opts: {
   fs.writeFileSync(mcpJsonPath, JSON.stringify(existingGlobal, null, 2) + "\n", "utf-8");
 
   console.log(`✓ Cursor is now connected to workspace '${workspaceName}'. Config written to ${mcpJsonPath}.`);
+  void sendTelemetry({ event: "cli_connect_success", target: "cursor" });
 }
 
 /**
