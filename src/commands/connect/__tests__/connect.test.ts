@@ -872,6 +872,7 @@ describe("mnotes connect claude-code", () => {
     vi.spyOn(configUtils, "validateConnection").mockResolvedValue({
       ok: false,
       error: "Connection refused",
+      kind: "network" as const,
     });
 
     const program = new Command();
@@ -933,5 +934,181 @@ describe("mnotes connect claude-code", () => {
     expect(fs.existsSync(path.join(tmpDir, ".mcp.json"))).toBe(false);
     expect(output).toContain("http://localhost:3000");
     expect(output).not.toMatch(/http:\/\/localhost:3000\/+\s/);
+  });
+});
+
+// =============================================================
+// AC-845: mnotes connect claude — post-connect feedback + error states
+// =============================================================
+describe("mnotes connect claude", () => {
+  let tmpDir: string;
+  let origCwd: () => string;
+  let origExit: (code?: number) => never;
+  let exitCode: number | undefined;
+  let origHome: string | undefined;
+
+  beforeEach(() => {
+    tmpDir = makeTmpDir();
+    origCwd = process.cwd;
+    process.cwd = () => tmpDir;
+    exitCode = undefined;
+    origExit = process.exit;
+    process.exit = ((code?: number) => {
+      exitCode = code;
+      throw new Error(`process.exit(${code})`);
+    }) as never;
+    // Redirect ~/.claude writes to tmpDir so tests don't touch the real home
+    origHome = process.env.HOME;
+    process.env.HOME = tmpDir;
+  });
+
+  afterEach(() => {
+    process.cwd = origCwd;
+    process.exit = origExit;
+    if (origHome !== undefined) process.env.HOME = origHome;
+    else delete process.env.HOME;
+    cleanTmpDir(tmpDir);
+    vi.restoreAllMocks();
+  });
+
+  // AC-845-1: happy path — exact success message wording
+  it("prints exact success message and writes ~/.claude/mcp.json", async () => {
+    const configUtils = await import("../config-utils");
+    vi.spyOn(configUtils, "validateConnection").mockResolvedValue({ ok: true });
+
+    const program = new Command();
+    program.exitOverride();
+    registerConnectCommand(program);
+
+    let output = "";
+    const origLog = console.log;
+    console.log = (...args: unknown[]) => {
+      output += args.join(" ") + "\n";
+    };
+
+    try {
+      await program.parseAsync([
+        "node", "mnotes", "connect", "claude",
+        "--url", "http://localhost:3000",
+        "--api-key", "test-key-abc",
+        "--workspace", "ws-123",
+      ]);
+    } finally {
+      console.log = origLog;
+    }
+
+    // Workspace name from mock is "Test" for ws-123
+    const expectedMcpPath = path.join(tmpDir, ".claude", "mcp.json");
+    expect(output).toContain(
+      `✓ Claude Code is now connected to workspace 'Test'. Config written to ${expectedMcpPath}.`
+    );
+
+    // ~/.claude/mcp.json must exist with the m-notes server entry
+    const mcpJson = JSON.parse(fs.readFileSync(expectedMcpPath, "utf-8"));
+    expect(mcpJson.mcpServers["m-notes"].url).toBe("http://localhost:3000/api/mcp");
+  });
+
+  // AC-845-2: auth failure — error + hint
+  it("prints auth error and hint when token is expired/revoked", async () => {
+    const configUtils = await import("../config-utils");
+    vi.spyOn(configUtils, "validateConnection").mockResolvedValue({
+      ok: false,
+      error: "HTTP 401: Unauthorized",
+      kind: "auth" as const,
+    });
+
+    const program = new Command();
+    program.exitOverride();
+    registerConnectCommand(program);
+
+    let stderrOutput = "";
+    const origStderrWrite = process.stderr.write;
+    process.stderr.write = (chunk: string | Uint8Array) => {
+      stderrOutput += typeof chunk === "string" ? chunk : chunk.toString();
+      return true;
+    };
+
+    try {
+      await program.parseAsync([
+        "node", "mnotes", "connect", "claude",
+        "--url", "http://localhost:3000",
+        "--api-key", "expired-token",
+        "--workspace", "ws-123",
+      ]);
+    } catch {
+      // Expected — process.exit throws
+    } finally {
+      process.stderr.write = origStderrWrite;
+    }
+
+    expect(exitCode).toBe(1);
+    expect(stderrOutput).toContain("Authentication failed");
+    expect(stderrOutput).toContain("HTTP 401");
+    expect(stderrOutput).toContain("Run: npx mnotes auth login");
+  });
+
+  // AC-845-3: network timeout — error + retry hint, exits non-zero
+  it("prints timeout error with retry hint and exits non-zero", async () => {
+    const configUtils = await import("../config-utils");
+    vi.spyOn(configUtils, "validateConnection").mockResolvedValue({
+      ok: false,
+      error: "The operation was aborted due to timeout",
+      kind: "timeout" as const,
+    });
+
+    const program = new Command();
+    program.exitOverride();
+    registerConnectCommand(program);
+
+    let stderrOutput = "";
+    const origStderrWrite = process.stderr.write;
+    process.stderr.write = (chunk: string | Uint8Array) => {
+      stderrOutput += typeof chunk === "string" ? chunk : chunk.toString();
+      return true;
+    };
+
+    try {
+      await program.parseAsync([
+        "node", "mnotes", "connect", "claude",
+        "--url", "http://localhost:3000",
+        "--api-key", "test-key",
+        "--workspace", "ws-123",
+      ]);
+    } catch {
+      // Expected — process.exit throws
+    } finally {
+      process.stderr.write = origStderrWrite;
+    }
+
+    expect(exitCode).toBe(1);
+    expect(stderrOutput).toContain("timed out");
+    expect(stderrOutput).toContain("try again");
+  });
+
+  // AC-845-4: unsupported target — exact wording, exits non-zero
+  it("prints exact unsupported-target message for unknown targets", async () => {
+    const program = new Command();
+    program.exitOverride();
+    registerConnectCommand(program);
+
+    let stderrOutput = "";
+    const origStderrWrite = process.stderr.write;
+    process.stderr.write = (chunk: string | Uint8Array) => {
+      stderrOutput += typeof chunk === "string" ? chunk : chunk.toString();
+      return true;
+    };
+
+    try {
+      await program.parseAsync([
+        "node", "mnotes", "connect", "vscode",
+      ]);
+    } catch {
+      // Expected — process.exit throws
+    } finally {
+      process.stderr.write = origStderrWrite;
+    }
+
+    expect(exitCode).toBe(1);
+    expect(stderrOutput).toBe("Unsupported target 'vscode'. Supported: claude, cursor.\n");
   });
 });

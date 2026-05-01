@@ -157,14 +157,31 @@ export function writeInstructionBlock(dir: string, filename: string, content: st
   }
 }
 
+export type ConnectionErrorKind = "auth" | "timeout" | "network";
+
+export interface ConnectionFailure {
+  ok: false;
+  error: string;
+  kind: ConnectionErrorKind;
+}
+
+export interface ConnectionSuccess {
+  ok: true;
+}
+
+export type ConnectionResult = ConnectionSuccess | ConnectionFailure;
+
 /**
  * Validates a connection to an m-notes instance by calling the health endpoint.
- * Returns true if the server responds successfully.
+ * Returns ok=true on success, or a typed failure with a `kind` discriminant:
+ *   - "auth"    — 401/403 response (expired or revoked token)
+ *   - "timeout" — request timed out
+ *   - "network" — any other network / HTTP error
  */
 export async function validateConnection(
   url: string,
   apiKey: string
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<ConnectionResult> {
   try {
     const healthUrl = `${url.replace(/\/+$/, "")}/api/health`;
     const res = await fetch(healthUrl, {
@@ -175,14 +192,34 @@ export async function validateConnection(
       signal: AbortSignal.timeout(5000),
     });
 
+    if (res.status === 401 || res.status === 403) {
+      return {
+        ok: false,
+        error: `HTTP ${res.status}: ${res.statusText}`,
+        kind: "auth",
+      };
+    }
+
     if (!res.ok) {
-      return { ok: false, error: `HTTP ${res.status}: ${res.statusText}` };
+      return {
+        ok: false,
+        error: `HTTP ${res.status}: ${res.statusText}`,
+        kind: "network",
+      };
     }
 
     return { ok: true };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    return { ok: false, error: message };
+    // AbortSignal.timeout raises a DOMException with name "TimeoutError"
+    const isTimeout =
+      (err instanceof Error && err.name === "TimeoutError") ||
+      message.toLowerCase().includes("timeout");
+    return {
+      ok: false,
+      error: message,
+      kind: isTimeout ? "timeout" : "network",
+    };
   }
 }
 

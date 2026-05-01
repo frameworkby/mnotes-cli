@@ -15,9 +15,14 @@ import type { WizardItem, ScaffoldResult } from "./wizard";
 /** Available integration targets with descriptions */
 export const INTEGRATION_TARGETS = [
   {
+    name: "claude",
+    description:
+      "Connect Claude Code globally via ~/.claude/mcp.json",
+  },
+  {
     name: "claude-code",
     description:
-      "Connect Claude Code via MCP server config and CLAUDE.md instructions",
+      "Connect Claude Code project-level via CLAUDE.md instructions",
   },
   {
     name: "codex",
@@ -134,9 +139,6 @@ async function resolveWorkspace(opts: {
 }
 
 /**
- * Handles the `claude-code` integration target.
- */
-/**
  * Normalize the base URL: strip trailing slashes and any legacy /api/mcp suffix.
  * Earlier versions of the CLI pointed at the MCP endpoint directly; we accept
  * those URLs and reduce them back to the bare server origin.
@@ -145,6 +147,77 @@ function normalizeBaseUrl(raw: string): string {
   return raw.replace(/\/+$/, "").replace(/\/api\/mcp$/i, "");
 }
 
+/**
+ * Prints a structured connection error to stderr and exits non-zero.
+ * Provides actionable hints based on the error kind.
+ */
+function printConnectionError(url: string, validation: { ok: false; error: string; kind: "auth" | "timeout" | "network" }): never {
+  if (validation.kind === "auth") {
+    process.stderr.write(`Error: Authentication failed for ${url}: ${validation.error}\n`);
+    process.stderr.write(`Hint: Run: npx mnotes auth login\n`);
+  } else if (validation.kind === "timeout") {
+    process.stderr.write(`Error: Connection to ${url} timed out: ${validation.error}\n`);
+    process.stderr.write(`Hint: Check your network connection and try again.\n`);
+  } else {
+    process.stderr.write(`Error: Cannot connect to ${url}: ${validation.error}\n`);
+  }
+  process.exit(1);
+}
+
+/**
+ * Handles the `claude` integration target.
+ * Writes the m-notes MCP server entry to ~/.claude/mcp.json so Claude Code
+ * picks it up globally (no project-level config file needed).
+ */
+export async function handleClaude(opts: {
+  url?: string;
+  apiKey?: string;
+  workspace?: string;
+}): Promise<void> {
+  const config = resolveConfig(opts);
+  const url = normalizeBaseUrl(config.baseUrl);
+  const apiKey = config.apiKey;
+
+  const validation = await validateConnection(url, apiKey);
+  if (!validation.ok) {
+    printConnectionError(url, validation);
+  }
+
+  const workspaceId = await resolveWorkspace({ url, apiKey, workspace: opts.workspace });
+
+  // Fetch workspace name for the success message
+  let workspaceName = workspaceId;
+  try {
+    const client = createClient(url, apiKey);
+    const res = await client.listWorkspaces();
+    const match = res.data.find((ws) => ws.id === workspaceId);
+    if (match) workspaceName = match.name;
+  } catch {
+    // Best-effort — fall back to ID if name lookup fails
+  }
+
+  // Write the MCP server entry to ~/.claude/mcp.json
+  const claudeConfigDir = path.join(process.env.HOME ?? "~", ".claude");
+  fs.mkdirSync(claudeConfigDir, { recursive: true });
+  const mcpJsonPath = path.join(claudeConfigDir, "mcp.json");
+
+  // Read existing config (if any) and merge in the m-notes entry
+  let existingGlobal: { mcpServers?: Record<string, unknown> } = {};
+  try {
+    existingGlobal = JSON.parse(fs.readFileSync(mcpJsonPath, "utf-8")) as typeof existingGlobal;
+  } catch {
+    // File absent or unreadable — start fresh
+  }
+  if (!existingGlobal.mcpServers) existingGlobal.mcpServers = {};
+  existingGlobal.mcpServers["m-notes"] = { url: `${url}/api/mcp` };
+  fs.writeFileSync(mcpJsonPath, JSON.stringify(existingGlobal, null, 2) + "\n", "utf-8");
+
+  console.log(`✓ Claude Code is now connected to workspace '${workspaceName}'. Config written to ${mcpJsonPath}.`);
+}
+
+/**
+ * Handles the `claude-code` integration target.
+ */
 export async function handleClaudeCode(opts: {
   url?: string;
   apiKey?: string;
@@ -158,7 +231,15 @@ export async function handleClaudeCode(opts: {
 
   const validation = await validateConnection(url, apiKey);
   if (!validation.ok) {
-    process.stderr.write(`Error: Cannot connect to ${url}: ${validation.error}\n`);
+    if (validation.kind === "auth") {
+      process.stderr.write(`Error: Authentication failed for ${url}: ${validation.error}\n`);
+      process.stderr.write(`Hint: Run: npx mnotes auth login\n`);
+    } else if (validation.kind === "timeout") {
+      process.stderr.write(`Error: Connection to ${url} timed out: ${validation.error}\n`);
+      process.stderr.write(`Hint: Check your network connection and try again.\n`);
+    } else {
+      process.stderr.write(`Error: Cannot connect to ${url}: ${validation.error}\n`);
+    }
     process.exit(1);
   }
 
@@ -338,6 +419,11 @@ export function registerConnectCommand(program: Command): void {
           return;
         }
 
+        if (target === "claude") {
+          await handleClaude(opts);
+          return;
+        }
+
         if (target === "claude-code") {
           await handleClaudeCode({
             ...opts,
@@ -358,7 +444,7 @@ export function registerConnectCommand(program: Command): void {
         }
 
         if (target) {
-          process.stderr.write(`Error: Unknown integration target "${target}". Use --list to see available targets.\n`);
+          process.stderr.write(`Unsupported target '${target}'. Supported: claude, cursor.\n`);
           process.exit(1);
           return;
         }
