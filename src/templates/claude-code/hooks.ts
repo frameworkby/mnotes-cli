@@ -56,7 +56,7 @@ set -euo pipefail
 
 WORKSPACE_ID="\${1:-\${MNOTES_WORKSPACE_ID:-}}"
 if [ -z "$WORKSPACE_ID" ]; then
-  echo "mnotes-session-start.sh: no workspaceId (pass as \$1 or set MNOTES_WORKSPACE_ID)" >&2
+  echo 'mnotes-session-start.sh: no workspaceId (pass as $1 or set MNOTES_WORKSPACE_ID)' >&2
   exit 0
 fi
 
@@ -73,7 +73,7 @@ set -euo pipefail
 
 WORKSPACE_ID="\${1:-\${MNOTES_WORKSPACE_ID:-}}"
 if [ -z "$WORKSPACE_ID" ]; then
-  echo "mnotes-session-stop.sh: no workspaceId (pass as \$1 or set MNOTES_WORKSPACE_ID)" >&2
+  echo 'mnotes-session-stop.sh: no workspaceId (pass as $1 or set MNOTES_WORKSPACE_ID)' >&2
   exit 0
 fi
 

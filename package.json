@@ -1,6 +1,6 @@
 {
   "name": "mnotes-cli",
-  "version": "1.22.1",
+  "version": "1.22.2",
   "description": "CLI for m-notes AI knowledge base — manage notes, search, and CRUD from the terminal",
   "bin": {
     "mnotes": "./dist/index.js"
