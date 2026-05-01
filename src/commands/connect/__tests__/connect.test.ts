@@ -938,6 +938,215 @@ describe("mnotes connect claude-code", () => {
 });
 
 // =============================================================
+// AC-846: mnotes connect cursor — happy path + error states
+// =============================================================
+describe("mnotes connect cursor", () => {
+  let tmpDir: string;
+  let origCwd: () => string;
+  let origExit: (code?: number) => never;
+  let exitCode: number | undefined;
+  let origHome: string | undefined;
+
+  beforeEach(() => {
+    tmpDir = makeTmpDir();
+    origCwd = process.cwd;
+    process.cwd = () => tmpDir;
+    exitCode = undefined;
+    origExit = process.exit;
+    process.exit = ((code?: number) => {
+      exitCode = code;
+      throw new Error(`process.exit(${code})`);
+    }) as never;
+    // Redirect ~/.cursor writes to tmpDir so tests don't touch the real home
+    origHome = process.env.HOME;
+    process.env.HOME = tmpDir;
+  });
+
+  afterEach(() => {
+    process.cwd = origCwd;
+    process.exit = origExit;
+    if (origHome !== undefined) process.env.HOME = origHome;
+    else delete process.env.HOME;
+    cleanTmpDir(tmpDir);
+    vi.restoreAllMocks();
+  });
+
+  // AC-846-1: happy path — exact success message and config written
+  it("prints exact success message and writes ~/.cursor/mcp.json", async () => {
+    const configUtils = await import("../config-utils");
+    vi.spyOn(configUtils, "validateConnection").mockResolvedValue({ ok: true });
+
+    const program = new Command();
+    program.exitOverride();
+    registerConnectCommand(program);
+
+    let output = "";
+    const origLog = console.log;
+    console.log = (...args: unknown[]) => {
+      output += args.join(" ") + "\n";
+    };
+
+    try {
+      await program.parseAsync([
+        "node", "mnotes", "connect", "cursor",
+        "--url", "http://localhost:3000",
+        "--api-key", "test-key-abc",
+        "--workspace", "ws-123",
+      ]);
+    } finally {
+      console.log = origLog;
+    }
+
+    // Workspace name from mock is "Test" for ws-123
+    const expectedMcpPath = path.join(tmpDir, ".cursor", "mcp.json");
+    expect(output).toContain(
+      `✓ Cursor is now connected to workspace 'Test'. Config written to ${expectedMcpPath}.`
+    );
+
+    // ~/.cursor/mcp.json must exist with the m-notes server entry
+    const mcpJson = JSON.parse(fs.readFileSync(expectedMcpPath, "utf-8"));
+    expect(mcpJson.mcpServers["m-notes"].url).toBe("http://localhost:3000/api/mcp");
+  });
+
+  // AC-846-2: creates ~/.cursor dir when it doesn't exist and warns user
+  it("creates ~/.cursor directory and emits warning when it did not exist", async () => {
+    const configUtils = await import("../config-utils");
+    vi.spyOn(configUtils, "validateConnection").mockResolvedValue({ ok: true });
+
+    const program = new Command();
+    program.exitOverride();
+    registerConnectCommand(program);
+
+    let stderrOutput = "";
+    const origStderrWrite = process.stderr.write;
+    process.stderr.write = (chunk: string | Uint8Array) => {
+      stderrOutput += typeof chunk === "string" ? chunk : chunk.toString();
+      return true;
+    };
+
+    const origLog = console.log;
+    console.log = () => {};
+
+    try {
+      await program.parseAsync([
+        "node", "mnotes", "connect", "cursor",
+        "--url", "http://localhost:3000",
+        "--api-key", "test-key-abc",
+        "--workspace", "ws-123",
+      ]);
+    } finally {
+      console.log = origLog;
+      process.stderr.write = origStderrWrite;
+    }
+
+    // ~/.cursor should now exist
+    expect(fs.existsSync(path.join(tmpDir, ".cursor"))).toBe(true);
+    // Warning emitted to stderr
+    expect(stderrOutput).toContain("~/.cursor directory did not exist");
+  });
+
+  // AC-846-3: merges into existing ~/.cursor/mcp.json without overwriting other entries
+  it("merges m-notes entry into existing ~/.cursor/mcp.json", async () => {
+    const configUtils = await import("../config-utils");
+    vi.spyOn(configUtils, "validateConnection").mockResolvedValue({ ok: true });
+
+    // Pre-create ~/.cursor/mcp.json with an existing server
+    const cursorDir = path.join(tmpDir, ".cursor");
+    fs.mkdirSync(cursorDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(cursorDir, "mcp.json"),
+      JSON.stringify({ mcpServers: { "other-tool": { url: "http://other" } } }, null, 2) + "\n",
+      "utf-8"
+    );
+
+    const program = new Command();
+    program.exitOverride();
+    registerConnectCommand(program);
+
+    const origLog = console.log;
+    console.log = () => {};
+
+    try {
+      await program.parseAsync([
+        "node", "mnotes", "connect", "cursor",
+        "--url", "http://localhost:3000",
+        "--api-key", "test-key-abc",
+        "--workspace", "ws-123",
+      ]);
+    } finally {
+      console.log = origLog;
+    }
+
+    const mcpJson = JSON.parse(fs.readFileSync(path.join(cursorDir, "mcp.json"), "utf-8"));
+    // Existing entry preserved
+    expect(mcpJson.mcpServers["other-tool"].url).toBe("http://other");
+    // m-notes entry added
+    expect(mcpJson.mcpServers["m-notes"].url).toBe("http://localhost:3000/api/mcp");
+  });
+
+  // AC-846-4: auth failure exits non-zero with hint
+  it("prints auth error and hint when token is expired/revoked", async () => {
+    const configUtils = await import("../config-utils");
+    vi.spyOn(configUtils, "validateConnection").mockResolvedValue({
+      ok: false,
+      error: "HTTP 401: Unauthorized",
+      kind: "auth" as const,
+    });
+
+    const program = new Command();
+    program.exitOverride();
+    registerConnectCommand(program);
+
+    let stderrOutput = "";
+    const origStderrWrite = process.stderr.write;
+    process.stderr.write = (chunk: string | Uint8Array) => {
+      stderrOutput += typeof chunk === "string" ? chunk : chunk.toString();
+      return true;
+    };
+
+    try {
+      await program.parseAsync([
+        "node", "mnotes", "connect", "cursor",
+        "--url", "http://localhost:3000",
+        "--api-key", "expired-token",
+        "--workspace", "ws-123",
+      ]);
+    } catch {
+      // Expected — process.exit throws
+    } finally {
+      process.stderr.write = origStderrWrite;
+    }
+
+    expect(exitCode).toBe(1);
+    expect(stderrOutput).toContain("Authentication failed");
+    expect(stderrOutput).toContain("HTTP 401");
+    expect(stderrOutput).toContain("Run: npx mnotes auth login");
+  });
+
+  // AC-846-5: cursor target appears in --list output
+  it("cursor appears in --list output with correct description", async () => {
+    const program = new Command();
+    program.exitOverride();
+    registerConnectCommand(program);
+
+    let output = "";
+    const origLog = console.log;
+    console.log = (...args: unknown[]) => {
+      output += args.join(" ") + "\n";
+    };
+
+    try {
+      await program.parseAsync(["node", "mnotes", "connect", "--list"]);
+    } finally {
+      console.log = origLog;
+    }
+
+    expect(output).toContain("cursor");
+    expect(output).toContain("~/.cursor/mcp.json");
+  });
+});
+
+// =============================================================
 // AC-845: mnotes connect claude — post-connect feedback + error states
 // =============================================================
 describe("mnotes connect claude", () => {

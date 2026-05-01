@@ -25,6 +25,11 @@ export const INTEGRATION_TARGETS = [
       "Connect Claude Code project-level via CLAUDE.md instructions",
   },
   {
+    name: "cursor",
+    description:
+      "Connect Cursor globally via ~/.cursor/mcp.json",
+  },
+  {
     name: "codex",
     description: "Connect OpenAI Codex via MCP config (experimental)",
   },
@@ -213,6 +218,63 @@ export async function handleClaude(opts: {
   fs.writeFileSync(mcpJsonPath, JSON.stringify(existingGlobal, null, 2) + "\n", "utf-8");
 
   console.log(`✓ Claude Code is now connected to workspace '${workspaceName}'. Config written to ${mcpJsonPath}.`);
+}
+
+/**
+ * Handles the `cursor` integration target.
+ * Writes the m-notes MCP server entry to ~/.cursor/mcp.json so Cursor
+ * picks it up globally across all projects.
+ * Source: https://cursor.com/docs/mcp — "global tools available across all
+ * projects are defined in a ~/.cursor/mcp.json file in the user's home directory."
+ */
+export async function handleCursor(opts: {
+  url?: string;
+  apiKey?: string;
+  workspace?: string;
+}): Promise<void> {
+  const config = resolveConfig(opts);
+  const url = normalizeBaseUrl(config.baseUrl);
+  const apiKey = config.apiKey;
+
+  const validation = await validateConnection(url, apiKey);
+  if (!validation.ok) {
+    printConnectionError(url, validation);
+  }
+
+  const workspaceId = await resolveWorkspace({ url, apiKey, workspace: opts.workspace });
+
+  // Fetch workspace name for the success message
+  let workspaceName = workspaceId;
+  try {
+    const client = createClient(url, apiKey);
+    const res = await client.listWorkspaces();
+    const match = res.data.find((ws) => ws.id === workspaceId);
+    if (match) workspaceName = match.name;
+  } catch {
+    // Best-effort — fall back to ID if name lookup fails
+  }
+
+  // Write the MCP server entry to ~/.cursor/mcp.json
+  const cursorConfigDir = path.join(process.env.HOME ?? "~", ".cursor");
+  const dirExisted = fs.existsSync(cursorConfigDir);
+  fs.mkdirSync(cursorConfigDir, { recursive: true });
+  if (!dirExisted) {
+    process.stderr.write(`Warning: ~/.cursor directory did not exist — created it.\n`);
+  }
+  const mcpJsonPath = path.join(cursorConfigDir, "mcp.json");
+
+  // Read existing config (if any) and merge in the m-notes entry
+  let existingGlobal: { mcpServers?: Record<string, unknown> } = {};
+  try {
+    existingGlobal = JSON.parse(fs.readFileSync(mcpJsonPath, "utf-8")) as typeof existingGlobal;
+  } catch {
+    // File absent or unreadable — start fresh
+  }
+  if (!existingGlobal.mcpServers) existingGlobal.mcpServers = {};
+  existingGlobal.mcpServers["m-notes"] = { url: `${url}/api/mcp` };
+  fs.writeFileSync(mcpJsonPath, JSON.stringify(existingGlobal, null, 2) + "\n", "utf-8");
+
+  console.log(`✓ Cursor is now connected to workspace '${workspaceName}'. Config written to ${mcpJsonPath}.`);
 }
 
 /**
@@ -424,6 +486,11 @@ export function registerConnectCommand(program: Command): void {
           return;
         }
 
+        if (target === "cursor") {
+          await handleCursor(opts);
+          return;
+        }
+
         if (target === "claude-code") {
           await handleClaudeCode({
             ...opts,
@@ -448,6 +515,7 @@ export function registerConnectCommand(program: Command): void {
           process.exit(1);
           return;
         }
+
 
         // No target and no flag — show help
         connect.help();
