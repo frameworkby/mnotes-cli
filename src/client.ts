@@ -1775,6 +1775,18 @@ export function createClient(baseUrl: string, apiKey: string) {
       );
     },
 
+    /**
+     * Stamps `firstAgentConnectAt` on the workspace (idempotent — server-side
+     * null guard means only the first call has any effect).
+     * Called by handleClaude / handleCursor after writing config to disk.
+     */
+    async markAgentConnected(id: string): Promise<void> {
+      await request<{ ok: boolean }>(
+        "POST",
+        `/api/v1/workspaces/${encodeURIComponent(id)}/mark-agent-connected`,
+      );
+    },
+
     async updateWorkspace(
       id: string,
       opts: { name?: string; description?: string | null; icon?: string | null },

@@ -220,6 +220,14 @@ export async function handleClaude(opts: {
 
   console.log(`✓ Claude Code is now connected to workspace '${workspaceName}'. Config written to ${mcpJsonPath}.`);
   void sendTelemetry({ event: "cli_connect_success", target: "claude" });
+
+  // Stamp first-connect timestamp on the workspace (best-effort, fire-and-forget)
+  try {
+    const client = createClient(url, apiKey);
+    await client.markAgentConnected(workspaceId);
+  } catch {
+    // Non-critical — banner simply won't appear if this fails
+  }
 }
 
 /**
@@ -278,6 +286,14 @@ export async function handleCursor(opts: {
 
   console.log(`✓ Cursor is now connected to workspace '${workspaceName}'. Config written to ${mcpJsonPath}.`);
   void sendTelemetry({ event: "cli_connect_success", target: "cursor" });
+
+  // Stamp first-connect timestamp on the workspace (best-effort, fire-and-forget)
+  try {
+    const client = createClient(url, apiKey);
+    await client.markAgentConnected(workspaceId);
+  } catch {
+    // Non-critical — banner simply won't appear if this fails
+  }
 }
 
 /**
