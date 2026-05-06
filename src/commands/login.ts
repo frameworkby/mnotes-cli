@@ -9,6 +9,8 @@ import * as crypto from "crypto";
 export interface MnotesConfig {
   apiKey: string;
   serverUrl: string;
+  /** Global default workspace ID (lowest-priority fallback in resolution cascade) */
+  workspaceId?: string;
   /** Map of absolute directory path → workspace ID */
   workspaces?: Record<string, string>;
 }
