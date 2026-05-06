@@ -32,13 +32,17 @@ export interface HookScript {
     content: string;
 }
 /**
- * Generates bash scripts to be written to `.claude/hooks/`.
+ * Generates bash scripts to be written to `~/.claude/hooks/mnotes/scripts/`.
+ * Workspace is resolved at runtime from MNOTES_WORKSPACE_ID (set by the hook
+ * command), the per-cwd config map, or the global config default — no
+ * --workspace-id flag is passed.
  */
 export declare function generateHookScripts(_opts: HooksTemplateOpts): HookScript[];
 /**
  * Generates the hooks object to merge into `.claude/settings.json`.
  * References bash scripts in `~/.claude/hooks/mnotes/scripts/` (absolute path
  * so hooks work across projects without per-project script copies).
+ * Workspace ID is exported as MNOTES_WORKSPACE_ID so the CLI resolver picks it up.
  */
 export declare function generateHooksTemplate(opts: HooksTemplateOpts): ClaudeCodeHooks;
 /** Header comment for the hooks section, used for identification. */
