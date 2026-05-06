@@ -19,7 +19,6 @@ interface ManageInput {
   id?: string;
   name?: string;
   parentId?: string;
-  workspaceId?: string;
 }
 
 type ManageOutput = FolderRecord | { deleted: string };
@@ -39,8 +38,7 @@ export const manageFoldersAction: ActionDescriptor<ManageInput, ManageOutput> = 
       )
       .option("--id <id>", "Folder ID (required for rename and delete)")
       .option("--name <name>", "Folder name (required for create and rename)")
-      .option("--parent-id <id>", "Parent folder ID (optional, for create)")
-      .option("--workspace-id <id>", "Workspace ID (required for create)"),
+      .option("--parent-id <id>", "Parent folder ID (optional, for create)"),
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
@@ -51,10 +49,10 @@ export const manageFoldersAction: ActionDescriptor<ManageInput, ManageOutput> = 
     switch (input.action) {
       case "create": {
         if (!input.name) throw new Error("--name is required for create action");
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         if (!workspaceId) {
           throw new Error(
-            "workspaceId is required for create (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+            "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
           );
         }
         return client.createFolder({

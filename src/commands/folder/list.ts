@@ -5,7 +5,6 @@ import type { ActionDescriptor } from "../_register-group";
 import type { FolderListItem } from "../../client";
 
 interface ListInput {
-  workspaceId?: string;
   cursor?: string;
   limit?: number;
 }
@@ -23,7 +22,6 @@ export const listFoldersAction: ActionDescriptor<ListInput, ListOutput> = {
   mcpTool: "list_folders",
   args: (cmd: Command) =>
     cmd
-      .option("--workspace-id <id>", "Workspace ID")
       .option("--cursor <cursor>", "Pagination cursor")
       .option("--limit <n>", "Max folders per page (default 50, max 100)", (v) =>
         parseInt(v, 10),
@@ -31,9 +29,9 @@ export const listFoldersAction: ActionDescriptor<ListInput, ListOutput> = {
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
-      throw new Error("workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)");
+      throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
     }
     const client = createClient(config.baseUrl, config.apiKey);
     return client.listFolders({

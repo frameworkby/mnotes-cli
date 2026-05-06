@@ -8,7 +8,6 @@ interface CreateSmartFolderInput {
   name: string;
   query: string;
   mode: "fulltext" | "semantic";
-  workspaceId?: string;
 }
 
 export const createSmartFolderAction: ActionDescriptor<
@@ -23,18 +22,17 @@ export const createSmartFolderAction: ActionDescriptor<
     cmd
       .requiredOption("--name <name>", "Smart folder name")
       .requiredOption("--query <q>", "Search query")
-      .requiredOption("--mode <m>", "Search mode: fulltext or semantic")
-      .option("--workspace-id <id>", "Workspace ID"),
+      .requiredOption("--mode <m>", "Search mode: fulltext or semantic"),
 
   run: async (input, ctx) => {
     if (input.mode !== "fulltext" && input.mode !== "semantic") {
       throw new Error("--mode must be 'fulltext' or 'semantic'");
     }
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const client = createClient(config.baseUrl, config.apiKey);

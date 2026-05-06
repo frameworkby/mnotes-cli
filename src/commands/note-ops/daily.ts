@@ -5,7 +5,6 @@ import type { ActionDescriptor } from "../_register-group";
 
 interface Input {
   date?: string;
-  workspaceId?: string;
 }
 
 export const dailyAction: ActionDescriptor<Input, unknown> = {
@@ -14,12 +13,11 @@ export const dailyAction: ActionDescriptor<Input, unknown> = {
   mcpTool: "daily_note",
   args: (cmd: Command) =>
     cmd
-      .option("--date <s>", "ISO date YYYY-MM-DD (default: today)")
-      .option("--workspace-id <id>", "Workspace ID"),
+      .option("--date <s>", "ISO date YYYY-MM-DD (default: today)"),
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
-    if (!workspaceId) throw new Error("workspaceId is required");
+    const workspaceId = config.workspaceId;
+    if (!workspaceId) throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
     const client = createClient(config.baseUrl, config.apiKey);
     return client.dailyNote({ workspaceId, date: input.date });
   },

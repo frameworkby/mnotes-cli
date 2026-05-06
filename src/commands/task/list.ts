@@ -9,7 +9,6 @@ interface ListTasksInput {
   tag?: string;
   noteId?: string;
   limit?: number;
-  workspaceId?: string;
 }
 
 export const listTasksAction: ActionDescriptor<ListTasksInput, TaskItem[]> = {
@@ -27,8 +26,7 @@ export const listTasksAction: ActionDescriptor<ListTasksInput, TaskItem[]> = {
       .option("--note-id <id>", "Filter to tasks from a specific note")
       .option("--limit <n>", "Max results (1-500, default 200)", (v) =>
         parseInt(v, 10),
-      )
-      .option("--workspace-id <id>", "Workspace ID"),
+      ),
 
   run: async (input, ctx) => {
     if (
@@ -40,10 +38,10 @@ export const listTasksAction: ActionDescriptor<ListTasksInput, TaskItem[]> = {
       throw new Error("--status must be 'all', 'open', or 'done'");
     }
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const client = createClient(config.baseUrl, config.apiKey);

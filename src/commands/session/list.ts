@@ -5,7 +5,6 @@ import type { ActionDescriptor } from "../_register-group";
 import type { SessionListResult } from "../../client";
 
 interface ListSessionsInput {
-  workspaceId?: string;
   limit?: number;
   cursor?: string;
 }
@@ -20,7 +19,6 @@ export const listSessionsAction: ActionDescriptor<
   mcpTool: "list_sessions",
   args: (cmd: Command) =>
     cmd
-      .option("--workspace-id <id>", "Workspace ID")
       .option("--limit <n>", "Max results (1-50, default 20)", (v) =>
         parseInt(v, 10),
       )
@@ -28,7 +26,7 @@ export const listSessionsAction: ActionDescriptor<
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     const client = createClient(config.baseUrl, config.apiKey);
     return client.listSessions({
       workspaceId,

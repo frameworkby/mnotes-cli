@@ -10,7 +10,6 @@ interface MemoryInput {
   source?: string;
   confidence?: number;
   tags?: string;
-  workspaceId?: string;
 }
 
 export const memoryAction: ActionDescriptor<MemoryInput, MemoryUpsertResult> = {
@@ -24,15 +23,14 @@ export const memoryAction: ActionDescriptor<MemoryInput, MemoryUpsertResult> = {
       .requiredOption("--content <md>", "The fact or memory to store")
       .option("--source <s>", "Origin (e.g. user-stated, inferred)")
       .option("--confidence <n>", "Confidence 0.0–1.0", (v) => parseFloat(v))
-      .option("--tags <csv>", "Comma-separated tags")
-      .option("--workspace-id <id>", "Workspace ID"),
+      .option("--tags <csv>", "Comma-separated tags"),
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const tags = input.tags

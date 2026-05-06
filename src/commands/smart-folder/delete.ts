@@ -6,7 +6,6 @@ import type { SmartFolderDeleteResult } from "../../client";
 
 interface DeleteSmartFolderInput {
   id: string;
-  workspaceId?: string;
 }
 
 export const deleteSmartFolderAction: ActionDescriptor<
@@ -19,15 +18,14 @@ export const deleteSmartFolderAction: ActionDescriptor<
   positional: ["id"],
   args: (cmd: Command) =>
     cmd
-      .argument("<id>", "Smart folder ID")
-      .option("--workspace-id <id>", "Workspace ID"),
+      .argument("<id>", "Smart folder ID"),
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const client = createClient(config.baseUrl, config.apiKey);

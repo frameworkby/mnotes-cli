@@ -8,7 +8,6 @@ interface GenerateMocInput {
   scopeType: "folder" | "tag";
   scopeId: string;
   limit?: number;
-  workspaceId?: string;
 }
 
 export const generateMocAction: ActionDescriptor<GenerateMocInput, MocResult> = {
@@ -25,18 +24,17 @@ export const generateMocAction: ActionDescriptor<GenerateMocInput, MocResult> = 
       .requiredOption("--scope-id <id>", "Folder ID or tag name")
       .option("--limit <n>", "Max notes (1-200, default 50)", (v) =>
         parseInt(v, 10),
-      )
-      .option("--workspace-id <id>", "Workspace ID"),
+      ),
 
   run: async (input, ctx) => {
     if (input.scopeType !== "folder" && input.scopeType !== "tag") {
       throw new Error("--scope-type must be 'folder' or 'tag'");
     }
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const client = createClient(config.baseUrl, config.apiKey);

@@ -7,7 +7,6 @@ import type { SynthesizeNotesResult } from "../../client";
 interface Input {
   noteIds: string;
   title?: string;
-  workspaceId?: string;
 }
 
 export const synthesizeAction: ActionDescriptor<Input, SynthesizeNotesResult> = {
@@ -18,14 +17,13 @@ export const synthesizeAction: ActionDescriptor<Input, SynthesizeNotesResult> = 
   args: (cmd: Command) =>
     cmd
       .requiredOption("--note-ids <csv>", "Comma-separated note IDs (2-20)")
-      .option("--title <title>", "Optional title override for synthesised note")
-      .option("--workspace-id <id>", "Workspace ID"),
+      .option("--title <title>", "Optional title override for synthesised note"),
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const noteIds = input.noteIds

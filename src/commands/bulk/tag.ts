@@ -8,7 +8,6 @@ interface Input {
   noteIds: string;
   tags: string;
   op: "add" | "remove";
-  workspaceId?: string;
 }
 
 export const bulkTagAction: ActionDescriptor<Input, BulkOpResult> = {
@@ -20,17 +19,16 @@ export const bulkTagAction: ActionDescriptor<Input, BulkOpResult> = {
     cmd
       .requiredOption("--note-ids <csv>", "Comma-separated note IDs (1-100)")
       .requiredOption("--tags <csv>", "Comma-separated tags (1-50)")
-      .requiredOption("--op <add|remove>", "Operation: add or remove")
-      .option("--workspace-id <id>", "Workspace ID"),
+      .requiredOption("--op <add|remove>", "Operation: add or remove"),
   run: async (input, ctx) => {
     if (input.op !== "add" && input.op !== "remove") {
       throw new Error("--op must be 'add' or 'remove'");
     }
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const noteIds = input.noteIds

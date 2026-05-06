@@ -8,7 +8,6 @@ export function registerSearchCommand(program: Command): void {
     .command("search <query>")
     .description("Search notes")
     .option("--semantic", "Use semantic (vector) search instead of full-text")
-    .option("--workspace-id <id>", "Workspace ID")
     .action(async (query: string, opts: Record<string, string | boolean | undefined>) => {
       const globalOpts = program.opts();
       const config = resolveConfig(globalOpts);

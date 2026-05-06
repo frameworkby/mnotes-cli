@@ -5,7 +5,6 @@ import type { ActionDescriptor } from "../_register-group";
 import type { KnowledgeLinkResult } from "../../client";
 
 interface LinkInput {
-  workspaceId?: string;
   relationType:
     | "supports"
     | "contradicts"
@@ -28,7 +27,6 @@ export const linkAction: ActionDescriptor<LinkInput, KnowledgeLinkResult> = {
   mcpTool: "knowledge_link",
   args: (cmd: Command) =>
     cmd
-      .option("--workspace-id <id>", "Workspace ID")
       .addOption(
         new Option("--relation-type <t>", "Relationship type")
           .choices([
@@ -50,10 +48,10 @@ export const linkAction: ActionDescriptor<LinkInput, KnowledgeLinkResult> = {
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const client = createClient(config.baseUrl, config.apiKey);

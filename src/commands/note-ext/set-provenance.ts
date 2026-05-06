@@ -11,7 +11,6 @@ interface Input {
   id: string;
   source: SourceValue;
   ref: string;
-  workspaceId?: string;
 }
 
 export const setProvenanceAction: ActionDescriptor<Input, SetProvenanceResult> = {
@@ -27,8 +26,7 @@ export const setProvenanceAction: ActionDescriptor<Input, SetProvenanceResult> =
         "--source <type>",
         `Source type (${SOURCE_VALUES.join("|")})`,
       )
-      .requiredOption("--ref <text>", "Reference string (e.g. URL, tool name)")
-      .option("--workspace-id <id>", "Workspace ID"),
+      .requiredOption("--ref <text>", "Reference string (e.g. URL, tool name)"),
   run: async (input, ctx) => {
     if (!SOURCE_VALUES.includes(input.source)) {
       throw new Error(
@@ -36,10 +34,10 @@ export const setProvenanceAction: ActionDescriptor<Input, SetProvenanceResult> =
       );
     }
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const client = createClient(config.baseUrl, config.apiKey);

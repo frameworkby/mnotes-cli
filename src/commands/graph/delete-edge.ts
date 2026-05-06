@@ -6,7 +6,6 @@ import type { DeleteGraphEntityResult } from "../../client";
 
 interface DeleteEdgeInput {
   id: string;
-  workspaceId?: string;
 }
 
 export const deleteEdgeAction: ActionDescriptor<DeleteEdgeInput, DeleteGraphEntityResult> = {
@@ -15,14 +14,14 @@ export const deleteEdgeAction: ActionDescriptor<DeleteEdgeInput, DeleteGraphEnti
   mcpTool: "delete_edge",
   positional: ["id"],
   args: (cmd: Command) =>
-    cmd.argument("<id>", "Edge ID").option("--workspace-id <id>", "Workspace ID"),
+    cmd.argument("<id>", "Edge ID"),
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const client = createClient(config.baseUrl, config.apiKey);

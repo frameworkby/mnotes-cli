@@ -5,7 +5,6 @@ import type { ActionDescriptor } from "../_register-group";
 import type { ConsolidateResult } from "../../client";
 
 interface ConsolidateInput {
-  workspaceId?: string;
   noteIds: string;
   targetTitle: string;
   strategy: "merge" | "summarize";
@@ -18,7 +17,6 @@ export const consolidateAction: ActionDescriptor<ConsolidateInput, ConsolidateRe
   mcpTool: "consolidate_memories",
   args: (cmd: Command) =>
     cmd
-      .option("--workspace-id <id>", "Workspace ID")
       .requiredOption("--note-ids <csv>", "Comma-separated note IDs to consolidate")
       .requiredOption("--target-title <s>", "Title for the consolidated note")
       .addOption(
@@ -29,10 +27,10 @@ export const consolidateAction: ActionDescriptor<ConsolidateInput, ConsolidateRe
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const noteIds = input.noteIds

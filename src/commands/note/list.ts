@@ -6,7 +6,6 @@ import type { ActionDescriptor } from "../_register-group";
 import type { NoteListItem } from "../../client";
 
 interface ListInput {
-  workspaceId?: string;
   folderId?: string;
   cursor?: string;
   // Commander coerces `--limit` via `parseInt` in `args` below, so handlers
@@ -26,7 +25,6 @@ export const listAction: ActionDescriptor<ListInput, ListOutput> = {
   aliases: ["list"], // legacy `mnotes list`
   args: (cmd: Command) =>
     cmd
-      .option("--workspace-id <id>", "Workspace ID")
       .option("--folder-id <id>", "Folder ID")
       .option("--cursor <cursor>", "Pagination cursor")
       .option("--limit <n>", "Max notes to return", (v) => parseInt(v, 10)),
@@ -36,7 +34,7 @@ export const listAction: ActionDescriptor<ListInput, ListOutput> = {
     const client = createClient(config.baseUrl, config.apiKey);
 
     const apiResp = await client.listNotes({
-      workspaceId: input.workspaceId ?? config.workspaceId,
+      workspaceId: config.workspaceId,
       folderId: input.folderId,
       cursor: input.cursor,
       limit: input.limit,

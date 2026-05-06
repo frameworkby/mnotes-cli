@@ -8,7 +8,6 @@ interface Input {
   type: string;
   limit?: number;
   propertyFilters?: string;
-  workspaceId?: string;
 }
 
 export const queryByTypeAction: ActionDescriptor<Input, QueryByTypeResult> = {
@@ -26,14 +25,13 @@ export const queryByTypeAction: ActionDescriptor<Input, QueryByTypeResult> = {
       .option(
         "--property-filters <json>",
         "JSON object string for property equality filters",
-      )
-      .option("--workspace-id <id>", "Workspace ID"),
+      ),
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const client = createClient(config.baseUrl, config.apiKey);

@@ -7,7 +7,6 @@ import type { SetImportanceResult } from "../../client";
 interface Input {
   id: string;
   importance: number;
-  workspaceId?: string;
 }
 
 export const setImportanceAction: ActionDescriptor<Input, SetImportanceResult> = {
@@ -21,14 +20,13 @@ export const setImportanceAction: ActionDescriptor<Input, SetImportanceResult> =
       .argument("<id>", "Note ID")
       .requiredOption("--importance <n>", "Importance score (0-1)", (v) =>
         parseFloat(v),
-      )
-      .option("--workspace-id <id>", "Workspace ID"),
+      ),
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const client = createClient(config.baseUrl, config.apiKey);

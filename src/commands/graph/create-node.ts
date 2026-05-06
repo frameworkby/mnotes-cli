@@ -5,7 +5,6 @@ import type { ActionDescriptor } from "../_register-group";
 import type { GraphNodeRecord } from "../../client";
 
 interface CreateNodeInput {
-  workspaceId?: string;
   label: string;
   nodeType?: "note" | "tag" | "concept";
   noteId?: string;
@@ -33,7 +32,6 @@ export const createNodeAction: ActionDescriptor<CreateNodeInput, GraphNodeRecord
   mcpTool: "create_node",
   args: (cmd: Command) =>
     cmd
-      .option("--workspace-id <id>", "Workspace ID")
       .requiredOption("--label <s>", "Node label")
       .addOption(
         new Option("--node-type <t>", "Node type").choices([
@@ -47,10 +45,10 @@ export const createNodeAction: ActionDescriptor<CreateNodeInput, GraphNodeRecord
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const client = createClient(config.baseUrl, config.apiKey);

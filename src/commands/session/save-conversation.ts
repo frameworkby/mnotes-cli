@@ -4,7 +4,6 @@ import { createClient } from "../../client";
 import type { ActionDescriptor } from "../_register-group";
 
 interface Input {
-  workspaceId?: string;
   messages: string;
   title?: string;
   source?: string;
@@ -22,14 +21,13 @@ export const saveConversationAction: ActionDescriptor<Input, unknown> = {
         'JSON array: [{"role":"user|assistant","content":"..."}]',
       )
       .option("--title <s>", "Optional conversation title")
-      .option("--source <s>", "Optional source identifier")
-      .option("--workspace-id <id>", "Workspace ID"),
+      .option("--source <s>", "Optional source identifier"),
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const messages = JSON.parse(input.messages) as Array<{

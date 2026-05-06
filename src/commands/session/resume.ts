@@ -6,7 +6,6 @@ import type { SessionResumeResult } from "../../client";
 
 interface ResumeInput {
   sessionId?: string;
-  workspaceId?: string;
   includeNotes?: boolean;
   noNotes?: boolean;
 }
@@ -22,15 +21,14 @@ export const sessionResumeAction: ActionDescriptor<
   args: (cmd: Command) =>
     cmd
       .option("--session-id <id>", "Session ID (defaults to most recent)")
-      .option("--workspace-id <id>", "Workspace ID")
       .option("--no-notes", "Skip including affected notes in the result"),
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     // Commander turns `--no-notes` into `notes: false`. Translate to API's

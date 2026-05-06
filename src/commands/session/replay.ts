@@ -6,7 +6,6 @@ import type { SessionReplay } from "../../client";
 
 interface ReplayInput {
   id: string;
-  workspaceId?: string;
 }
 
 export const sessionReplayAction: ActionDescriptor<ReplayInput, SessionReplay> = {
@@ -17,12 +16,11 @@ export const sessionReplayAction: ActionDescriptor<ReplayInput, SessionReplay> =
   positional: ["id"],
   args: (cmd: Command) =>
     cmd
-      .argument("<id>", "Session trace ID")
-      .option("--workspace-id <id>", "Workspace ID"),
+      .argument("<id>", "Session trace ID"),
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     const client = createClient(config.baseUrl, config.apiKey);
     return client.getSessionReplay(input.id, workspaceId);
   },

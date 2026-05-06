@@ -9,7 +9,6 @@ interface Input {
   tokenBudget?: number;
   types?: string;
   tags?: string;
-  workspaceId?: string;
 }
 
 export const contextFetchAction: ActionDescriptor<Input, unknown> = {
@@ -23,12 +22,11 @@ export const contextFetchAction: ActionDescriptor<Input, unknown> = {
       .option("--limit <n>", "Max items", (v) => parseInt(v, 10))
       .option("--token-budget <n>", "Max tokens to return", (v) => parseInt(v, 10))
       .option("--types <csv>", "Comma-separated note types")
-      .option("--tags <csv>", "Comma-separated tags")
-      .option("--workspace-id <id>", "Workspace ID"),
+      .option("--tags <csv>", "Comma-separated tags"),
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
-    if (!workspaceId) throw new Error("workspaceId is required");
+    const workspaceId = config.workspaceId;
+    if (!workspaceId) throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
     const types = input.types
       ? input.types.split(",").map((s) => s.trim()).filter(Boolean)
       : undefined;

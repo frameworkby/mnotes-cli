@@ -5,7 +5,6 @@ import type { ActionDescriptor } from "../_register-group";
 import type { GraphResult } from "../../client";
 
 interface NeighborsInput {
-  workspaceId?: string;
   nodeId: string;
   depth?: number;
   edgeType?: string;
@@ -18,17 +17,16 @@ export const neighborsAction: ActionDescriptor<NeighborsInput, GraphResult> = {
   mcpTool: "get_neighbors",
   args: (cmd: Command) =>
     cmd
-      .option("--workspace-id <id>", "Workspace ID")
       .requiredOption("--node-id <id>", "Start node ID")
       .option("--depth <n>", "Traversal depth (1-3)", (v) => parseInt(v, 10), 1)
       .option("--edge-type <t>", "Filter edges by type"),
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const client = createClient(config.baseUrl, config.apiKey);

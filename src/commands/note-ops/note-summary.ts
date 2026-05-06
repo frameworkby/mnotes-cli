@@ -6,7 +6,6 @@ import type { ActionDescriptor } from "../_register-group";
 interface Input {
   id: string;
   maxLength?: number;
-  workspaceId?: string;
 }
 
 export const noteSummaryAction: ActionDescriptor<Input, unknown> = {
@@ -19,12 +18,11 @@ export const noteSummaryAction: ActionDescriptor<Input, unknown> = {
       .argument("<id>", "Note ID")
       .option("--max-length <n>", "Max summary chars (50-500, default 150)", (v) =>
         parseInt(v, 10),
-      )
-      .option("--workspace-id <id>", "Workspace ID"),
+      ),
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
-    if (!workspaceId) throw new Error("workspaceId is required");
+    const workspaceId = config.workspaceId;
+    if (!workspaceId) throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
     const client = createClient(config.baseUrl, config.apiKey);
     return client.noteSummary(input.id, {
       workspaceId,

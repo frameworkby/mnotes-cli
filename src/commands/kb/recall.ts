@@ -9,7 +9,6 @@ interface RecallInput {
   tags?: string;
   limit?: number;
   decayWindow?: number;
-  workspaceId?: string;
 }
 
 export const recallAction: ActionDescriptor<RecallInput, RecallEntry[]> = {
@@ -32,15 +31,14 @@ export const recallAction: ActionDescriptor<RecallInput, RecallEntry[]> = {
         "--decay-window <n>",
         "Days for full freshness decay (default 90)",
         (v) => parseInt(v, 10),
-      )
-      .option("--workspace-id <id>", "Workspace ID"),
+      ),
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const tags = input.tags

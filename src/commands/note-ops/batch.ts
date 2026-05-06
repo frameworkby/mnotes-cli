@@ -5,7 +5,6 @@ import type { ActionDescriptor } from "../_register-group";
 
 interface Input {
   ids: string;
-  workspaceId?: string;
 }
 
 export const batchAction: ActionDescriptor<Input, unknown> = {
@@ -14,12 +13,11 @@ export const batchAction: ActionDescriptor<Input, unknown> = {
   mcpTool: "get_notes",
   args: (cmd: Command) =>
     cmd
-      .requiredOption("--ids <csv>", "Comma-separated note IDs (max 50)")
-      .option("--workspace-id <id>", "Workspace ID"),
+      .requiredOption("--ids <csv>", "Comma-separated note IDs (max 50)"),
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
-    if (!workspaceId) throw new Error("workspaceId is required");
+    const workspaceId = config.workspaceId;
+    if (!workspaceId) throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
     const ids = input.ids
       .split(",")
       .map((s) => s.trim())

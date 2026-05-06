@@ -6,7 +6,6 @@ import type { BacklinkNote } from "../../client";
 
 interface BacklinksInput {
   id: string;
-  workspaceId?: string;
 }
 
 export const backlinksAction: ActionDescriptor<BacklinksInput, BacklinkNote[]> = {
@@ -15,14 +14,14 @@ export const backlinksAction: ActionDescriptor<BacklinksInput, BacklinkNote[]> =
   mcpTool: "get_backlinks",
   positional: ["id"],
   args: (cmd: Command) =>
-    cmd.argument("<id>", "Note ID").option("--workspace-id <id>", "Workspace ID"),
+    cmd.argument("<id>", "Note ID"),
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const client = createClient(config.baseUrl, config.apiKey);

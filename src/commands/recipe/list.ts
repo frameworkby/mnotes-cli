@@ -5,7 +5,6 @@ import type { ActionDescriptor } from "../_register-group";
 import type { ListRecipesResult } from "../../client";
 
 interface Input {
-  workspaceId?: string;
 }
 
 export const listRecipesAction: ActionDescriptor<Input, ListRecipesResult> = {
@@ -13,13 +12,13 @@ export const listRecipesAction: ActionDescriptor<Input, ListRecipesResult> = {
   describe:
     "List all prompt recipes for the authenticated user. Returns recipe id, name, and description.",
   mcpTool: "list_recipes",
-  args: (cmd: Command) => cmd.option("--workspace-id <id>", "Workspace ID"),
+  args: (cmd: Command) => cmd,
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const client = createClient(config.baseUrl, config.apiKey);

@@ -17,7 +17,6 @@ export function registerCreateCommand(program: Command): void {
     .description("Create a new note (reads content from stdin)")
     .requiredOption("--title <title>", "Note title")
     .option("--folder-id <id>", "Folder ID")
-    .option("--workspace-id <id>", "Workspace ID")
     .action(async (opts: Record<string, string | undefined>) => {
       const globalOpts = program.opts();
       const config = resolveConfig(globalOpts);

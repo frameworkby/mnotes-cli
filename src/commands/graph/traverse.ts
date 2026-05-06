@@ -5,7 +5,6 @@ import type { ActionDescriptor } from "../_register-group";
 import type { GraphTraverseResult } from "../../client";
 
 interface TraverseInput {
-  workspaceId?: string;
   startNodeId: string;
   maxDepth?: number;
   edgeTypes?: string;
@@ -27,7 +26,6 @@ export const traverseAction: ActionDescriptor<TraverseInput, GraphTraverseResult
   mcpTool: "graph_traverse",
   args: (cmd: Command) =>
     cmd
-      .option("--workspace-id <id>", "Workspace ID")
       .requiredOption("--start-node-id <id>", "Start node ID")
       .option("--max-depth <n>", "Max traversal depth (1-3)", (v) => parseInt(v, 10))
       .option("--edge-types <csv>", "Comma-separated edge types to include")
@@ -35,10 +33,10 @@ export const traverseAction: ActionDescriptor<TraverseInput, GraphTraverseResult
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const client = createClient(config.baseUrl, config.apiKey);

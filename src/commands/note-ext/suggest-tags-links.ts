@@ -6,7 +6,6 @@ import type { SuggestionsResult } from "../../client";
 
 interface Input {
   id: string;
-  workspaceId?: string;
 }
 
 export const suggestTagsLinksAction: ActionDescriptor<Input, SuggestionsResult> = {
@@ -17,14 +16,13 @@ export const suggestTagsLinksAction: ActionDescriptor<Input, SuggestionsResult> 
   positional: ["id"],
   args: (cmd: Command) =>
     cmd
-      .argument("<id>", "Note ID")
-      .option("--workspace-id <id>", "Workspace ID"),
+      .argument("<id>", "Note ID"),
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const client = createClient(config.baseUrl, config.apiKey);

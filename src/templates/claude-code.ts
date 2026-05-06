@@ -4,13 +4,23 @@ export interface ClaudeCodeTemplateOpts {
 }
 
 export function generateClaudeCodeTemplate(opts: ClaudeCodeTemplateOpts): string {
-  return `<!-- m-notes instructions v4 -->
+  return `<!-- m-notes instructions v5 -->
 # m-notes — Your Wiki (MANDATORY)
 
 **Server**: ${opts.url}
 **Workspace**: ${opts.workspaceId}
 
 > You are not a reader of a scratchpad. You are the **author and maintainer of a living wiki**. Every session, three things compound: the wiki grows, links densify, contradictions get resolved. This is your persistent memory — without it you start from zero every conversation.
+
+## Workspace Resolution
+
+The CLI resolves workspace automatically — no \`--workspace-id\` flag needed. Resolution order:
+
+1. \`MNOTES_WORKSPACE_ID\` environment variable
+2. Per-directory mapping set by \`mnotes workspace link\` (walks up parent dirs)
+3. Global default set by \`mnotes workspace select\`
+
+To configure: run \`mnotes workspace link\` in your project directory, or set \`MNOTES_WORKSPACE_ID\` in your shell environment.
 
 ## The Three Layers
 
@@ -34,11 +44,11 @@ export function generateClaudeCodeTemplate(opts: ClaudeCodeTemplateOpts): string
 These are not suggestions. Skip any step and the wiki degrades.
 
 ### Session Start (before ANY work)
-- [ ] Run \`mnotes composite project-load --workspace-id "${opts.workspaceId}"\`
-- [ ] Run \`mnotes kb recall --workspace-id "${opts.workspaceId}" --query "<topic>"\` — past you already figured things out
-- [ ] Run \`mnotes note search --workspace-id "${opts.workspaceId}" --query "<topic>"\` for related wiki pages
-- [ ] If the graph is empty, run \`mnotes graph populate --workspace-id "${opts.workspaceId}"\` (idempotent)
-- [ ] Run \`mnotes note search --workspace-id "${opts.workspaceId}" --query "type:config"\` for schema notes before editing
+- [ ] Run \`mnotes composite project-load\`
+- [ ] Run \`mnotes kb recall --query "<topic>"\` — past you already figured things out
+- [ ] Run \`mnotes note search --query "<topic>"\` for related wiki pages
+- [ ] If the graph is empty, run \`mnotes graph populate\` (idempotent)
+- [ ] Run \`mnotes note search --query "type:config"\` for schema notes before editing
 
 Do not skip this. Do not say "I'll check later." Do not assume you know what's in the wiki.
 
@@ -56,7 +66,7 @@ Do not skip this. Do not say "I'll check later." Do not assume you know what's i
 - Duplicates — run \`mnotes kb recall\` first to check
 
 ### Session End (before finishing)
-- [ ] Run \`mnotes session log --workspace-id "${opts.workspaceId}" --summary "..." \`
+- [ ] Run \`mnotes session log --summary "..."\`
 - [ ] If you did meaningful work and didn't store anything yet — you forgot. Go back and store it.
 
 If you think "this isn't worth saving" — save it anyway. Future you has no context.
@@ -78,7 +88,7 @@ A single source should rarely touch fewer than 3 notes — that's a sign you're 
 
 Periodically (session start on large workspaces; after ingests):
 
-- **Contradictions** → run \`mnotes kb scan-conflicts --workspace-id "${opts.workspaceId}"\`. Resolve, don't stack.
+- **Contradictions** → run \`mnotes kb scan-conflicts\`. Resolve, don't stack.
 - **Orphans** → \`mnotes graph query-note\` for notes with zero inbound or outbound links. Link them or delete.
 - **Broken wikilinks** → \`[[X]]\` targets that don't exist. Create a stub note or fix the link.
 - **Stale** → notes untouched >90 days referenced by new sources. Update them.
@@ -148,72 +158,72 @@ The graph is how the wiki stays navigable. **Every note you write or edit must h
 ### Graph Commands
 | Command | When to use |
 |---------|------------|
-| \`mnotes graph populate --workspace-id <id>\` | Initialize from existing notes (idempotent) |
-| \`mnotes graph create-node --workspace-id <id>\` | Add a concept/tag/note-linked node |
-| \`mnotes graph create-edge --workspace-id <id>\` | Link two nodes |
-| \`mnotes graph query --workspace-id <id>\` | Search by type, label, or connectivity |
-| \`mnotes graph neighbors --workspace-id <id>\` | Explore connections from a node |
-| \`mnotes graph query-note --workspace-id <id>\` | Get subgraph around a note |
+| \`mnotes graph populate\` | Initialize from existing notes (idempotent) |
+| \`mnotes graph create-node\` | Add a concept/tag/note-linked node |
+| \`mnotes graph create-edge\` | Link two nodes |
+| \`mnotes graph query\` | Search by type, label, or connectivity |
+| \`mnotes graph neighbors\` | Explore connections from a node |
+| \`mnotes graph query-note\` | Get subgraph around a note |
 
 Node types: **note**, **tag**, **concept**. Edge types: **wikilink**, **related**, **parent**, **tagged**, **custom**.
 
 \`\`\`bash
-mnotes graph create-node --workspace-id "${opts.workspaceId}" --label "Auth Module" --node-type concept
-mnotes graph create-node --workspace-id "${opts.workspaceId}" --label "PostgreSQL" --node-type concept
-mnotes graph create-edge --workspace-id "${opts.workspaceId}" --source <authNodeId> --target <pgNodeId> --edge-type related
+mnotes graph create-node --label "Auth Module" --node-type concept
+mnotes graph create-node --label "PostgreSQL" --node-type concept
+mnotes graph create-edge --source <authNodeId> --target <pgNodeId> --edge-type related
 \`\`\`
 
 ## CLI Commands Reference
 
-All commands require \`--workspace-id "${opts.workspaceId}"\` unless noted.
+Workspace is resolved automatically from env/config. No \`--workspace-id\` flag required.
 
 ### Session & Context
 | Command | When to use |
 |---------|------------|
-| \`mnotes composite project-load --workspace-id <id>\` | Session start |
-| \`mnotes session resume --workspace-id <id>\` | Resume mid-conversation |
-| \`mnotes session log --workspace-id <id> --summary "..."\` | Log summary at end |
+| \`mnotes composite project-load\` | Session start |
+| \`mnotes session resume\` | Resume mid-conversation |
+| \`mnotes session log --summary "..."\` | Log summary at end |
 
 ### Knowledge (fast capture)
 | Command | When to use |
 |---------|------------|
-| \`mnotes kb store --workspace-id <id> --key <key> --content "..."\` | Store a single fact |
-| \`mnotes kb recall --workspace-id <id> --query "..."\` | Semantic search |
-| \`mnotes bulk knowledge-recall --workspace-id <id> --tag-pattern "arch/*"\` | Recall by tag pattern |
-| \`mnotes kb snapshot --workspace-id <id>\` | Export all knowledge |
-| \`mnotes kb scan-conflicts --workspace-id <id>\` | Lint: find contradictions |
+| \`mnotes kb store --key <key> --content "..."\` | Store a single fact |
+| \`mnotes kb recall --query "..."\` | Semantic search |
+| \`mnotes bulk knowledge-recall --tag-pattern "arch/*"\` | Recall by tag pattern |
+| \`mnotes kb snapshot\` | Export all knowledge |
+| \`mnotes kb scan-conflicts\` | Lint: find contradictions |
 
 ### Notes (wiki pages)
 | Command | When to use |
 |---------|------------|
-| \`mnotes note create --workspace-id <id> --title "..."\` | New page |
-| \`mnotes note update --workspace-id <id> --id <id>\` | Replace content |
-| \`mnotes note-ops append --workspace-id <id> --id <id>\` | Add to existing page |
-| \`mnotes note get --workspace-id <id> --id <id>\` | Read by ID |
-| \`mnotes note-ops by-title --workspace-id <id> --title "..."\` | Read by title |
-| \`mnotes note search --workspace-id <id> --query "..."\` | FTS + semantic search |
-| \`mnotes note list --workspace-id <id>\` | List by folder |
-| \`mnotes note-ops daily --workspace-id <id>\` | Today's capture note |
-| \`mnotes tag manage --workspace-id <id> --id <id>\` | Add/remove tags |
-| \`mnotes note-ops pin --workspace-id <id> --id <id>\` | Pin a note |
-| \`mnotes note-ops star --workspace-id <id> --id <id>\` | Star a note |
+| \`mnotes note create --title "..."\` | New page |
+| \`mnotes note update --id <id>\` | Replace content |
+| \`mnotes note-ops append --id <id>\` | Add to existing page |
+| \`mnotes note get --id <id>\` | Read by ID |
+| \`mnotes note-ops by-title --title "..."\` | Read by title |
+| \`mnotes note search --query "..."\` | FTS + semantic search |
+| \`mnotes note list\` | List by folder |
+| \`mnotes note-ops daily\` | Today's capture note |
+| \`mnotes tag manage --id <id>\` | Add/remove tags |
+| \`mnotes note-ops pin --id <id>\` | Pin a note |
+| \`mnotes note-ops star --id <id>\` | Star a note |
 
 ### Organization
 | Command | When to use |
 |---------|------------|
-| \`mnotes folder list --workspace-id <id>\` | List folders |
-| \`mnotes folder manage --workspace-id <id>\` | Create/rename/delete folders |
-| \`mnotes folder move --workspace-id <id>\` | Move a folder |
-| \`mnotes bulk move --workspace-id <id>\` | Bulk move notes |
-| \`mnotes composite context-fetch --workspace-id <id> --query "..."\` | Search notes by query |
+| \`mnotes folder list\` | List folders |
+| \`mnotes folder manage\` | Create/rename/delete folders |
+| \`mnotes folder move\` | Move a folder |
+| \`mnotes bulk move\` | Bulk move notes |
+| \`mnotes composite context-fetch --query "..."\` | Search notes by query |
 
 ### Knowledge Graph
 | Command | When to use |
 |---------|------------|
-| \`mnotes graph populate --workspace-id <id>\` | Initialize graph |
-| \`mnotes graph create-node --workspace-id <id>\` | Add concept node |
-| \`mnotes graph create-edge --workspace-id <id>\` | Link two nodes |
-| \`mnotes graph query --workspace-id <id>\` | Search graph |
-| \`mnotes graph neighbors --workspace-id <id>\` | Explore connections |
-| \`mnotes graph query-note --workspace-id <id>\` | Subgraph around a note |`;
+| \`mnotes graph populate\` | Initialize graph |
+| \`mnotes graph create-node\` | Add concept node |
+| \`mnotes graph create-edge\` | Link two nodes |
+| \`mnotes graph query\` | Search graph |
+| \`mnotes graph neighbors\` | Explore connections |
+| \`mnotes graph query-note\` | Subgraph around a note |`;
 }

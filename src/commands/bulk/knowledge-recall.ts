@@ -7,7 +7,6 @@ import type { BulkKnowledgeRecallResult } from "../../client";
 interface Input {
   queries: string;
   limit?: number;
-  workspaceId?: string;
 }
 
 export const bulkKnowledgeRecallAction: ActionDescriptor<
@@ -23,14 +22,13 @@ export const bulkKnowledgeRecallAction: ActionDescriptor<
       .requiredOption("--queries <csv>", "Comma-separated tag patterns (1-20)")
       .option("--limit <n>", "Max entries per pattern (default 20, max 100)", (v) =>
         parseInt(v, 10),
-      )
-      .option("--workspace-id <id>", "Workspace ID"),
+      ),
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const queries = input.queries

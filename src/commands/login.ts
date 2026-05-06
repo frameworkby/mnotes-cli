@@ -9,7 +9,6 @@ import * as crypto from "crypto";
 export interface MnotesConfig {
   apiKey: string;
   serverUrl: string;
-  workspaceId?: string;
   /** Map of absolute directory path → workspace ID */
   workspaces?: Record<string, string>;
 }

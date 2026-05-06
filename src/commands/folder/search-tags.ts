@@ -8,7 +8,6 @@ interface SearchTagsInput {
   tags: string;
   match?: "any" | "all";
   limit?: number;
-  workspaceId?: string;
 }
 
 export const folderSearchTagsAction: ActionDescriptor<
@@ -28,14 +27,13 @@ export const folderSearchTagsAction: ActionDescriptor<
       .option("--match <mode>", "any | all (default any)")
       .option("--limit <n>", "Max results (default 50, max 100)", (v) =>
         parseInt(v, 10),
-      )
-      .option("--workspace-id <id>", "Workspace ID"),
+      ),
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
-      throw new Error("workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)");
+      throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
     }
     const tags = input.tags
       .split(",")

@@ -7,7 +7,6 @@ import type { SearchResult } from "../../client";
 
 interface SearchInput {
   query: string;
-  workspace?: string;
   limit?: number;
   semantic?: boolean;
 }
@@ -24,7 +23,6 @@ export const searchNotesAction: ActionDescriptor<SearchInput, SearchOutput> = {
   args: (cmd: Command) =>
     cmd
       .argument("<query>", "Search query")
-      .option("--workspace <id>", "Workspace ID")
       .option("--limit <n>", "Max results to display", (v: string) => parseInt(v, 10))
       .option("--semantic", "Use semantic (vector) search instead of full-text"),
 
@@ -35,7 +33,7 @@ export const searchNotesAction: ActionDescriptor<SearchInput, SearchOutput> = {
     const res = await client.searchNotes({
       query: input.query,
       mode: input.semantic ? "semantic" : "fulltext",
-      workspaceId: input.workspace ?? config.workspaceId,
+      workspaceId: config.workspaceId,
     });
 
     let results = res.data.results;

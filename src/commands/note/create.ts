@@ -17,7 +17,6 @@ interface CreateInput {
   content?: string;
   folder?: string;
   tags?: string[];
-  workspace?: string;
 }
 
 interface CreateOutput {
@@ -37,8 +36,7 @@ export const createNoteAction: ActionDescriptor<CreateInput, CreateOutput> = {
       .option(
         "--tags <tags...>",
         "Tags (space-separated)",
-      )
-      .option("--workspace <id>", "Workspace ID"),
+      ),
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
@@ -55,7 +53,7 @@ export const createNoteAction: ActionDescriptor<CreateInput, CreateOutput> = {
       content,
       folderId: input.folder,
       tags: input.tags,
-      workspaceId: input.workspace ?? config.workspaceId,
+      workspaceId: config.workspaceId,
     });
 
     return res.data;

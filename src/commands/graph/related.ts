@@ -6,7 +6,6 @@ import type { RelatedNote } from "../../client";
 
 interface RelatedInput {
   id: string;
-  workspaceId?: string;
   limit?: number;
   minSimilarity?: number;
 }
@@ -20,7 +19,6 @@ export const relatedNotesAction: ActionDescriptor<RelatedInput, RelatedNote[]> =
   args: (cmd: Command) =>
     cmd
       .argument("<id>", "Note ID")
-      .option("--workspace-id <id>", "Workspace ID")
       .option("--limit <n>", "Max results (1-50)", (v) => parseInt(v, 10))
       .option("--min-similarity <n>", "Minimum cosine similarity (0-1)", (v) =>
         parseFloat(v),
@@ -28,10 +26,10 @@ export const relatedNotesAction: ActionDescriptor<RelatedInput, RelatedNote[]> =
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const client = createClient(config.baseUrl, config.apiKey);

@@ -6,7 +6,6 @@ import type { ActionDescriptor } from "../_register-group";
 interface Input {
   id: string;
   type: string;
-  workspaceId?: string;
 }
 
 export const setTypeAction: ActionDescriptor<Input, unknown> = {
@@ -17,12 +16,11 @@ export const setTypeAction: ActionDescriptor<Input, unknown> = {
   args: (cmd: Command) =>
     cmd
       .argument("<id>", "Note ID")
-      .requiredOption("--type <s>", "Object type slug (or null to clear)")
-      .option("--workspace-id <id>", "Workspace ID"),
+      .requiredOption("--type <s>", "Object type slug (or null to clear)"),
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
-    if (!workspaceId) throw new Error("workspaceId is required");
+    const workspaceId = config.workspaceId;
+    if (!workspaceId) throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
     const client = createClient(config.baseUrl, config.apiKey);
     return client.setNoteType(input.id, { workspaceId, type: input.type });
   },

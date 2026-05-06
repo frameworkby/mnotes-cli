@@ -3,6 +3,49 @@
 All notable changes to the CLI are documented here. The CLI follows semver
 independent of the app — see `feedback_release_versioning` in agent memory.
 
+## 2.0.0 — 2026-05-06
+
+### Breaking change
+
+`--workspace-id` and `--workspace` flags have been removed from every command.
+
+**Before (v1.x):**
+```bash
+mnotes note search --query "auth" --workspace-id ws_abc123
+mnotes kb store --key arch/db --content "..." --workspace-id ws_abc123
+```
+
+**After (v2.x):**
+```bash
+mnotes note search --query "auth"
+mnotes kb store --key arch/db --content "..."
+```
+
+Workspace is now resolved automatically in this order:
+
+1. `MNOTES_WORKSPACE_ID` environment variable
+2. Per-directory mapping set by `mnotes workspace link` (walks up parent dirs)
+3. Global default set by `mnotes workspace select`
+
+**Migration:**
+
+| Old approach | New approach |
+|---|---|
+| `--workspace-id ws_abc123` per command | `export MNOTES_WORKSPACE_ID=ws_abc123` in shell profile |
+| One-off per script | `mnotes workspace link` in the project directory |
+| Global default | `mnotes workspace select` (interactive) |
+
+If no workspace is resolvable, commands exit with:
+```
+No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.
+```
+
+### Changed
+- `resolveConfig()` — `workspaceId` field removed from options type; workspace always resolved internally via env/config cascade.
+- Generated `CLAUDE.md` (from `mnotes connect claude-code`) no longer includes `--workspace-id` in any command examples. Added a "Workspace Resolution" section explaining the cascade.
+- Generated session hook scripts (`mnotes-session-start.sh`, `mnotes-session-stop.sh`) no longer accept a workspace ID positional argument. The hook command in `settings.json` now exports `MNOTES_WORKSPACE_ID=<id>` as an env var prefix instead.
+- `docs/cli-reference.md` updated throughout — all examples rewritten without `--workspace-id`.
+
 ## 1.20.0 — 2026-04-30
 
 ### Added

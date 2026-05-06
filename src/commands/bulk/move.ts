@@ -7,7 +7,6 @@ import type { BulkOpResult } from "../../client";
 interface Input {
   noteIds: string;
   targetFolderId: string;
-  workspaceId?: string;
 }
 
 export const bulkMoveAction: ActionDescriptor<Input, BulkOpResult> = {
@@ -18,14 +17,13 @@ export const bulkMoveAction: ActionDescriptor<Input, BulkOpResult> = {
   args: (cmd: Command) =>
     cmd
       .requiredOption("--note-ids <csv>", "Comma-separated note IDs (1-100)")
-      .requiredOption("--target-folder-id <id>", "Target folder ID")
-      .option("--workspace-id <id>", "Workspace ID"),
+      .requiredOption("--target-folder-id <id>", "Target folder ID"),
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const noteIds = input.noteIds

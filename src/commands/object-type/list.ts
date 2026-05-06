@@ -5,7 +5,6 @@ import type { ActionDescriptor } from "../_register-group";
 import type { ListObjectTypesResult } from "../../client";
 
 interface Input {
-  workspaceId?: string;
 }
 
 export const listObjectTypesAction: ActionDescriptor<Input, ListObjectTypesResult> = {
@@ -13,13 +12,13 @@ export const listObjectTypesAction: ActionDescriptor<Input, ListObjectTypesResul
   describe:
     "List all object types (supertags) in the current or specified workspace. Returns id, name, icon, color, property schema, and note count.",
   mcpTool: "list_object_types",
-  args: (cmd: Command) => cmd.option("--workspace-id <id>", "Workspace ID"),
+  args: (cmd: Command) => cmd,
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const client = createClient(config.baseUrl, config.apiKey);

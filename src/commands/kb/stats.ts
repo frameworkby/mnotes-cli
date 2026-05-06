@@ -5,7 +5,6 @@ import type { ActionDescriptor } from "../_register-group";
 import type { KbStats } from "../../client";
 
 interface StatsInput {
-  workspaceId?: string;
 }
 
 export const statsAction: ActionDescriptor<StatsInput, KbStats> = {
@@ -13,14 +12,14 @@ export const statsAction: ActionDescriptor<StatsInput, KbStats> = {
   describe:
     "Get knowledge base statistics: total notes, total tags, orphan count, stale count, conflict count, and embedding coverage.",
   mcpTool: "get_kb_stats",
-  args: (cmd: Command) => cmd.option("--workspace-id <id>", "Workspace ID"),
+  args: (cmd: Command) => cmd,
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const client = createClient(config.baseUrl, config.apiKey);

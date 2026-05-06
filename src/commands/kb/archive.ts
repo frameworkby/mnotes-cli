@@ -5,7 +5,6 @@ import type { ActionDescriptor } from "../_register-group";
 import type { ArchiveStaleResult } from "../../client";
 
 interface ArchiveInput {
-  workspaceId?: string;
   maxDecayScore?: number;
   maxImportance?: number;
   dryRun?: boolean;
@@ -18,7 +17,6 @@ export const archiveAction: ActionDescriptor<ArchiveInput, ArchiveStaleResult> =
   mcpTool: "archive_stale_memories",
   args: (cmd: Command) =>
     cmd
-      .option("--workspace-id <id>", "Workspace ID")
       .option("--max-decay-score <n>", "Only archive entries with decay score above this", (v) =>
         parseFloat(v),
       )
@@ -29,10 +27,10 @@ export const archiveAction: ActionDescriptor<ArchiveInput, ArchiveStaleResult> =
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const client = createClient(config.baseUrl, config.apiKey);

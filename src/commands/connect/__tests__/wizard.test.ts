@@ -50,30 +50,34 @@ describe("hooks template", () => {
     expect(hooks.SessionStart![0].matcher).toBe("");
     expect(hooks.SessionStart![0].hooks).toHaveLength(1);
     expect(hooks.SessionStart![0].hooks[0].type).toBe("command");
-    // Global path — resolves at generation time via os.homedir(), with workspaceId argument
+    // Global path — resolves at generation time via os.homedir().
+    // Format: MNOTES_WORKSPACE_ID=<id> /absolute/path/to/script.sh
     const cmd = hooks.SessionStart![0].hooks[0].command;
     expect(cmd).toContain(
       path.join(".claude", "hooks", "mnotes", "scripts", "mnotes-session-start.sh")
     );
     expect(cmd).toContain(DEFAULT_OPTS.workspaceId);
-    // The script path portion (before the space + argument) is absolute
-    expect(path.isAbsolute(cmd.split(" ")[0])).toBe(true);
+    // The env-var prefix is followed by a space and an absolute script path
+    const scriptPath = cmd.split(" ").slice(1).join(" ");
+    expect(path.isAbsolute(scriptPath)).toBe(true);
   });
 
-  it("generates hook scripts targeting v1 endpoints with workspaceId arg and Accept header", () => {
+  it("generates hook scripts using MNOTES_WORKSPACE_ID env var (not --workspace-id flag)", () => {
     const scripts = generateHookScripts(DEFAULT_OPTS);
     expect(scripts).toHaveLength(2);
 
     const startScript = scripts.find((s) => s.filename === "mnotes-session-start.sh")!;
     expect(startScript.content).toContain("mnotes composite project-load");
     expect(startScript.content).not.toContain("/api/mcp");
-    // workspaceId is a runtime argument, not hardcoded
-    expect(startScript.content).toContain("WORKSPACE_ID=");
+    // workspaceId is resolved via env var — no --workspace-id flag in scripts
+    expect(startScript.content).toContain("MNOTES_WORKSPACE_ID");
+    expect(startScript.content).not.toContain("--workspace-id");
     expect(startScript.content).not.toContain("ws-test-123");
 
     const stopScript = scripts.find((s) => s.filename === "mnotes-session-stop.sh")!;
     expect(stopScript.content).toContain("mnotes session log");
     expect(stopScript.content).not.toContain("/api/mcp");
+    expect(stopScript.content).not.toContain("--workspace-id");
   });
 
   it("strips trailing slashes from URL in hook scripts", () => {
@@ -224,12 +228,14 @@ describe("scaffoldItems: hooks", () => {
     // Project directory must NOT contain scripts
     expect(fs.existsSync(path.join(tmpDir, ".claude", "hooks"))).toBe(false);
 
-    // settings.json references the global absolute path with workspaceId argument
-    expect(settings.hooks.SessionStart[0].hooks[0].command).toBe(`${startScript} ${DEFAULT_OPTS.workspaceId}`);
+    // settings.json command exports MNOTES_WORKSPACE_ID then runs the script
+    expect(settings.hooks.SessionStart[0].hooks[0].command).toBe(
+      `MNOTES_WORKSPACE_ID=${DEFAULT_OPTS.workspaceId} ${startScript}`
+    );
 
     const startContent = fs.readFileSync(startScript, "utf-8");
     expect(startContent).toContain("mnotes composite project-load");
-    expect(startContent).toContain("--workspace-id");
+    expect(startContent).not.toContain("--workspace-id");
   });
 
   it("merges hooks into existing settings.json (AC-5)", () => {
@@ -454,6 +460,7 @@ describe("handleClaudeCode with wizard flags", () => {
   let origCwd: () => string;
   let origExit: (code?: number) => never;
   let exitCode: number | undefined;
+  let origWorkspaceId: string | undefined;
 
   beforeEach(() => {
     tmpDir = makeTmpDir();
@@ -468,6 +475,8 @@ describe("handleClaudeCode with wizard flags", () => {
       exitCode = code;
       throw new Error(`process.exit(${code})`);
     }) as never;
+    origWorkspaceId = process.env.MNOTES_WORKSPACE_ID;
+    process.env.MNOTES_WORKSPACE_ID = "ws-123";
   });
 
   afterEach(() => {
@@ -477,6 +486,8 @@ describe("handleClaudeCode with wizard flags", () => {
     cleanTmpDir(fakeHome);
     if (origHome === undefined) delete process.env.HOME;
     else process.env.HOME = origHome;
+    if (origWorkspaceId !== undefined) process.env.MNOTES_WORKSPACE_ID = origWorkspaceId;
+    else delete process.env.MNOTES_WORKSPACE_ID;
     vi.restoreAllMocks();
   });
 
@@ -492,7 +503,6 @@ describe("handleClaudeCode with wizard flags", () => {
       await handleClaudeCode({
         url: "http://localhost:3000",
         apiKey: "test-key",
-        workspace: "ws-123",
         noWizard: true,
       });
     } finally {
@@ -525,7 +535,6 @@ describe("handleClaudeCode with wizard flags", () => {
       await handleClaudeCode({
         url: "http://localhost:3000",
         apiKey: "test-key",
-        workspace: "ws-123",
         all: true,
       });
     } finally {
@@ -556,6 +565,7 @@ describe("CLI flag integration", () => {
   let origHome: string | undefined;
   let origCwd: () => string;
   let origExit: (code?: number) => never;
+  let origWorkspaceId: string | undefined;
 
   beforeEach(() => {
     tmpDir = makeTmpDir();
@@ -568,6 +578,8 @@ describe("CLI flag integration", () => {
     process.exit = ((code?: number) => {
       throw new Error(`process.exit(${code})`);
     }) as never;
+    origWorkspaceId = process.env.MNOTES_WORKSPACE_ID;
+    process.env.MNOTES_WORKSPACE_ID = "ws-123";
   });
 
   afterEach(() => {
@@ -577,6 +589,8 @@ describe("CLI flag integration", () => {
     cleanTmpDir(fakeHome);
     if (origHome === undefined) delete process.env.HOME;
     else process.env.HOME = origHome;
+    if (origWorkspaceId !== undefined) process.env.MNOTES_WORKSPACE_ID = origWorkspaceId;
+    else delete process.env.MNOTES_WORKSPACE_ID;
     vi.restoreAllMocks();
   });
 
@@ -598,7 +612,6 @@ describe("CLI flag integration", () => {
         "node", "mnotes", "connect", "claude-code",
         "--url", "http://localhost:3000",
         "--api-key", "test-key",
-        "--workspace", "ws-123",
         "--no-wizard",
       ]);
     } finally {
@@ -629,7 +642,6 @@ describe("CLI flag integration", () => {
         "node", "mnotes", "connect", "claude-code",
         "--url", "http://localhost:3000",
         "--api-key", "test-key",
-        "--workspace", "ws-123",
         "--all",
       ]);
     } finally {

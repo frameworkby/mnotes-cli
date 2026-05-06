@@ -10,7 +10,6 @@ interface SessionLogInput {
   decisions?: string;
   actions?: string;
   tags?: string;
-  workspaceId?: string;
 }
 
 export const sessionLogAction: ActionDescriptor<
@@ -36,15 +35,14 @@ export const sessionLogAction: ActionDescriptor<
         "--actions <json>",
         'JSON array of actions: [{"action","target"}]',
       )
-      .option("--tags <csv>", "Comma-separated tags")
-      .option("--workspace-id <id>", "Workspace ID"),
+      .option("--tags <csv>", "Comma-separated tags"),
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const tags = input.tags

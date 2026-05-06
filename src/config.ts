@@ -8,16 +8,13 @@ export interface Config {
 
 /**
  * Resolve workspace ID from (in priority order):
- * 1. Explicit flag/option
- * 2. MNOTES_WORKSPACE_ID env var
- * 3. Per-directory mapping in config (cwd → workspaceId)
- * 4. Global default workspaceId in config
+ * 1. MNOTES_WORKSPACE_ID env var
+ * 2. Per-directory mapping in config (cwd → workspaceId, walking up parents)
+ * 3. Global default workspaceId in config
  */
 function resolveWorkspaceId(
-  explicit?: string,
   stored?: { workspaceId?: string; workspaces?: Record<string, string> },
 ): string | undefined {
-  if (explicit) return explicit;
   if (process.env.MNOTES_WORKSPACE_ID) return process.env.MNOTES_WORKSPACE_ID;
 
   // Check per-directory mapping
@@ -39,7 +36,6 @@ function resolveWorkspaceId(
 export function resolveConfig(opts: {
   apiKey?: string;
   url?: string;
-  workspaceId?: string;
 }): Config {
   const stored = readConfig();
   const apiKey = opts.apiKey || process.env.MNOTES_API_KEY || stored?.apiKey;
@@ -51,7 +47,7 @@ export function resolveConfig(opts: {
   }
 
   const baseUrl = opts.url || process.env.MNOTES_URL || stored?.serverUrl || "https://mnotes.framework.by";
-  const workspaceId = resolveWorkspaceId(opts.workspaceId, stored ?? undefined);
+  const workspaceId = resolveWorkspaceId(stored ?? undefined);
 
   return { apiKey, baseUrl, workspaceId };
 }

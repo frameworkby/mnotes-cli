@@ -5,7 +5,6 @@ import type { ActionDescriptor } from "../_register-group";
 import type { GraphResult } from "../../client";
 
 interface QueryInput {
-  workspaceId?: string;
   nodeType?: string;
   labelContains?: string;
   edgeType?: string;
@@ -21,7 +20,6 @@ export const queryGraphAction: ActionDescriptor<QueryInput, GraphResult> = {
   mcpTool: "query_graph",
   args: (cmd: Command) =>
     cmd
-      .option("--workspace-id <id>", "Workspace ID")
       .option("--node-type <t>", "Filter by node type")
       .option("--label-contains <s>", "Filter by label substring")
       .option("--edge-type <t>", "Filter by edge type")
@@ -31,10 +29,10 @@ export const queryGraphAction: ActionDescriptor<QueryInput, GraphResult> = {
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const client = createClient(config.baseUrl, config.apiKey);

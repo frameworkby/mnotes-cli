@@ -222,17 +222,12 @@ describe("mnotes connect flags", () => {
     expect(output).toContain("Available integrations:");
   });
 
-  it("accepts --workspace flag without error", async () => {
+  it("rejects unknown --workspace flag (removed in v2)", async () => {
     const program = new Command();
     program.exitOverride();
     registerConnectCommand(program);
 
-    let output = "";
-    const origLog = console.log;
-    console.log = (...args: unknown[]) => {
-      output += args.join(" ") + "\n";
-    };
-
+    let errorMessage = "";
     try {
       await program.parseAsync([
         "node",
@@ -242,11 +237,11 @@ describe("mnotes connect flags", () => {
         "--workspace",
         "ws-abc-123",
       ]);
-    } finally {
-      console.log = origLog;
+    } catch (err) {
+      errorMessage = err instanceof Error ? err.message : String(err);
     }
 
-    expect(output).toContain("Available integrations:");
+    expect(errorMessage).toContain("unknown option");
   });
 });
 
@@ -673,6 +668,7 @@ describe("mnotes connect claude-code", () => {
   let origCwd: () => string;
   let origExit: (code?: number) => never;
   let exitCode: number | undefined;
+  let origWorkspaceId: string | undefined;
 
   beforeEach(() => {
     tmpDir = makeTmpDir();
@@ -684,11 +680,16 @@ describe("mnotes connect claude-code", () => {
       exitCode = code;
       throw new Error(`process.exit(${code})`);
     }) as never;
+    // Provide a default workspace via env so tests don't hit interactive prompt
+    origWorkspaceId = process.env.MNOTES_WORKSPACE_ID;
+    process.env.MNOTES_WORKSPACE_ID = "ws-123";
   });
 
   afterEach(() => {
     process.cwd = origCwd;
     process.exit = origExit;
+    if (origWorkspaceId !== undefined) process.env.MNOTES_WORKSPACE_ID = origWorkspaceId;
+    else delete process.env.MNOTES_WORKSPACE_ID;
     cleanTmpDir(tmpDir);
     vi.restoreAllMocks();
   });
@@ -713,7 +714,6 @@ describe("mnotes connect claude-code", () => {
         "node", "mnotes", "connect", "claude-code",
         "--url", "http://localhost:3000",
         "--api-key", "test-key-abc",
-        "--workspace", "ws-123",
         "--no-wizard",
       ]);
     } finally {
@@ -747,7 +747,6 @@ describe("mnotes connect claude-code", () => {
         "node", "mnotes", "connect", "claude-code",
         "--url", "http://localhost:3000",
         "--api-key", "test-key-abc",
-        "--workspace", "ws-123",
         "--no-wizard",
       ]);
     } finally {
@@ -779,12 +778,13 @@ describe("mnotes connect claude-code", () => {
     const origLog = console.log;
     console.log = () => {};
 
+    // Override workspace to ws-new for this test
+    process.env.MNOTES_WORKSPACE_ID = "ws-new";
     try {
       await program.parseAsync([
         "node", "mnotes", "connect", "claude-code",
         "--url", "http://localhost:3000",
         "--api-key", "test-key-abc",
-        "--workspace", "ws-new",
         "--no-wizard",
       ]);
     } finally {
@@ -823,7 +823,6 @@ describe("mnotes connect claude-code", () => {
     try {
       await program.parseAsync([
         "node", "mnotes", "connect", "claude-code",
-        "--workspace", "ws-123",
       ]);
     } catch {
       // Expected — process.exit throws
@@ -837,7 +836,7 @@ describe("mnotes connect claude-code", () => {
     expect(stderrOutput).toContain("API key required");
   });
 
-  it("uses --workspace flag when provided (AC-5, no interactive prompt)", async () => {
+  it("uses MNOTES_WORKSPACE_ID env var (AC-5, no interactive prompt)", async () => {
     const configUtils = await import("../config-utils");
     vi.spyOn(configUtils, "validateConnection").mockResolvedValue({ ok: true });
 
@@ -851,12 +850,13 @@ describe("mnotes connect claude-code", () => {
       output += args.join(" ") + "\n";
     };
 
+    // Override env to a different workspace for this test
+    process.env.MNOTES_WORKSPACE_ID = "ws-explicit-id";
     try {
       await program.parseAsync([
         "node", "mnotes", "connect", "claude-code",
         "--url", "http://localhost:3000",
         "--api-key", "test-key",
-        "--workspace", "ws-explicit-id",
         "--no-wizard",
       ]);
     } finally {
@@ -891,7 +891,6 @@ describe("mnotes connect claude-code", () => {
         "node", "mnotes", "connect", "claude-code",
         "--url", "http://localhost:3000",
         "--api-key", "test-key",
-        "--workspace", "ws-123",
       ]);
     } catch {
       // Expected — process.exit throws
@@ -923,7 +922,6 @@ describe("mnotes connect claude-code", () => {
         "node", "mnotes", "connect", "claude-code",
         "--url", "http://localhost:3000///",
         "--api-key", "test-key-abc",
-        "--workspace", "ws-123",
         "--no-wizard",
       ]);
     } finally {
@@ -946,6 +944,7 @@ describe("mnotes connect cursor", () => {
   let origExit: (code?: number) => never;
   let exitCode: number | undefined;
   let origHome: string | undefined;
+  let origWorkspaceId: string | undefined;
 
   beforeEach(() => {
     tmpDir = makeTmpDir();
@@ -960,6 +959,9 @@ describe("mnotes connect cursor", () => {
     // Redirect ~/.cursor writes to tmpDir so tests don't touch the real home
     origHome = process.env.HOME;
     process.env.HOME = tmpDir;
+    // Provide workspace via env (flag removed in v2)
+    origWorkspaceId = process.env.MNOTES_WORKSPACE_ID;
+    process.env.MNOTES_WORKSPACE_ID = "ws-123";
   });
 
   afterEach(() => {
@@ -967,6 +969,8 @@ describe("mnotes connect cursor", () => {
     process.exit = origExit;
     if (origHome !== undefined) process.env.HOME = origHome;
     else delete process.env.HOME;
+    if (origWorkspaceId !== undefined) process.env.MNOTES_WORKSPACE_ID = origWorkspaceId;
+    else delete process.env.MNOTES_WORKSPACE_ID;
     cleanTmpDir(tmpDir);
     vi.restoreAllMocks();
   });
@@ -991,7 +995,6 @@ describe("mnotes connect cursor", () => {
         "node", "mnotes", "connect", "cursor",
         "--url", "http://localhost:3000",
         "--api-key", "test-key-abc",
-        "--workspace", "ws-123",
       ]);
     } finally {
       console.log = origLog;
@@ -1032,7 +1035,6 @@ describe("mnotes connect cursor", () => {
         "node", "mnotes", "connect", "cursor",
         "--url", "http://localhost:3000",
         "--api-key", "test-key-abc",
-        "--workspace", "ws-123",
       ]);
     } finally {
       console.log = origLog;
@@ -1071,7 +1073,6 @@ describe("mnotes connect cursor", () => {
         "node", "mnotes", "connect", "cursor",
         "--url", "http://localhost:3000",
         "--api-key", "test-key-abc",
-        "--workspace", "ws-123",
       ]);
     } finally {
       console.log = origLog;
@@ -1109,7 +1110,6 @@ describe("mnotes connect cursor", () => {
         "node", "mnotes", "connect", "cursor",
         "--url", "http://localhost:3000",
         "--api-key", "expired-token",
-        "--workspace", "ws-123",
       ]);
     } catch {
       // Expected — process.exit throws
@@ -1155,6 +1155,7 @@ describe("mnotes connect claude", () => {
   let origExit: (code?: number) => never;
   let exitCode: number | undefined;
   let origHome: string | undefined;
+  let origWorkspaceId: string | undefined;
 
   beforeEach(() => {
     tmpDir = makeTmpDir();
@@ -1169,6 +1170,9 @@ describe("mnotes connect claude", () => {
     // Redirect ~/.claude writes to tmpDir so tests don't touch the real home
     origHome = process.env.HOME;
     process.env.HOME = tmpDir;
+    // Provide workspace via env (flag removed in v2)
+    origWorkspaceId = process.env.MNOTES_WORKSPACE_ID;
+    process.env.MNOTES_WORKSPACE_ID = "ws-123";
   });
 
   afterEach(() => {
@@ -1176,6 +1180,8 @@ describe("mnotes connect claude", () => {
     process.exit = origExit;
     if (origHome !== undefined) process.env.HOME = origHome;
     else delete process.env.HOME;
+    if (origWorkspaceId !== undefined) process.env.MNOTES_WORKSPACE_ID = origWorkspaceId;
+    else delete process.env.MNOTES_WORKSPACE_ID;
     cleanTmpDir(tmpDir);
     vi.restoreAllMocks();
   });
@@ -1200,7 +1206,6 @@ describe("mnotes connect claude", () => {
         "node", "mnotes", "connect", "claude",
         "--url", "http://localhost:3000",
         "--api-key", "test-key-abc",
-        "--workspace", "ws-123",
       ]);
     } finally {
       console.log = origLog;
@@ -1242,7 +1247,6 @@ describe("mnotes connect claude", () => {
         "node", "mnotes", "connect", "claude",
         "--url", "http://localhost:3000",
         "--api-key", "expired-token",
-        "--workspace", "ws-123",
       ]);
     } catch {
       // Expected — process.exit throws
@@ -1281,7 +1285,6 @@ describe("mnotes connect claude", () => {
         "node", "mnotes", "connect", "claude",
         "--url", "http://localhost:3000",
         "--api-key", "test-key",
-        "--workspace", "ws-123",
       ]);
     } catch {
       // Expected — process.exit throws

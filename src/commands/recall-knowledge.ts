@@ -14,7 +14,6 @@ export function registerRecallKnowledgeCommand(program: Command): void {
     .option("--type <type>", "Node type filter (graph mode only): note, tag, concept")
     .option("--neighbors <nodeId>", "Show neighbors of a node (graph mode only)")
     .option("--depth <n>", "Neighbor traversal depth 1-3 (graph mode only)", "1")
-    .option("--workspace-id <id>", "Workspace ID")
     .action(async (opts: Record<string, string | boolean | undefined>) => {
       const globalOpts = program.opts();
       const config = resolveConfig(globalOpts);

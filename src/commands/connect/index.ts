@@ -82,19 +82,18 @@ function printConnectionStatus(): void {
 }
 
 /**
- * Resolves the workspace ID — uses --workspace flag if provided, otherwise
- * prompts interactively after validating the connection.
+ * Resolves the workspace ID from env var, per-cwd config, or global config default.
+ * Prompts interactively if no workspace is configured.
  *
- * When a workspace value is provided (flag, env, or config), validates it
- * against the API by matching on ID or slug. If not found, prompts to create.
+ * When a workspace value is found (env/config), validates it against the API by
+ * matching on ID or slug. If not found, prompts to create.
  */
 async function resolveWorkspace(opts: {
   url: string;
   apiKey: string;
-  workspace?: string;
 }): Promise<string> {
-  // Check flag, env, dir map, global config
-  const fromConfig = resolveConfig({ workspaceId: opts.workspace });
+  // Check MNOTES_WORKSPACE_ID env, per-cwd map, global config default
+  const fromConfig = resolveConfig({});
   const candidate = fromConfig.workspaceId;
 
   if (candidate) {
@@ -178,7 +177,6 @@ function printConnectionError(url: string, validation: { ok: false; error: strin
 export async function handleClaude(opts: {
   url?: string;
   apiKey?: string;
-  workspace?: string;
 }): Promise<void> {
   const config = resolveConfig(opts);
   const url = normalizeBaseUrl(config.baseUrl);
@@ -189,7 +187,7 @@ export async function handleClaude(opts: {
     printConnectionError(url, validation);
   }
 
-  const workspaceId = await resolveWorkspace({ url, apiKey, workspace: opts.workspace });
+  const workspaceId = await resolveWorkspace({ url, apiKey });
 
   // Fetch workspace name for the success message
   let workspaceName = workspaceId;
@@ -240,7 +238,6 @@ export async function handleClaude(opts: {
 export async function handleCursor(opts: {
   url?: string;
   apiKey?: string;
-  workspace?: string;
 }): Promise<void> {
   const config = resolveConfig(opts);
   const url = normalizeBaseUrl(config.baseUrl);
@@ -251,7 +248,7 @@ export async function handleCursor(opts: {
     printConnectionError(url, validation);
   }
 
-  const workspaceId = await resolveWorkspace({ url, apiKey, workspace: opts.workspace });
+  const workspaceId = await resolveWorkspace({ url, apiKey, });
 
   // Fetch workspace name for the success message
   let workspaceName = workspaceId;
@@ -302,7 +299,6 @@ export async function handleCursor(opts: {
 export async function handleClaudeCode(opts: {
   url?: string;
   apiKey?: string;
-  workspace?: string;
   noWizard?: boolean;
   all?: boolean;
 }): Promise<void> {
@@ -324,7 +320,7 @@ export async function handleClaudeCode(opts: {
     process.exit(1);
   }
 
-  const workspaceId = await resolveWorkspace({ url, apiKey, workspace: opts.workspace });
+  const workspaceId = await resolveWorkspace({ url, apiKey, });
 
   const dir = process.cwd();
 
@@ -387,7 +383,6 @@ function printScaffoldResults(results: ScaffoldResult[]): void {
 async function handleCodex(opts: {
   url?: string;
   apiKey?: string;
-  workspace?: string;
 }): Promise<void> {
   const config = resolveConfig(opts);
   const url = normalizeBaseUrl(config.baseUrl);
@@ -399,7 +394,7 @@ async function handleCodex(opts: {
     process.exit(1);
   }
 
-  const workspaceId = await resolveWorkspace({ url, apiKey, workspace: opts.workspace });
+  const workspaceId = await resolveWorkspace({ url, apiKey, });
 
   const dir = process.cwd();
 
@@ -421,7 +416,6 @@ async function handleCodex(opts: {
 async function handleOpenClaw(opts: {
   url?: string;
   apiKey?: string;
-  workspace?: string;
   configPath?: string;
 }): Promise<void> {
   const config = resolveConfig(opts);
@@ -435,7 +429,7 @@ async function handleOpenClaw(opts: {
     process.exit(1);
   }
 
-  const workspaceId = await resolveWorkspace({ url, apiKey, workspace: opts.workspace });
+  const workspaceId = await resolveWorkspace({ url, apiKey, });
 
   const configDir = path.dirname(configPath);
 
@@ -464,7 +458,6 @@ export function registerConnectCommand(program: Command): void {
     .option("--status", "Show connection status for agents in current directory")
     .option("--url <url>", "m-notes URL (skip prompt)")
     .option("--api-key <key>", "API key (skip prompt)")
-    .option("--workspace <id>", "Workspace ID")
     .option("--config-path <path>", "Config file path (openclaw only)")
     .option("--no-wizard", "Skip the extras wizard (core setup only)")
     .option("--all", "Install all extras without prompting")
@@ -476,7 +469,6 @@ export function registerConnectCommand(program: Command): void {
           status?: boolean;
           url?: string;
           apiKey?: string;
-          workspace?: string;
           configPath?: string;
           wizard?: boolean;
           all?: boolean;

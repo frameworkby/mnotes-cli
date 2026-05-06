@@ -8,7 +8,6 @@ interface Input {
   id: string;
   splitPoint?: number;
   title2?: string;
-  workspaceId?: string;
 }
 
 export const splitNoteAction: ActionDescriptor<Input, SplitNoteResult> = {
@@ -23,14 +22,13 @@ export const splitNoteAction: ActionDescriptor<Input, SplitNoteResult> = {
       .option("--split-point <n>", "Split point hint (currently unused by API)", (v) =>
         parseInt(v, 10),
       )
-      .option("--title2 <title>", "Title hint for second split (currently unused by API)")
-      .option("--workspace-id <id>", "Workspace ID"),
+      .option("--title2 <title>", "Title hint for second split (currently unused by API)"),
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     const client = createClient(config.baseUrl, config.apiKey);

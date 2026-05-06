@@ -9,7 +9,6 @@ interface ToggleTaskInput {
   taskIndex: number;
   done?: boolean;
   notDone?: boolean;
-  workspaceId?: string;
 }
 
 export const toggleTaskAction: ActionDescriptor<
@@ -29,15 +28,14 @@ export const toggleTaskAction: ActionDescriptor<
         (v) => parseInt(v, 10),
       )
       .option("--done", "Force the task to done")
-      .option("--not-done", "Force the task to undone")
-      .option("--workspace-id <id>", "Workspace ID"),
+      .option("--not-done", "Force the task to undone"),
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
-    const workspaceId = input.workspaceId ?? config.workspaceId;
+    const workspaceId = config.workspaceId;
     if (!workspaceId) {
       throw new Error(
-        "workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)",
+        "No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.",
       );
     }
     if (input.done && input.notDone) {
