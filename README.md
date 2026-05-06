@@ -134,6 +134,10 @@ list`), the flat form is registered as a hidden top-level alias that
 delegates to the same handler. No deprecation warnings are emitted in v1.x —
 the aliases are stable through the next major release.
 
+### Migration note (v2.1.0) — `connect claude` and `connect cursor` removed
+
+`mnotes connect claude` and `mnotes connect cursor` have been removed. Both targets wrote a dead `${url}/api/mcp` URL into `~/.claude/mcp.json` and `~/.cursor/mcp.json` respectively — the m-notes MCP endpoint no longer exists. Use `mnotes connect claude-code` instead (writes CLAUDE.md instructions that invoke the v1 HTTP API via CLI). If you previously ran either removed command, delete the stale `m-notes` entry from `~/.claude/mcp.json` or `~/.cursor/mcp.json` to avoid connection errors in your AI client.
+
 ### Auditing parity
 
 `mnotes parity` (hidden) prints a table of MCP tools vs CLI commands with

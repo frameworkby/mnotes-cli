@@ -36,13 +36,20 @@ description: Store a knowledge entry in m-notes. Use when the user says /store o
 
 # Store Knowledge in m-notes
 
-Use the \`knowledge_store\` MCP tool to save knowledge.
+Run the \`mnotes kb store\` CLI command via Bash to save knowledge.
+
+## Command
+
+\`\`\`bash
+mnotes kb store --key "<category>/<name>" --content "<markdown content>" [--tags "<tag1>,<tag2>"]
+\`\`\`
 
 ## Parameters
-- **workspaceId**: \`${opts.workspaceId}\`
-- **key**: Use the naming convention \`<category>/<name>\` (e.g., \`arch/database\`, \`decision/auth-provider\`, \`pattern/error-handling\`)
-- **content**: The knowledge to store — be specific and include rationale
-- **tags**: Array of category tags (e.g., \`["architecture"]\`, \`["decision", "auth"]\`)
+- **--key**: Use the naming convention \`<category>/<name>\` (e.g., \`arch/database\`, \`decision/auth-provider\`, \`pattern/error-handling\`)
+- **--content**: The knowledge to store — be specific and include rationale
+- **--tags**: Comma-separated category tags (e.g., \`architecture\` or \`decision,auth\`)
+
+Workspace is resolved automatically from the CLI config. Do not pass \`--workspace-id\`.
 
 ## Categories
 | Prefix | Use for |
@@ -65,16 +72,25 @@ description: Recall knowledge from m-notes using semantic search. Use when the u
 
 # Recall Knowledge from m-notes
 
-Use the \`recall_knowledge\` MCP tool to search stored knowledge.
+Run the \`mnotes kb recall\` CLI command via Bash to search stored knowledge.
+
+## Command
+
+\`\`\`bash
+mnotes kb recall --query "<natural language query>" [--tags "<tag1>,<tag2>"] [--limit <n>]
+\`\`\`
 
 ## Parameters
-- **workspaceId**: \`${opts.workspaceId}\`
-- **query**: Natural language description of what you are looking for
+- **--query**: Natural language description of what you are looking for (required)
+- **--tags**: Comma-separated tags to filter results
+- **--limit**: Maximum number of results to return (default 10, max 50)
+
+Workspace is resolved automatically from the CLI config. Do not pass \`--workspace-id\`.
 
 ## Tips
 - Be specific in your query for better semantic matching
-- Use \`bulk_knowledge_recall\` with tag patterns to recall groups of entries (e.g., all \`arch/*\` entries)
-- Use \`knowledge_snapshot\` to export all knowledge at once
+- Use \`mnotes bulk knowledge-recall --tags "arch/*"\` to recall groups of entries by tag prefix
+- Use \`mnotes kb snapshot\` to export all knowledge at once
 `,
     },
   ];

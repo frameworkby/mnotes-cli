@@ -16,29 +16,22 @@ import type { WizardItem, ScaffoldResult } from "./wizard";
 /** Available integration targets with descriptions */
 export const INTEGRATION_TARGETS = [
   {
-    name: "claude",
-    description:
-      "Connect Claude Code globally via ~/.claude/mcp.json",
-  },
-  {
     name: "claude-code",
     description:
       "Connect Claude Code project-level via CLAUDE.md instructions",
   },
   {
-    name: "cursor",
-    description:
-      "Connect Cursor globally via ~/.cursor/mcp.json",
-  },
-  {
     name: "codex",
-    description: "Connect OpenAI Codex via MCP config (experimental)",
+    description: "Connect OpenAI Codex via AGENTS.md instructions",
   },
   {
     name: "openclaw",
     description: "Connect OpenClaw for mobile/conversational use",
   },
 ] as const;
+
+/** Targets removed in v2.1 that previously wrote a dead /api/mcp URL. */
+const REMOVED_MCP_TARGETS = new Set(["claude", "cursor"]);
 
 export type IntegrationName = (typeof INTEGRATION_TARGETS)[number]["name"];
 
@@ -167,130 +160,6 @@ function printConnectionError(url: string, validation: { ok: false; error: strin
     process.stderr.write(`Error: Cannot connect to ${url}: ${validation.error}\n`);
   }
   process.exit(1);
-}
-
-/**
- * Handles the `claude` integration target.
- * Writes the m-notes MCP server entry to ~/.claude/mcp.json so Claude Code
- * picks it up globally (no project-level config file needed).
- */
-export async function handleClaude(opts: {
-  url?: string;
-  apiKey?: string;
-}): Promise<void> {
-  const config = resolveConfig(opts);
-  const url = normalizeBaseUrl(config.baseUrl);
-  const apiKey = config.apiKey;
-
-  const validation = await validateConnection(url, apiKey);
-  if (!validation.ok) {
-    printConnectionError(url, validation);
-  }
-
-  const workspaceId = await resolveWorkspace({ url, apiKey });
-
-  // Fetch workspace name for the success message
-  let workspaceName = workspaceId;
-  try {
-    const client = createClient(url, apiKey);
-    const res = await client.listWorkspaces();
-    const match = res.data.find((ws) => ws.id === workspaceId);
-    if (match) workspaceName = match.name;
-  } catch {
-    // Best-effort — fall back to ID if name lookup fails
-  }
-
-  // Write the MCP server entry to ~/.claude/mcp.json
-  const claudeConfigDir = path.join(process.env.HOME ?? "~", ".claude");
-  fs.mkdirSync(claudeConfigDir, { recursive: true });
-  const mcpJsonPath = path.join(claudeConfigDir, "mcp.json");
-
-  // Read existing config (if any) and merge in the m-notes entry
-  let existingGlobal: { mcpServers?: Record<string, unknown> } = {};
-  try {
-    existingGlobal = JSON.parse(fs.readFileSync(mcpJsonPath, "utf-8")) as typeof existingGlobal;
-  } catch {
-    // File absent or unreadable — start fresh
-  }
-  if (!existingGlobal.mcpServers) existingGlobal.mcpServers = {};
-  existingGlobal.mcpServers["m-notes"] = { url: `${url}/api/mcp` };
-  fs.writeFileSync(mcpJsonPath, JSON.stringify(existingGlobal, null, 2) + "\n", "utf-8");
-
-  console.log(`✓ Claude Code is now connected to workspace '${workspaceName}'. Config written to ${mcpJsonPath}.`);
-  void sendTelemetry({ event: "cli_connect_success", target: "claude" });
-
-  // Stamp first-connect timestamp on the workspace (best-effort, fire-and-forget)
-  try {
-    const client = createClient(url, apiKey);
-    await client.markAgentConnected(workspaceId);
-  } catch {
-    // Non-critical — banner simply won't appear if this fails
-  }
-}
-
-/**
- * Handles the `cursor` integration target.
- * Writes the m-notes MCP server entry to ~/.cursor/mcp.json so Cursor
- * picks it up globally across all projects.
- * Source: https://cursor.com/docs/mcp — "global tools available across all
- * projects are defined in a ~/.cursor/mcp.json file in the user's home directory."
- */
-export async function handleCursor(opts: {
-  url?: string;
-  apiKey?: string;
-}): Promise<void> {
-  const config = resolveConfig(opts);
-  const url = normalizeBaseUrl(config.baseUrl);
-  const apiKey = config.apiKey;
-
-  const validation = await validateConnection(url, apiKey);
-  if (!validation.ok) {
-    printConnectionError(url, validation);
-  }
-
-  const workspaceId = await resolveWorkspace({ url, apiKey, });
-
-  // Fetch workspace name for the success message
-  let workspaceName = workspaceId;
-  try {
-    const client = createClient(url, apiKey);
-    const res = await client.listWorkspaces();
-    const match = res.data.find((ws) => ws.id === workspaceId);
-    if (match) workspaceName = match.name;
-  } catch {
-    // Best-effort — fall back to ID if name lookup fails
-  }
-
-  // Write the MCP server entry to ~/.cursor/mcp.json
-  const cursorConfigDir = path.join(process.env.HOME ?? "~", ".cursor");
-  const dirExisted = fs.existsSync(cursorConfigDir);
-  fs.mkdirSync(cursorConfigDir, { recursive: true });
-  if (!dirExisted) {
-    process.stderr.write(`Warning: ~/.cursor directory did not exist — created it.\n`);
-  }
-  const mcpJsonPath = path.join(cursorConfigDir, "mcp.json");
-
-  // Read existing config (if any) and merge in the m-notes entry
-  let existingGlobal: { mcpServers?: Record<string, unknown> } = {};
-  try {
-    existingGlobal = JSON.parse(fs.readFileSync(mcpJsonPath, "utf-8")) as typeof existingGlobal;
-  } catch {
-    // File absent or unreadable — start fresh
-  }
-  if (!existingGlobal.mcpServers) existingGlobal.mcpServers = {};
-  existingGlobal.mcpServers["m-notes"] = { url: `${url}/api/mcp` };
-  fs.writeFileSync(mcpJsonPath, JSON.stringify(existingGlobal, null, 2) + "\n", "utf-8");
-
-  console.log(`✓ Cursor is now connected to workspace '${workspaceName}'. Config written to ${mcpJsonPath}.`);
-  void sendTelemetry({ event: "cli_connect_success", target: "cursor" });
-
-  // Stamp first-connect timestamp on the workspace (best-effort, fire-and-forget)
-  try {
-    const client = createClient(url, apiKey);
-    await client.markAgentConnected(workspaceId);
-  } catch {
-    // Non-critical — banner simply won't appear if this fails
-  }
 }
 
 /**
@@ -492,13 +361,14 @@ export function registerConnectCommand(program: Command): void {
           return;
         }
 
-        if (target === "claude") {
-          await handleClaude(opts);
-          return;
-        }
-
-        if (target === "cursor") {
-          await handleCursor(opts);
+        if (target && REMOVED_MCP_TARGETS.has(target)) {
+          process.stderr.write(
+            `Error: 'connect ${target}' was removed in v2.1 — it wrote a dead /api/mcp URL.\n` +
+            `Use 'connect claude-code' instead (writes CLAUDE.md instructions, no MCP required).\n` +
+            `If you previously ran 'connect ${target}', remove the stale 'm-notes' entry from\n` +
+            `~/.${target}/mcp.json to avoid connection errors.\n`
+          );
+          process.exit(1);
           return;
         }
 
@@ -522,7 +392,9 @@ export function registerConnectCommand(program: Command): void {
         }
 
         if (target) {
-          process.stderr.write(`Unsupported target '${target}'. Supported: claude, cursor.\n`);
+          process.stderr.write(
+            `Unsupported target '${target}'. Supported: ${INTEGRATION_TARGETS.map((t) => t.name).join(", ")}.\n`
+          );
           process.exit(1);
           return;
         }
