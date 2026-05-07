@@ -124,6 +124,26 @@ describe("generateHookScripts: mnotes-session-stop.sh", () => {
     // Must document the intent — reviewers need to know it's deliberate
     expect(content).toMatch(/stderr.*suppress|suppress.*stderr/i);
   });
+
+  // Bug #931: prevent empty session-log notes
+  it("exits early when MNOTES_SESSION_ID is not set (#931)", () => {
+    const content = getScript("mnotes-session-stop.sh");
+    // Must guard the log call on MNOTES_SESSION_ID being explicitly set
+    expect(content).toMatch(/if\s+\[\s+-z\s+["']\$\{MNOTES_SESSION_ID:?-?\}["']\s+\]/);
+    expect(content).toMatch(/exit\s+0/);
+  });
+
+  it("does NOT auto-generate a SESSION_ID fallback (#931)", () => {
+    const content = getScript("mnotes-session-stop.sh");
+    // The old broken pattern minted a fresh ID per stop, creating duplicate empty notes
+    expect(content).not.toMatch(/SESSION_ID=["']\$\{MNOTES_SESSION_ID:-\$\(date/);
+    expect(content).not.toContain("date +%Y%m%d");
+  });
+
+  it("uses MNOTES_SESSION_ID directly on the log call (#931)", () => {
+    const content = getScript("mnotes-session-stop.sh");
+    expect(content).toMatch(/--session-id\s+["']\$MNOTES_SESSION_ID["']/);
+  });
 });
 
 // =============================================================

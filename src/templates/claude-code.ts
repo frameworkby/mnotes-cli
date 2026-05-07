@@ -32,7 +32,7 @@ To configure: run \`mnotes workspace link\` in your project directory, or set \`
 
 1. **ALWAYS recall before researching.** Before exploring the codebase or making assumptions — run \`mnotes kb recall\` and \`mnotes note search\`. Past you already figured things out.
 2. **ALWAYS store what you learn.** Non-obvious discoveries → \`mnotes kb store\` immediately. Anything worth re-finding belongs in the wiki.
-3. **ALWAYS log sessions.** Run \`mnotes session log\` before the session ends.
+3. **LOG MEANINGFUL SESSIONS.** Run \`mnotes session log --summary "..."\` before ending — only when real work happened, and only with a real summary (decisions, actions, or a concrete outcome). Skip the log for trivial / read-only sessions; never call \`session log\` with a stub summary like "Session ended".
 4. **ALWAYS load context at session start.** Run \`mnotes composite project-load\`. Use \`mnotes session resume\` if mid-conversation.
 5. **INGEST sources coherently.** When the user drops a URL, long paste, or file: don't just dump it into one note. Run the **ingest loop** (below).
 6. **LINT the wiki periodically.** On session start for large workspaces, and after any ingest, run the **lint loop** (below).
@@ -66,7 +66,7 @@ Do not skip this. Do not say "I'll check later." Do not assume you know what's i
 - Duplicates — run \`mnotes kb recall\` first to check
 
 ### Session End (before finishing)
-- [ ] Run \`mnotes session log --summary "..."\`
+- [ ] If meaningful work happened (decisions, code shipped, investigations completed): run \`mnotes session log --summary "<real summary>"\` with concrete content. Skip otherwise — empty/stub logs are noise.
 - [ ] If you did meaningful work and didn't store anything yet — you forgot. Go back and store it.
 
 If you think "this isn't worth saving" — save it anyway. Future you has no context.
