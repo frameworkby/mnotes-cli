@@ -108,6 +108,12 @@ export interface KnowledgeIngestRow {
   noteId: string;
 }
 
+export interface IngestExternalResult {
+  noteId: string;
+  status: "created" | "updated";
+  title: string;
+}
+
 export interface DecayEntry {
   key: string | null;
   title: string;
@@ -843,6 +849,29 @@ export function createClient(baseUrl: string, apiKey: string) {
       workspaceId: string;
     }): Promise<KnowledgeIngestRow[]> {
       return request<KnowledgeIngestRow[]>("POST", "/api/v1/knowledge/ingest", opts);
+    },
+
+    async ingestExternal(opts: {
+      workspaceId: string;
+      title: string;
+      content: string;
+      sourceType:
+        | "web_page"
+        | "pdf"
+        | "email"
+        | "slack"
+        | "meeting"
+        | "other";
+      sourceUrl?: string;
+      sourceRef?: string;
+      tags?: string[];
+      folderId?: string;
+    }): Promise<IngestExternalResult> {
+      return request<IngestExternalResult>(
+        "POST",
+        "/api/v1/knowledge/ingest-external",
+        opts,
+      );
     },
 
     async knowledgeDecay(opts: {
