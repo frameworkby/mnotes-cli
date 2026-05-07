@@ -114,6 +114,17 @@ export interface IngestExternalResult {
   title: string;
 }
 
+export interface CheckIngestedSourceRow {
+  sourceUrl: string;
+  status: "exists" | "not_found";
+  noteId?: string;
+  lastUpdated?: string;
+}
+
+export interface CheckIngestedSourcesResult {
+  data: CheckIngestedSourceRow[];
+}
+
 export interface DecayEntry {
   key: string | null;
   title: string;
@@ -849,6 +860,17 @@ export function createClient(baseUrl: string, apiKey: string) {
       workspaceId: string;
     }): Promise<KnowledgeIngestRow[]> {
       return request<KnowledgeIngestRow[]>("POST", "/api/v1/knowledge/ingest", opts);
+    },
+
+    async checkIngestedSources(opts: {
+      workspaceId: string;
+      sourceUrls: string[];
+    }): Promise<CheckIngestedSourcesResult> {
+      return request<CheckIngestedSourcesResult>(
+        "POST",
+        "/api/v1/knowledge/check-ingested",
+        opts,
+      );
     },
 
     async ingestExternal(opts: {

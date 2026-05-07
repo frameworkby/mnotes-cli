@@ -5,6 +5,7 @@ import { storeAction } from "./store";
 import { memoryAction } from "./memory";
 import { ingestAction } from "./ingest";
 import { ingestExternalAction } from "./ingest-external";
+import { checkIngestedAction } from "./check-ingested";
 import { decayAction } from "./decay";
 import { archiveAction } from "./archive";
 import { consolidateAction } from "./consolidate";
@@ -22,6 +23,7 @@ export function registerKbGroup(program: Command): void {
     memoryAction,
     ingestAction,
     ingestExternalAction,
+    checkIngestedAction,
     decayAction,
     archiveAction,
     consolidateAction,
