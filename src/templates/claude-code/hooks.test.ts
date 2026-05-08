@@ -100,61 +100,40 @@ describe("generateHookScripts: mnotes-session-start.sh", () => {
 });
 
 // =============================================================
-// Stop script — minimal changes, stderr kept suppressed
+// Stop script — removed in #939. Claude Code's `Stop` event fires after
+// every assistant turn, not at session end, so any auto-log it emits is
+// necessarily noise. The CLAUDE.md template instructs the agent to call
+// `mnotes session log` itself with a real summary when meaningful work
+// happened.
 // =============================================================
-describe("generateHookScripts: mnotes-session-stop.sh", () => {
-  it("has bash shebang and set -euo pipefail", () => {
-    const content = getScript("mnotes-session-stop.sh");
-    expect(content).toMatch(/^#!\/usr\/bin\/env bash/);
-    expect(content).toContain("set -euo pipefail");
-  });
-
-  it("keeps stderr suppressed with 2>&1 on the session log call", () => {
-    const content = getScript("mnotes-session-stop.sh");
-    expect(content).toContain("> /dev/null 2>&1");
-  });
-
-  it("uses || true so failures do not block session shutdown", () => {
-    const content = getScript("mnotes-session-stop.sh");
-    expect(content).toContain("|| true");
-  });
-
-  it("includes a comment explaining why stderr is suppressed", () => {
-    const content = getScript("mnotes-session-stop.sh");
-    // Must document the intent — reviewers need to know it's deliberate
-    expect(content).toMatch(/stderr.*suppress|suppress.*stderr/i);
-  });
-
-  // Bug #931: prevent empty session-log notes
-  it("exits early when MNOTES_SESSION_ID is not set (#931)", () => {
-    const content = getScript("mnotes-session-stop.sh");
-    // Must guard the log call on MNOTES_SESSION_ID being explicitly set
-    expect(content).toMatch(/if\s+\[\s+-z\s+["']\$\{MNOTES_SESSION_ID:?-?\}["']\s+\]/);
-    expect(content).toMatch(/exit\s+0/);
-  });
-
-  it("does NOT auto-generate a SESSION_ID fallback (#931)", () => {
-    const content = getScript("mnotes-session-stop.sh");
-    // The old broken pattern minted a fresh ID per stop, creating duplicate empty notes
-    expect(content).not.toMatch(/SESSION_ID=["']\$\{MNOTES_SESSION_ID:-\$\(date/);
-    expect(content).not.toContain("date +%Y%m%d");
-  });
-
-  it("uses MNOTES_SESSION_ID directly on the log call (#931)", () => {
-    const content = getScript("mnotes-session-stop.sh");
-    expect(content).toMatch(/--session-id\s+["']\$MNOTES_SESSION_ID["']/);
+describe("generateHookScripts: mnotes-session-stop.sh removed (#939)", () => {
+  it("does not emit a Stop-hook script", () => {
+    const scripts = generateHookScripts(opts);
+    const names = scripts.map((s) => s.filename);
+    expect(names).not.toContain("mnotes-session-stop.sh");
   });
 });
 
 // =============================================================
-// Script filenames unchanged (existing users have them in settings.json)
+// Script filenames — only SessionStart remains after #939
 // =============================================================
 describe("generateHookScripts: filenames", () => {
-  it("returns exactly two scripts with the expected filenames", () => {
+  it("returns exactly one script (SessionStart only)", () => {
     const scripts = generateHookScripts(opts);
     const names = scripts.map((s) => s.filename);
-    expect(names).toContain("mnotes-session-start.sh");
-    expect(names).toContain("mnotes-session-stop.sh");
-    expect(names).toHaveLength(2);
+    expect(names).toEqual(["mnotes-session-start.sh"]);
+  });
+});
+
+// =============================================================
+// Hook template registration — Stop event no longer registered (#939)
+// =============================================================
+describe("generateHooksTemplate (#939)", () => {
+  it("registers SessionStart but NOT Stop", async () => {
+    const { generateHooksTemplate } = await import("./hooks");
+    const tmpl = generateHooksTemplate(opts);
+    expect(tmpl.SessionStart).toBeDefined();
+    expect(tmpl.SessionStart).toHaveLength(1);
+    expect((tmpl as Record<string, unknown>).Stop).toBeUndefined();
   });
 });

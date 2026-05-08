@@ -64,7 +64,8 @@ describe("hooks template", () => {
 
   it("generates hook scripts using MNOTES_WORKSPACE_ID env var (not --workspace-id flag)", () => {
     const scripts = generateHookScripts(DEFAULT_OPTS);
-    expect(scripts).toHaveLength(2);
+    // After #939 only SessionStart remains.
+    expect(scripts).toHaveLength(1);
 
     const startScript = scripts.find((s) => s.filename === "mnotes-session-start.sh")!;
     expect(startScript.content).toContain("mnotes composite project-load");
@@ -74,10 +75,8 @@ describe("hooks template", () => {
     expect(startScript.content).not.toContain("--workspace-id");
     expect(startScript.content).not.toContain("ws-test-123");
 
-    const stopScript = scripts.find((s) => s.filename === "mnotes-session-stop.sh")!;
-    expect(stopScript.content).toContain("mnotes session log");
-    expect(stopScript.content).not.toContain("/api/mcp");
-    expect(stopScript.content).not.toContain("--workspace-id");
+    // Stop-hook script removed in #939
+    expect(scripts.find((s) => s.filename === "mnotes-session-stop.sh")).toBeUndefined();
   });
 
   it("strips trailing slashes from URL in hook scripts", () => {
@@ -221,8 +220,8 @@ describe("scaffoldItems: hooks", () => {
     const results = scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
     expect(results).toHaveLength(1);
     expect(results[0].item).toBe("hooks");
-    // 2 bash scripts + settings.json
-    expect(results[0].filesWritten).toHaveLength(3);
+    // 1 bash script (SessionStart only after #939) + settings.json
+    expect(results[0].filesWritten).toHaveLength(2);
 
     // settings.json is project-local
     const settingsPath = path.join(tmpDir, ".claude", "settings.json");
@@ -232,13 +231,17 @@ describe("scaffoldItems: hooks", () => {
     expect(settings.hooks).toBeDefined();
     expect(settings.hooks.SessionStart).toBeDefined();
     expect(settings.hooks.SessionStart).toHaveLength(1);
+    // No Stop hook registered after #939
+    expect(settings.hooks.Stop).toBeUndefined();
 
-    // Bash scripts live under fake HOME at ~/.claude/hooks/mnotes/scripts/
+    // Bash script lives under fake HOME at ~/.claude/hooks/mnotes/scripts/
     const globalScriptsDir = path.join(fakeHome, ".claude", "hooks", "mnotes", "scripts");
     const startScript = path.join(globalScriptsDir, "mnotes-session-start.sh");
-    const stopScript = path.join(globalScriptsDir, "mnotes-session-stop.sh");
     expect(fs.existsSync(startScript)).toBe(true);
-    expect(fs.existsSync(stopScript)).toBe(true);
+    // Stop-hook script no longer emitted after #939
+    expect(
+      fs.existsSync(path.join(globalScriptsDir, "mnotes-session-stop.sh"))
+    ).toBe(false);
 
     // Project directory must NOT contain scripts
     expect(fs.existsSync(path.join(tmpDir, ".claude", "hooks"))).toBe(false);
@@ -295,9 +298,11 @@ describe("scaffoldItems: hooks", () => {
     expect(settings.hooks.SessionStart).toHaveLength(1);
   });
 
-  // #938 — legacy m-notes hook entries (positional workspace-id, no env var
-  // prefix) must be replaced, not appended alongside the current form.
-  it("replaces legacy positional-arg m-notes hook entries on re-run (#938)", () => {
+  // #938 / #939 — legacy m-notes hook entries (positional workspace-id, no
+  // env var prefix) get cleaned up: SessionStart is replaced with the current
+  // form; Stop entries are removed entirely (no replacement) since #939 no
+  // longer registers a Stop hook.
+  it("replaces legacy SessionStart and removes legacy Stop on re-run (#938/#939)", () => {
     const claudeDir = path.join(tmpDir, ".claude");
     fs.mkdirSync(claudeDir, { recursive: true });
 
@@ -331,11 +336,43 @@ describe("scaffoldItems: hooks", () => {
     );
     expect(settings.hooks.SessionStart[0].hooks[0].command).not.toContain("ws-legacy-id");
 
-    expect(settings.hooks.Stop).toHaveLength(1);
-    expect(settings.hooks.Stop[0].hooks[0].command).toContain(
-      `MNOTES_WORKSPACE_ID=${DEFAULT_OPTS.workspaceId}`
+    // Stop event is removed entirely — no current-form Stop entry, no legacy
+    // entry left behind. (#939)
+    expect(settings.hooks.Stop).toBeUndefined();
+  });
+
+  it("removes a legacy Stop entry while preserving non-mnotes Stop hooks (#939)", () => {
+    const claudeDir = path.join(tmpDir, ".claude");
+    fs.mkdirSync(claudeDir, { recursive: true });
+
+    const userStop = `/usr/local/bin/my-stop-tool.sh`;
+    const legacyStop = `/old/path/mnotes-session-stop.sh ws-legacy-id`;
+    const existingSettings = {
+      hooks: {
+        Stop: [
+          { matcher: "", hooks: [{ type: "command", command: userStop }] },
+          { matcher: "", hooks: [{ type: "command", command: legacyStop }] },
+        ],
+      },
+    };
+    fs.writeFileSync(
+      path.join(claudeDir, "settings.json"),
+      JSON.stringify(existingSettings, null, 2),
+      "utf-8"
     );
-    expect(settings.hooks.Stop[0].hooks[0].command).not.toContain("ws-legacy-id");
+
+    scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
+
+    const settings = JSON.parse(
+      fs.readFileSync(path.join(claudeDir, "settings.json"), "utf-8")
+    );
+
+    // Non-mnotes Stop hook preserved; legacy mnotes Stop entry removed.
+    const stopCommands: string[] = (settings.hooks.Stop ?? []).flatMap(
+      (e: { hooks: { command: string }[] }) => e.hooks.map((h) => h.command)
+    );
+    expect(stopCommands).toContain(userStop);
+    expect(stopCommands.some((c) => c.includes("mnotes-session-stop.sh"))).toBe(false);
   });
 
   it("preserves non-mnotes hooks on the same events (#938)", () => {
@@ -384,7 +421,7 @@ describe("scaffoldItems: hooks", () => {
     ).toBe(1);
   });
 
-  it("idempotent: running connect twice produces a single mnotes entry per event (#938)", () => {
+  it("idempotent: running connect three times produces a single SessionStart entry, no Stop (#938/#939)", () => {
     scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
     scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
     scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
@@ -396,16 +433,12 @@ describe("scaffoldItems: hooks", () => {
     const startCommands: string[] = settings.hooks.SessionStart.flatMap(
       (e: { hooks: { command: string }[] }) => e.hooks.map((h) => h.command)
     );
-    const stopCommands: string[] = settings.hooks.Stop.flatMap(
-      (e: { hooks: { command: string }[] }) => e.hooks.map((h) => h.command)
-    );
 
     expect(
       startCommands.filter((c) => c.includes("mnotes-session-start.sh")).length
     ).toBe(1);
-    expect(
-      stopCommands.filter((c) => c.includes("mnotes-session-stop.sh")).length
-    ).toBe(1);
+    // After #939 we don't register Stop at all on a clean install.
+    expect(settings.hooks.Stop).toBeUndefined();
   });
 });
 
