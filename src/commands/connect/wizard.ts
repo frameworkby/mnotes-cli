@@ -142,36 +142,50 @@ function scaffoldHooks(dir: string, opts: WizardOpts): ScaffoldResult {
 
   const newHooks = generateHooksTemplate(opts);
 
-  // Merge hooks: preserve existing hook entries, append new ones.
-  // Claude Code hooks format: { "Event": [{ matcher, hooks: [{ type, command }] }] }
+  // Merge hooks: drop any existing entry that invokes one of OUR scripts (by
+  // filename, not exact command — argument shape has changed across CLI
+  // versions, e.g. legacy positional workspace-id vs current
+  // MNOTES_WORKSPACE_ID env-var prefix). Then append our current entries.
+  // Non-m-notes hooks are preserved untouched. Identity = command contains
+  // any of our script filenames. (#938)
+  const MNOTES_SCRIPT_NAMES = ["mnotes-session-start.sh", "mnotes-session-stop.sh"];
+  const isMnotesCommand = (cmd: unknown): boolean =>
+    typeof cmd === "string" && MNOTES_SCRIPT_NAMES.some((n) => cmd.includes(n));
+  const isMnotesEntry = (entry: unknown): boolean => {
+    if (typeof entry !== "object" || entry === null) return false;
+    const e = entry as Record<string, unknown>;
+    if (Array.isArray(e.hooks)) {
+      for (const h of e.hooks) {
+        if (typeof h === "object" && h !== null && isMnotesCommand((h as Record<string, unknown>).command)) {
+          return true;
+        }
+      }
+    }
+    if (isMnotesCommand(e.command)) return true;
+    return false;
+  };
+
   const existingHooks = (existing.hooks ?? {}) as Record<string, unknown[]>;
   const mergedHooks: Record<string, unknown[]> = { ...existingHooks };
 
   for (const [event, hookList] of Object.entries(newHooks)) {
     if (!hookList) continue;
     const existingList = mergedHooks[event] ?? [];
-    // Extract all existing commands for dedup (handles both new and legacy format)
-    const existingCommands = new Set<string>();
-    for (const entry of existingList) {
-      if (typeof entry !== "object" || entry === null) continue;
-      const e = entry as Record<string, unknown>;
-      // New format: { matcher, hooks: [{ command }] }
-      if (Array.isArray(e.hooks)) {
-        for (const h of e.hooks) {
-          if (typeof h === "object" && h !== null && "command" in h) {
-            existingCommands.add((h as { command: string }).command);
-          }
-        }
-      }
-      // Legacy format: { type, command }
-      if ("command" in e && typeof e.command === "string") {
-        existingCommands.add(e.command);
-      }
+    const preserved = existingList.filter((e) => !isMnotesEntry(e));
+    mergedHooks[event] = [...preserved, ...hookList];
+  }
+
+  // Strip empty arrays for events we no longer emit but that may still
+  // contain only-m-notes entries from previous installs.
+  for (const event of Object.keys(mergedHooks)) {
+    const list = mergedHooks[event] ?? [];
+    const filtered = list.filter((e) => !isMnotesEntry(e));
+    const fromUs = (newHooks as Record<string, unknown[] | undefined>)[event] ?? [];
+    if (fromUs.length === 0 && filtered.length === 0) {
+      delete mergedHooks[event];
+    } else if (fromUs.length === 0) {
+      mergedHooks[event] = filtered;
     }
-    const newEntries = hookList.filter((entry) =>
-      entry.hooks.every((h) => !existingCommands.has(h.command))
-    );
-    mergedHooks[event] = [...existingList, ...newEntries];
   }
 
   existing.hooks = mergedHooks;

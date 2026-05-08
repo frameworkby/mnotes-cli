@@ -294,6 +294,119 @@ describe("scaffoldItems: hooks", () => {
 
     expect(settings.hooks.SessionStart).toHaveLength(1);
   });
+
+  // #938 — legacy m-notes hook entries (positional workspace-id, no env var
+  // prefix) must be replaced, not appended alongside the current form.
+  it("replaces legacy positional-arg m-notes hook entries on re-run (#938)", () => {
+    const claudeDir = path.join(tmpDir, ".claude");
+    fs.mkdirSync(claudeDir, { recursive: true });
+
+    const legacyStart = `/some/old/path/mnotes-session-start.sh ws-legacy-id`;
+    const legacyStop = `/some/old/path/mnotes-session-stop.sh ws-legacy-id`;
+    const existingSettings = {
+      hooks: {
+        SessionStart: [
+          { matcher: "", hooks: [{ type: "command", command: legacyStart }] },
+        ],
+        Stop: [
+          { matcher: "", hooks: [{ type: "command", command: legacyStop }] },
+        ],
+      },
+    };
+    fs.writeFileSync(
+      path.join(claudeDir, "settings.json"),
+      JSON.stringify(existingSettings, null, 2),
+      "utf-8"
+    );
+
+    scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
+
+    const settings = JSON.parse(
+      fs.readFileSync(path.join(claudeDir, "settings.json"), "utf-8")
+    );
+
+    expect(settings.hooks.SessionStart).toHaveLength(1);
+    expect(settings.hooks.SessionStart[0].hooks[0].command).toContain(
+      `MNOTES_WORKSPACE_ID=${DEFAULT_OPTS.workspaceId}`
+    );
+    expect(settings.hooks.SessionStart[0].hooks[0].command).not.toContain("ws-legacy-id");
+
+    expect(settings.hooks.Stop).toHaveLength(1);
+    expect(settings.hooks.Stop[0].hooks[0].command).toContain(
+      `MNOTES_WORKSPACE_ID=${DEFAULT_OPTS.workspaceId}`
+    );
+    expect(settings.hooks.Stop[0].hooks[0].command).not.toContain("ws-legacy-id");
+  });
+
+  it("preserves non-mnotes hooks on the same events (#938)", () => {
+    const claudeDir = path.join(tmpDir, ".claude");
+    fs.mkdirSync(claudeDir, { recursive: true });
+
+    const userStart = `/usr/local/bin/my-other-tool.sh`;
+    const existingSettings = {
+      hooks: {
+        SessionStart: [
+          { matcher: "", hooks: [{ type: "command", command: userStart }] },
+          {
+            matcher: "",
+            hooks: [
+              {
+                type: "command",
+                command: "/old/mnotes-session-start.sh ws-legacy-id",
+              },
+            ],
+          },
+        ],
+      },
+    };
+    fs.writeFileSync(
+      path.join(claudeDir, "settings.json"),
+      JSON.stringify(existingSettings, null, 2),
+      "utf-8"
+    );
+
+    scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
+
+    const settings = JSON.parse(
+      fs.readFileSync(path.join(claudeDir, "settings.json"), "utf-8")
+    );
+
+    // Non-mnotes hook preserved
+    const commands: string[] = settings.hooks.SessionStart.flatMap(
+      (e: { hooks: { command: string }[] }) => e.hooks.map((h) => h.command)
+    );
+    expect(commands).toContain(userStart);
+    // Legacy mnotes entry removed
+    expect(commands.some((c) => c.includes("ws-legacy-id"))).toBe(false);
+    // Current mnotes entry present exactly once
+    expect(
+      commands.filter((c) => c.includes("mnotes-session-start.sh")).length
+    ).toBe(1);
+  });
+
+  it("idempotent: running connect twice produces a single mnotes entry per event (#938)", () => {
+    scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
+    scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
+    scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
+
+    const settings = JSON.parse(
+      fs.readFileSync(path.join(tmpDir, ".claude", "settings.json"), "utf-8")
+    );
+
+    const startCommands: string[] = settings.hooks.SessionStart.flatMap(
+      (e: { hooks: { command: string }[] }) => e.hooks.map((h) => h.command)
+    );
+    const stopCommands: string[] = settings.hooks.Stop.flatMap(
+      (e: { hooks: { command: string }[] }) => e.hooks.map((h) => h.command)
+    );
+
+    expect(
+      startCommands.filter((c) => c.includes("mnotes-session-start.sh")).length
+    ).toBe(1);
+    expect(
+      stopCommands.filter((c) => c.includes("mnotes-session-stop.sh")).length
+    ).toBe(1);
+  });
 });
 
 // =============================================================
