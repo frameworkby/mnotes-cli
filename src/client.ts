@@ -125,6 +125,58 @@ export interface CheckIngestedSourcesResult {
   data: CheckIngestedSourceRow[];
 }
 
+// ── Wiki lint shapes ────────────────────────────────────────────────────────
+
+export type WikiLintCheck =
+  | "orphans"
+  | "broken-wikilinks"
+  | "contradictions"
+  | "stale";
+
+export interface WikiLintOrphan {
+  id: string;
+  title: string;
+  updatedAt: string;
+}
+
+export interface WikiLintBrokenWikilink {
+  noteId: string;
+  noteTitle: string;
+  target: string;
+}
+
+export interface WikiLintContradiction {
+  id: string;
+  noteA: { id: string; title: string | null };
+  noteB: { id: string; title: string | null };
+  similarity: number;
+  confidence: number;
+  description: string | null;
+  scannedAt: string;
+}
+
+export interface WikiLintStale {
+  id: string;
+  title: string;
+  updatedAt: string;
+  referencedBy: { id: string; title: string; updatedAt: string };
+}
+
+export interface WikiLintResult {
+  orphans: WikiLintOrphan[];
+  brokenWikilinks: WikiLintBrokenWikilink[];
+  contradictions: WikiLintContradiction[];
+  stale: WikiLintStale[];
+  summary: {
+    totals: {
+      orphans: number;
+      brokenWikilinks: number;
+      contradictions: number;
+      stale: number;
+    };
+  };
+}
+
 export interface DecayEntry {
   key: string | null;
   title: string;
@@ -871,6 +923,14 @@ export function createClient(baseUrl: string, apiKey: string) {
         "/api/v1/knowledge/check-ingested",
         opts,
       );
+    },
+
+    async wikiLint(opts: {
+      workspaceId: string;
+      checks?: WikiLintCheck[];
+      limitPerCheck?: number;
+    }): Promise<WikiLintResult> {
+      return request<WikiLintResult>("POST", "/api/v1/notes/wiki-lint", opts);
     },
 
     async ingestExternal(opts: {

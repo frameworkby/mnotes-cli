@@ -22,6 +22,7 @@ import { registerTagGroup } from "./commands/tag";
 import { registerWsGroup } from "./commands/ws";
 import { registerInfoGroup } from "./commands/info";
 import { registerCompositeGroup } from "./commands/composite";
+import { registerWikiGroup } from "./commands/wiki";
 import { registerReadCommand } from "./commands/read";
 import { registerSearchCommand } from "./commands/search";
 import { registerCreateCommand } from "./commands/create";
@@ -62,6 +63,7 @@ export function buildProgram(): Command {
   registerWsGroup(program);
   registerInfoGroup(program);
   registerCompositeGroup(program);
+  registerWikiGroup(program);
 
   registerReadCommand(program);
   registerSearchCommand(program);
