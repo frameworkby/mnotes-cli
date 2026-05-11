@@ -1,6 +1,7 @@
 import { Option, type Command } from "commander";
 import { resolveConfig } from "../../config";
 import { createClient } from "../../client";
+import { printSuccess } from "../../output";
 import type { ActionDescriptor } from "../_register-group";
 import type { FolderRecord } from "../../client";
 
@@ -39,6 +40,14 @@ export const manageFoldersAction: ActionDescriptor<ManageInput, ManageOutput> = 
       .option("--id <id>", "Folder ID (required for rename and delete)")
       .option("--name <name>", "Folder name (required for create and rename)")
       .option("--parent-id <id>", "Parent folder ID (optional, for create)"),
+
+  renderHuman: (output) => {
+    if ("deleted" in output) {
+      printSuccess(`Folder ${output.deleted} deleted`);
+    } else {
+      console.log(`${output.id}  ${output.name}`);
+    }
+  },
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);

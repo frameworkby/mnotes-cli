@@ -7,6 +7,8 @@ import type { NoteListItem } from "../../client";
 
 interface ListInput {
   folderId?: string;
+  /** Alias for folderId — accepted when the user types --folder instead of --folder-id. */
+  folder?: string;
   cursor?: string;
   // Commander coerces `--limit` via `parseInt` in `args` below, so handlers
   // always see `number | undefined` here.
@@ -26,16 +28,18 @@ export const listAction: ActionDescriptor<ListInput, ListOutput> = {
   args: (cmd: Command) =>
     cmd
       .option("--folder-id <id>", "Folder ID")
+      .option("--folder <id>", "Alias for --folder-id")
       .option("--cursor <cursor>", "Pagination cursor")
       .option("--limit <n>", "Max notes to return", (v) => parseInt(v, 10)),
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
     const client = createClient(config.baseUrl, config.apiKey);
+    const folderId = input.folderId ?? input.folder;
 
     const apiResp = await client.listNotes({
       workspaceId: config.workspaceId,
-      folderId: input.folderId,
+      folderId,
       cursor: input.cursor,
       limit: input.limit,
     });
