@@ -384,10 +384,14 @@ describe("generatePostToolUseScript: wiki log append call", () => {
     expect(appendLine).toContain(">/dev/null 2>&1 || true");
   });
 
-  it("summary is first 80 chars of stdout with newlines stripped", () => {
+  it("summary uses first non-empty line of stdout, not concatenated across commands", () => {
     const s = generatePostToolUseScript();
-    expect(s).toContain("head -c 80");
-    expect(s).toContain("tr -d");
+    // grep -m1 picks first non-empty line — NOT tr -d '\n' which strips all newlines
+    expect(s).toMatch(/grep\s+-m1\s+-v/);
+    // The _summary= line must NOT use tr -d to strip newlines
+    const summaryLine = s.split("\n").find((l) => l.includes("_summary="));
+    expect(summaryLine).toBeDefined();
+    expect(summaryLine).not.toContain("tr -d");
   });
 });
 
@@ -396,5 +400,41 @@ describe("generatePostToolUseScript: optional debug log", () => {
     const s = generatePostToolUseScript();
     expect(s).toContain("MNOTES_HOOK_DEBUG");
     expect(s).toContain("postusetool.debug.log");
+  });
+});
+
+// =============================================================
+// Bug #953 — redirection filtering + summary fixes
+// =============================================================
+describe("generatePostToolUseScript: #953 fixes", () => {
+  it("script filters shell redirection from --ref in wiki lint", () => {
+    const s = generatePostToolUseScript();
+    // Find the _ref extraction line for the lint branch (wiki lint / kb scan-conflicts).
+    const lintRefLine = s
+      .split("\n")
+      .find((l) => l.includes("wiki[[:space:]]+lint") && l.includes("_ref=") && l.includes("awk"));
+    expect(lintRefLine).toBeDefined();
+    // Must pipe through grep -vE to reject redirection tokens
+    expect(lintRefLine).toContain("grep -vE");
+    // Must strip trailing ; or & via sed
+    expect(lintRefLine).toMatch(/sed\s+'s\/\[;&\]/);
+  });
+
+  it("script extracts first non-empty line for summary", () => {
+    const s = generatePostToolUseScript();
+    // _summary= line must use grep -m1 -v to get the first non-empty line
+    const summaryLine = s.split("\n").find((l) => l.includes("_summary="));
+    expect(summaryLine).toBeDefined();
+    expect(summaryLine).toContain("grep -m1 -v");
+  });
+
+  it("script truncates summary at word boundary", () => {
+    const s = generatePostToolUseScript();
+    // awk on the summary line splits on space and accumulates up to 80 chars
+    const summaryLine = s.split("\n").find((l) => l.includes("_summary="));
+    expect(summaryLine).toBeDefined();
+    expect(summaryLine).toContain("awk");
+    expect(summaryLine).toContain("80");
+    expect(summaryLine).toContain("split");
   });
 });

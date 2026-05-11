@@ -117,8 +117,8 @@ elif printf '%s' "\${_command}" | grep -qE '\\bsearch\\b|recall-knowledge'; then
   elif printf '%s' "\${_command}" | grep -qE -- '--query[[:space:]]+[^[:space:]]+'; then
     _ref=\$(printf '%s' "\${_command}" | grep -oE -- '--query[[:space:]]+[^[:space:]]+' | sed 's/--query[[:space:]]*//' | head -1) || true
   else
-    # First positional arg after subcommand keyword
-    _ref=\$(printf '%s' "\${_command}" | grep -oE '(search|recall-knowledge)[[:space:]]+[^[:space:]]+' | awk '{print \$2}' | head -1) || true
+    # First positional arg after subcommand keyword; filter out shell redirections.
+    _ref=\$(printf '%s' "\${_command}" | grep -oE '(search|recall-knowledge)[[:space:]]+[^[:space:]]+' | awk '{print \$2}' | head -1 | grep -vE '^(\\||&|;|<|>|[12]?>|>>|&&|\\|\\|)' | sed 's/[;&]\$//' ) || true
   fi
   if [ -z "\${_ref}" ]; then
     _ref="query"
@@ -126,8 +126,8 @@ elif printf '%s' "\${_command}" | grep -qE '\\bsearch\\b|recall-knowledge'; then
 
 elif printf '%s' "\${_command}" | grep -qE '(wiki[[:space:]]+lint|kb[[:space:]]+scan-conflicts)'; then
   _kind="lint"
-  # Extract check name after subcommand or default to "all".
-  _ref=\$(printf '%s' "\${_command}" | grep -oE '(wiki[[:space:]]+lint|kb[[:space:]]+scan-conflicts)[[:space:]]+[^[:space:]]+' | awk '{print \$NF}' | head -1) || true
+  # Extract check name after subcommand or default to "all"; filter out shell redirections.
+  _ref=\$(printf '%s' "\${_command}" | grep -oE '(wiki[[:space:]]+lint|kb[[:space:]]+scan-conflicts)[[:space:]]+[^[:space:]]+' | awk '{print \$NF}' | head -1 | grep -vE '^(\\||&|;|<|>|[12]?>|>>|&&|\\|\\|)' | sed 's/[;&]\$//' ) || true
   if [ -z "\${_ref}" ]; then
     _ref="all"
   fi
@@ -195,7 +195,7 @@ printf '%s\\n' "\$(( _count + 1 ))" > "\${_SESSION_FILE}" || true
 
 # ── Build summary ──────────────────────────────────────────────────────────────
 
-_summary=\$(printf '%s' "\${_stdout}" | tr -d '\\n' | head -c 80) || true
+_summary=\$(printf '%s' "\${_stdout}" | grep -m1 -v '^[[:space:]]*\$' | awk 'NR==1{ if(length(\$0)<=80){print \$0;exit} n=split(\$0,w," "); r=""; for(i=1;i<=n;i++){t=(r==""?w[i]:r" "w[i]); if(length(t)>80)break; r=t}; print r}') || true
 
 # ── Append wiki log entry ──────────────────────────────────────────────────────
 
