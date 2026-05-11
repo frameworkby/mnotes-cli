@@ -2,25 +2,67 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateClaudeCodeTemplate = generateClaudeCodeTemplate;
 function generateClaudeCodeTemplate(opts) {
-    return `<!-- m-notes instructions v4 -->
+    return `<!-- m-notes instructions v7 -->
 # m-notes — Your Wiki (MANDATORY)
 
 **Server**: ${opts.url}
 **Workspace**: ${opts.workspaceId}
 
-> You are not a reader of a scratchpad. You are the **author and maintainer of a living wiki**. Every session, three things compound: the wiki grows, links densify, contradictions get resolved. This is your persistent memory — without it you start from zero every conversation.
+> **Division of labour**: The human curates sources and asks questions. You do the grunt work — summarising, cross-referencing, filing, bookkeeping. You are the **author and maintainer of a living wiki**. Every session, three things compound: the wiki grows, links densify, contradictions get resolved. This is your persistent memory — without it you start from zero every conversation.
+
+## Workspace Resolution
+
+The CLI resolves workspace automatically — no \`--workspace-id\` flag needed. Resolution order:
+
+1. \`MNOTES_WORKSPACE_ID\` environment variable
+2. Per-directory mapping set by \`mnotes workspace link\` (walks up parent dirs)
+3. Global default set by \`mnotes workspace select\`
+
+To configure: run \`mnotes workspace link\` in your project directory, or set \`MNOTES_WORKSPACE_ID\` in your shell environment.
 
 ## The Three Layers
 
 1. **Raw sources** — user messages, pasted docs, URLs, files. Immutable. You never edit these.
 2. **The wiki** — your notes. You *write* these. They are interlinked with \`[[wikilinks]]\`, tagged for retrieval, and updated whenever sources change.
-3. **Schema pages** — notes tagged \`type:config\` (or in a \`_schema/\` folder). The user's rules for how the wiki is organized. **Read these before editing the wiki.**
+3. **The schema** — notes tagged \`type:config\` (or in a \`_schema/\` folder). The user's rules for how the wiki is organized. **Read these before editing the wiki.**
+
+## Page Types (for long-form wiki notes)
+
+When creating a note, use the most specific \`type\` from this enum in frontmatter:
+
+| type | Use when... |
+|------|-------------|
+| \`concept\` | A recurring idea, pattern, or principle |
+| \`entity\` | A person, library, product, or system |
+| \`source-summary\` | A distilled summary of one raw source |
+| \`comparison\` | A side-by-side of two or more entities/concepts |
+| \`overview\` | A top-down map of a topic area |
+
+These types apply to **wiki notes** (long-form, evolving pages). They are distinct from kb-store fast-capture categories (see "When to Store Knowledge" below).
+
+### Recommended Frontmatter
+
+Follow this convention when creating or updating notes:
+
+\`\`\`yaml
+---
+title: <human-readable>
+type: concept | entity | source-summary | comparison | overview
+sources: [<raw source ids or slugs>]
+related: [<linked note titles>]
+created: YYYY-MM-DD
+updated: YYYY-MM-DD
+confidence: high | medium | low
+---
+\`\`\`
+
+This frontmatter is a convention, not enforced by the server. Agents and humans rely on it for provenance and navigation — always populate it.
 
 ## Rules (follow strictly)
 
 1. **ALWAYS recall before researching.** Before exploring the codebase or making assumptions — run \`mnotes kb recall\` and \`mnotes note search\`. Past you already figured things out.
 2. **ALWAYS store what you learn.** Non-obvious discoveries → \`mnotes kb store\` immediately. Anything worth re-finding belongs in the wiki.
-3. **ALWAYS log sessions.** Run \`mnotes session log\` before the session ends.
+3. **LOG MEANINGFUL SESSIONS.** Run \`mnotes session log --summary "..."\` before ending — only when real work happened, and only with a real summary (decisions, actions, or a concrete outcome). Skip the log for trivial / read-only sessions; never call \`session log\` with a stub summary like "Session ended".
 4. **ALWAYS load context at session start.** Run \`mnotes composite project-load\`. Use \`mnotes session resume\` if mid-conversation.
 5. **INGEST sources coherently.** When the user drops a URL, long paste, or file: don't just dump it into one note. Run the **ingest loop** (below).
 6. **LINT the wiki periodically.** On session start for large workspaces, and after any ingest, run the **lint loop** (below).
@@ -32,11 +74,13 @@ function generateClaudeCodeTemplate(opts) {
 These are not suggestions. Skip any step and the wiki degrades.
 
 ### Session Start (before ANY work)
-- [ ] Run \`mnotes composite project-load --workspace-id "${opts.workspaceId}"\`
-- [ ] Run \`mnotes kb recall --workspace-id "${opts.workspaceId}" --query "<topic>"\` — past you already figured things out
-- [ ] Run \`mnotes note search --workspace-id "${opts.workspaceId}" --query "<topic>"\` for related wiki pages
-- [ ] If the graph is empty, run \`mnotes graph populate --workspace-id "${opts.workspaceId}"\` (idempotent)
-- [ ] Run \`mnotes note search --workspace-id "${opts.workspaceId}" --query "type:config"\` for schema notes before editing
+- [ ] Run \`mnotes wiki log tail --limit 10\` — see recent ingest/lint/decision activity before anything else
+- [ ] Read the Wiki Index: \`mnotes note-ops by-title --title "Wiki Index"\` — find relevant pages and drill in before falling back to search
+- [ ] Run \`mnotes composite project-load\`
+- [ ] Run \`mnotes kb recall --query "<topic>"\` — past you already figured things out
+- [ ] Run \`mnotes note search --query "<topic>"\` for related wiki pages
+- [ ] If the graph is empty, run \`mnotes graph populate\` (idempotent)
+- [ ] Run \`mnotes note search --query "type:config"\` for schema notes before editing
 
 Do not skip this. Do not say "I'll check later." Do not assume you know what's in the wiki.
 
@@ -54,7 +98,7 @@ Do not skip this. Do not say "I'll check later." Do not assume you know what's i
 - Duplicates — run \`mnotes kb recall\` first to check
 
 ### Session End (before finishing)
-- [ ] Run \`mnotes session log --workspace-id "${opts.workspaceId}" --summary "..." \`
+- [ ] If meaningful work happened (decisions, code shipped, investigations completed): run \`mnotes session log --summary "<real summary>"\` with concrete content. Skip otherwise — empty/stub logs are noise.
 - [ ] If you did meaningful work and didn't store anything yet — you forgot. Go back and store it.
 
 If you think "this isn't worth saving" — save it anyway. Future you has no context.
@@ -63,29 +107,46 @@ If you think "this isn't worth saving" — save it anyway. Future you has no con
 
 When the user supplies a source (URL, paste, file):
 
-1. **Find related pages**: \`mnotes note search\` + \`mnotes graph query\` to identify 3–15 existing notes affected.
+1. **Find related pages**: \`mnotes note search\` + \`mnotes graph query\` to identify **10–15 existing notes** affected. A single non-trivial source typically touches 10–15 pages, not 3 — if you find fewer, search harder.
 2. **Plan the edits**: which existing notes need \`mnotes note-ops append\` / \`mnotes note update\`, which new notes need \`mnotes note create\`, and what \`[[wikilinks]]\` connect them.
 3. **Apply**: execute the plan. Every touched note gets:
-   - A \`source/<slug>\` tag or a "Sources" section listing provenance
+   - A \`source/<slug>\` tag **and** a "Sources" section in the body listing provenance
    - At least one \`[[wikilink]]\` to another touched note
+   - Frontmatter updated (especially \`updated\`, \`sources\`, \`related\`)
 4. **Summarize**: tell the user which notes were created vs. updated.
+5. **Log the ingest**: the PostToolUse hook appends the log entry automatically when you run \`mnotes notes create\` / \`mnotes wiki ingest\`. You do not need to call \`wiki log append\` manually — the hook handles it.
+6. **Refresh the index**: \`mnotes wiki index refresh\`
 
-A single source should rarely touch fewer than 3 notes — that's a sign you're treating the wiki as a dumping ground.
+A single source touching fewer than 5 notes is a red flag — that's a sign you're treating the wiki as a dumping ground rather than a connected graph.
+
+## The Query Loop
+
+When answering a non-trivial question:
+
+1. **Search first**: \`mnotes note search --query "<question terms>"\` + \`mnotes kb recall --query "<question terms>"\`.
+2. **Answer from the wiki**: synthesise from what you find. Prefer existing notes over re-deriving from scratch.
+3. **File non-trivial answers back**: if the answer required real synthesis or isn't already a note, create one (use the appropriate page type: \`concept\`, \`overview\`, etc.). This is the compounding loop — answering questions grows the wiki.
+4. **Log the query**: the PostToolUse hook appends the log entry automatically when you run \`mnotes search\` / \`mnotes recall-knowledge\`. You do not need to call \`wiki log append\` manually — the hook handles it.
+
+Questions answered and not filed are knowledge lost.
 
 ## The Lint Loop
 
 Periodically (session start on large workspaces; after ingests):
 
-- **Contradictions** → run \`mnotes kb scan-conflicts --workspace-id "${opts.workspaceId}"\`. Resolve, don't stack.
+- **Contradictions** → run \`mnotes kb scan-conflicts\`. Resolve, don't stack.
 - **Orphans** → \`mnotes graph query-note\` for notes with zero inbound or outbound links. Link them or delete.
 - **Broken wikilinks** → \`[[X]]\` targets that don't exist. Create a stub note or fix the link.
 - **Stale** → notes untouched >90 days referenced by new sources. Update them.
+
+After running \`mnotes wiki lint\`, the PostToolUse hook appends the log entry automatically. You do not need to call \`wiki log append\` manually — the hook handles it. Call \`mnotes wiki log append --kind decision\` only for explicit decisions, which no hook can infer.
 
 Report findings as a short list; ask before bulk-deleting.
 
 ## When to Store Knowledge
 
-Store **proactively** — don't wait to be asked. Categories:
+Store **proactively** — don't wait to be asked. These are **kb-store fast-capture categories** (distinct from wiki note page types above):
+
 - Architecture decision → \`arch/{component}\`
 - Code pattern or convention → \`pattern/{name}\`
 - Debugged bug → \`bug/{id}\`
@@ -95,7 +156,7 @@ Store **proactively** — don't wait to be asked. Categories:
 - Gotcha or footgun → \`gotcha/{description}\`
 - Completed task → \`task/{id}\`
 
-**Promotion rule**: if a knowledge entry is recalled 3+ times, promote it to a full note with \`mnotes note create\` — it has earned a wiki page.
+**Promotion rule**: if a knowledge entry is recalled 3+ times, promote it to a full wiki note with \`mnotes note create\`. Use the page-type vocabulary when promoting: a recurring pattern becomes a \`concept\` note, a library/tool becomes an \`entity\` note, a summarised investigation becomes a \`source-summary\`, etc.
 
 ## When to Recall Knowledge
 
@@ -146,72 +207,79 @@ The graph is how the wiki stays navigable. **Every note you write or edit must h
 ### Graph Commands
 | Command | When to use |
 |---------|------------|
-| \`mnotes graph populate --workspace-id <id>\` | Initialize from existing notes (idempotent) |
-| \`mnotes graph create-node --workspace-id <id>\` | Add a concept/tag/note-linked node |
-| \`mnotes graph create-edge --workspace-id <id>\` | Link two nodes |
-| \`mnotes graph query --workspace-id <id>\` | Search by type, label, or connectivity |
-| \`mnotes graph neighbors --workspace-id <id>\` | Explore connections from a node |
-| \`mnotes graph query-note --workspace-id <id>\` | Get subgraph around a note |
+| \`mnotes graph populate\` | Initialize from existing notes (idempotent) |
+| \`mnotes graph create-node\` | Add a concept/tag/note-linked node |
+| \`mnotes graph create-edge\` | Link two nodes |
+| \`mnotes graph query\` | Search by type, label, or connectivity |
+| \`mnotes graph neighbors\` | Explore connections from a node |
+| \`mnotes graph query-note\` | Get subgraph around a note |
 
 Node types: **note**, **tag**, **concept**. Edge types: **wikilink**, **related**, **parent**, **tagged**, **custom**.
 
 \`\`\`bash
-mnotes graph create-node --workspace-id "${opts.workspaceId}" --label "Auth Module" --node-type concept
-mnotes graph create-node --workspace-id "${opts.workspaceId}" --label "PostgreSQL" --node-type concept
-mnotes graph create-edge --workspace-id "${opts.workspaceId}" --source <authNodeId> --target <pgNodeId> --edge-type related
+mnotes graph create-node --label "Auth Module" --node-type concept
+mnotes graph create-node --label "PostgreSQL" --node-type concept
+mnotes graph create-edge --source <authNodeId> --target <pgNodeId> --edge-type related
 \`\`\`
 
 ## CLI Commands Reference
 
-All commands require \`--workspace-id "${opts.workspaceId}"\` unless noted.
+Workspace is resolved automatically from env/config. No \`--workspace-id\` flag required.
 
 ### Session & Context
 | Command | When to use |
 |---------|------------|
-| \`mnotes composite project-load --workspace-id <id>\` | Session start |
-| \`mnotes session resume --workspace-id <id>\` | Resume mid-conversation |
-| \`mnotes session log --workspace-id <id> --summary "..."\` | Log summary at end |
+| \`mnotes composite project-load\` | Session start |
+| \`mnotes session resume\` | Resume mid-conversation |
+| \`mnotes session log --summary "..."\` | Log summary at end |
 
 ### Knowledge (fast capture)
 | Command | When to use |
 |---------|------------|
-| \`mnotes kb store --workspace-id <id> --key <key> --content "..."\` | Store a single fact |
-| \`mnotes kb recall --workspace-id <id> --query "..."\` | Semantic search |
-| \`mnotes bulk knowledge-recall --workspace-id <id> --tag-pattern "arch/*"\` | Recall by tag pattern |
-| \`mnotes kb snapshot --workspace-id <id>\` | Export all knowledge |
-| \`mnotes kb scan-conflicts --workspace-id <id>\` | Lint: find contradictions |
+| \`mnotes kb store --key <key> --content "..."\` | Store a single fact |
+| \`mnotes kb recall --query "..."\` | Semantic search |
+| \`mnotes bulk knowledge-recall --tag-pattern "arch/*"\` | Recall by tag pattern |
+| \`mnotes kb snapshot\` | Export all knowledge |
+| \`mnotes kb scan-conflicts\` | Lint: find contradictions |
 
 ### Notes (wiki pages)
 | Command | When to use |
 |---------|------------|
-| \`mnotes note create --workspace-id <id> --title "..."\` | New page |
-| \`mnotes note update --workspace-id <id> --id <id>\` | Replace content |
-| \`mnotes note-ops append --workspace-id <id> --id <id>\` | Add to existing page |
-| \`mnotes note get --workspace-id <id> --id <id>\` | Read by ID |
-| \`mnotes note-ops by-title --workspace-id <id> --title "..."\` | Read by title |
-| \`mnotes note search --workspace-id <id> --query "..."\` | FTS + semantic search |
-| \`mnotes note list --workspace-id <id>\` | List by folder |
-| \`mnotes note-ops daily --workspace-id <id>\` | Today's capture note |
-| \`mnotes tag manage --workspace-id <id> --id <id>\` | Add/remove tags |
-| \`mnotes note-ops pin --workspace-id <id> --id <id>\` | Pin a note |
-| \`mnotes note-ops star --workspace-id <id> --id <id>\` | Star a note |
+| \`mnotes note create --title "..."\` | New page |
+| \`mnotes note update --id <id>\` | Replace content |
+| \`mnotes note-ops append --id <id>\` | Add to existing page |
+| \`mnotes note get --id <id>\` | Read by ID |
+| \`mnotes note-ops by-title --title "..."\` | Read by title |
+| \`mnotes note search --query "..."\` | FTS + semantic search |
+| \`mnotes note list\` | List by folder |
+| \`mnotes note-ops daily\` | Today's capture note |
+| \`mnotes tag manage --id <id>\` | Add/remove tags |
+| \`mnotes note-ops pin --id <id>\` | Pin a note |
+| \`mnotes note-ops star --id <id>\` | Star a note |
 
 ### Organization
 | Command | When to use |
 |---------|------------|
-| \`mnotes folder list --workspace-id <id>\` | List folders |
-| \`mnotes folder manage --workspace-id <id>\` | Create/rename/delete folders |
-| \`mnotes folder move --workspace-id <id>\` | Move a folder |
-| \`mnotes bulk move --workspace-id <id>\` | Bulk move notes |
-| \`mnotes composite context-fetch --workspace-id <id> --query "..."\` | Search notes by query |
+| \`mnotes folder list\` | List folders |
+| \`mnotes folder manage\` | Create/rename/delete folders |
+| \`mnotes folder move\` | Move a folder |
+| \`mnotes bulk move\` | Bulk move notes |
+| \`mnotes composite context-fetch --query "..."\` | Search notes by query |
 
 ### Knowledge Graph
 | Command | When to use |
 |---------|------------|
-| \`mnotes graph populate --workspace-id <id>\` | Initialize graph |
-| \`mnotes graph create-node --workspace-id <id>\` | Add concept node |
-| \`mnotes graph create-edge --workspace-id <id>\` | Link two nodes |
-| \`mnotes graph query --workspace-id <id>\` | Search graph |
-| \`mnotes graph neighbors --workspace-id <id>\` | Explore connections |
-| \`mnotes graph query-note --workspace-id <id>\` | Subgraph around a note |`;
+| \`mnotes graph populate\` | Initialize graph |
+| \`mnotes graph create-node\` | Add concept node |
+| \`mnotes graph create-edge\` | Link two nodes |
+| \`mnotes graph query\` | Search graph |
+| \`mnotes graph neighbors\` | Explore connections |
+| \`mnotes graph query-note\` | Subgraph around a note |
+
+### Wiki Index & Log
+| Command | When to use |
+|---------|------------|
+| \`mnotes wiki log tail --limit N\` | Read last N log entries (default 20, most recent first) — run at session start |
+| \`mnotes wiki log append --kind <ingest\|query\|lint\|decision> --ref <text> [--summary <text>]\` | Append a timestamped log entry |
+| \`mnotes wiki index refresh\` | Regenerate the Wiki Index from current notes; outputs added/removed/unchanged/total |`;
 }

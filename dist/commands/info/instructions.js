@@ -9,13 +9,12 @@ exports.instructionsAction = {
     mcpTool: "generate_agent_instructions",
     args: (cmd) => cmd
         .option("--client <s>", "Target client")
-        .option("--base-url <url>", "Override base URL")
-        .option("--workspace-id <id>", "Workspace ID"),
+        .option("--base-url <url>", "Override base URL"),
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
         return client.generateAgentInstructions({
-            workspaceId: input.workspaceId ?? config.workspaceId,
+            workspaceId: config.workspaceId,
             client: input.client,
             baseUrl: input.baseUrl,
         });

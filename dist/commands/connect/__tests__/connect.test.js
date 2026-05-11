@@ -222,15 +222,11 @@ function cleanTmpDir(dir) {
         // The --list flag should still work with --url and --api-key present
         (0, vitest_1.expect)(output).toContain("Available integrations:");
     });
-    (0, vitest_1.it)("accepts --workspace flag without error", async () => {
+    (0, vitest_1.it)("rejects unknown --workspace flag (removed in v2)", async () => {
         const program = new commander_1.Command();
         program.exitOverride();
         (0, index_1.registerConnectCommand)(program);
-        let output = "";
-        const origLog = console.log;
-        console.log = (...args) => {
-            output += args.join(" ") + "\n";
-        };
+        let errorMessage = "";
         try {
             await program.parseAsync([
                 "node",
@@ -241,10 +237,10 @@ function cleanTmpDir(dir) {
                 "ws-abc-123",
             ]);
         }
-        finally {
-            console.log = origLog;
+        catch (err) {
+            errorMessage = err instanceof Error ? err.message : String(err);
         }
-        (0, vitest_1.expect)(output).toContain("Available integrations:");
+        (0, vitest_1.expect)(errorMessage).toContain("unknown option");
     });
 });
 // =============================================================
@@ -574,6 +570,7 @@ function cleanTmpDir(dir) {
     let origCwd;
     let origExit;
     let exitCode;
+    let origWorkspaceId;
     (0, vitest_1.beforeEach)(() => {
         tmpDir = makeTmpDir();
         origCwd = process.cwd;
@@ -584,10 +581,17 @@ function cleanTmpDir(dir) {
             exitCode = code;
             throw new Error(`process.exit(${code})`);
         });
+        // Provide a default workspace via env so tests don't hit interactive prompt
+        origWorkspaceId = process.env.MNOTES_WORKSPACE_ID;
+        process.env.MNOTES_WORKSPACE_ID = "ws-123";
     });
     (0, vitest_1.afterEach)(() => {
         process.cwd = origCwd;
         process.exit = origExit;
+        if (origWorkspaceId !== undefined)
+            process.env.MNOTES_WORKSPACE_ID = origWorkspaceId;
+        else
+            delete process.env.MNOTES_WORKSPACE_ID;
         cleanTmpDir(tmpDir);
         vitest_1.vi.restoreAllMocks();
     });
@@ -608,7 +612,6 @@ function cleanTmpDir(dir) {
                 "node", "mnotes", "connect", "claude-code",
                 "--url", "http://localhost:3000",
                 "--api-key", "test-key-abc",
-                "--workspace", "ws-123",
                 "--no-wizard",
             ]);
         }
@@ -637,7 +640,6 @@ function cleanTmpDir(dir) {
                 "node", "mnotes", "connect", "claude-code",
                 "--url", "http://localhost:3000",
                 "--api-key", "test-key-abc",
-                "--workspace", "ws-123",
                 "--no-wizard",
             ]);
         }
@@ -660,12 +662,13 @@ function cleanTmpDir(dir) {
         (0, index_1.registerConnectCommand)(program);
         const origLog = console.log;
         console.log = () => { };
+        // Override workspace to ws-new for this test
+        process.env.MNOTES_WORKSPACE_ID = "ws-new";
         try {
             await program.parseAsync([
                 "node", "mnotes", "connect", "claude-code",
                 "--url", "http://localhost:3000",
                 "--api-key", "test-key-abc",
-                "--workspace", "ws-new",
                 "--no-wizard",
             ]);
         }
@@ -699,7 +702,6 @@ function cleanTmpDir(dir) {
         try {
             await program.parseAsync([
                 "node", "mnotes", "connect", "claude-code",
-                "--workspace", "ws-123",
             ]);
         }
         catch {
@@ -715,7 +717,7 @@ function cleanTmpDir(dir) {
         (0, vitest_1.expect)(exitCode).toBe(1);
         (0, vitest_1.expect)(stderrOutput).toContain("API key required");
     });
-    (0, vitest_1.it)("uses --workspace flag when provided (AC-5, no interactive prompt)", async () => {
+    (0, vitest_1.it)("uses MNOTES_WORKSPACE_ID env var (AC-5, no interactive prompt)", async () => {
         const configUtils = await Promise.resolve().then(() => __importStar(require("../config-utils")));
         vitest_1.vi.spyOn(configUtils, "validateConnection").mockResolvedValue({ ok: true });
         const program = new commander_1.Command();
@@ -726,12 +728,13 @@ function cleanTmpDir(dir) {
         console.log = (...args) => {
             output += args.join(" ") + "\n";
         };
+        // Override env to a different workspace for this test
+        process.env.MNOTES_WORKSPACE_ID = "ws-explicit-id";
         try {
             await program.parseAsync([
                 "node", "mnotes", "connect", "claude-code",
                 "--url", "http://localhost:3000",
                 "--api-key", "test-key",
-                "--workspace", "ws-explicit-id",
                 "--no-wizard",
             ]);
         }
@@ -746,6 +749,7 @@ function cleanTmpDir(dir) {
         vitest_1.vi.spyOn(configUtils, "validateConnection").mockResolvedValue({
             ok: false,
             error: "Connection refused",
+            kind: "network",
         });
         const program = new commander_1.Command();
         program.exitOverride();
@@ -761,7 +765,6 @@ function cleanTmpDir(dir) {
                 "node", "mnotes", "connect", "claude-code",
                 "--url", "http://localhost:3000",
                 "--api-key", "test-key",
-                "--workspace", "ws-123",
             ]);
         }
         catch {
@@ -790,7 +793,6 @@ function cleanTmpDir(dir) {
                 "node", "mnotes", "connect", "claude-code",
                 "--url", "http://localhost:3000///",
                 "--api-key", "test-key-abc",
-                "--workspace", "ws-123",
                 "--no-wizard",
             ]);
         }
@@ -801,5 +803,125 @@ function cleanTmpDir(dir) {
         (0, vitest_1.expect)(fs.existsSync(path.join(tmpDir, ".mcp.json"))).toBe(false);
         (0, vitest_1.expect)(output).toContain("http://localhost:3000");
         (0, vitest_1.expect)(output).not.toMatch(/http:\/\/localhost:3000\/+\s/);
+    });
+});
+// =============================================================
+// Removed targets: connect claude / connect cursor (removed in v2.1)
+// =============================================================
+(0, vitest_1.describe)("mnotes connect <removed targets>", () => {
+    let origExit;
+    let exitCode;
+    (0, vitest_1.beforeEach)(() => {
+        exitCode = undefined;
+        origExit = process.exit;
+        process.exit = ((code) => {
+            exitCode = code;
+            throw new Error(`process.exit(${code})`);
+        });
+    });
+    (0, vitest_1.afterEach)(() => {
+        process.exit = origExit;
+        vitest_1.vi.restoreAllMocks();
+    });
+    (0, vitest_1.it)("exits with error and migration hint for 'connect claude' (removed in v2.1)", async () => {
+        const program = new commander_1.Command();
+        program.exitOverride();
+        (0, index_1.registerConnectCommand)(program);
+        let stderrOutput = "";
+        const origStderrWrite = process.stderr.write;
+        process.stderr.write = (chunk) => {
+            stderrOutput += typeof chunk === "string" ? chunk : chunk.toString();
+            return true;
+        };
+        try {
+            await program.parseAsync(["node", "mnotes", "connect", "claude"]);
+        }
+        catch {
+            // Expected — process.exit throws
+        }
+        finally {
+            process.stderr.write = origStderrWrite;
+        }
+        (0, vitest_1.expect)(exitCode).toBe(1);
+        (0, vitest_1.expect)(stderrOutput).toContain("removed in v2.1");
+        (0, vitest_1.expect)(stderrOutput).toContain("/api/mcp");
+        (0, vitest_1.expect)(stderrOutput).toContain("connect claude-code");
+        (0, vitest_1.expect)(stderrOutput).toContain("~/.claude/mcp.json");
+    });
+    (0, vitest_1.it)("exits with error and migration hint for 'connect cursor' (removed in v2.1)", async () => {
+        const program = new commander_1.Command();
+        program.exitOverride();
+        (0, index_1.registerConnectCommand)(program);
+        let stderrOutput = "";
+        const origStderrWrite = process.stderr.write;
+        process.stderr.write = (chunk) => {
+            stderrOutput += typeof chunk === "string" ? chunk : chunk.toString();
+            return true;
+        };
+        try {
+            await program.parseAsync(["node", "mnotes", "connect", "cursor"]);
+        }
+        catch {
+            // Expected — process.exit throws
+        }
+        finally {
+            process.stderr.write = origStderrWrite;
+        }
+        (0, vitest_1.expect)(exitCode).toBe(1);
+        (0, vitest_1.expect)(stderrOutput).toContain("removed in v2.1");
+        (0, vitest_1.expect)(stderrOutput).toContain("/api/mcp");
+        (0, vitest_1.expect)(stderrOutput).toContain("connect claude-code");
+        (0, vitest_1.expect)(stderrOutput).toContain("~/.cursor/mcp.json");
+    });
+    (0, vitest_1.it)("exits with error for unknown target with list of supported targets", async () => {
+        const program = new commander_1.Command();
+        program.exitOverride();
+        (0, index_1.registerConnectCommand)(program);
+        let stderrOutput = "";
+        const origStderrWrite = process.stderr.write;
+        process.stderr.write = (chunk) => {
+            stderrOutput += typeof chunk === "string" ? chunk : chunk.toString();
+            return true;
+        };
+        try {
+            await program.parseAsync(["node", "mnotes", "connect", "vscode"]);
+        }
+        catch {
+            // Expected — process.exit throws
+        }
+        finally {
+            process.stderr.write = origStderrWrite;
+        }
+        (0, vitest_1.expect)(exitCode).toBe(1);
+        (0, vitest_1.expect)(stderrOutput).toContain("Unsupported target 'vscode'");
+        (0, vitest_1.expect)(stderrOutput).toContain("claude-code");
+        (0, vitest_1.expect)(stderrOutput).toContain("codex");
+        (0, vitest_1.expect)(stderrOutput).toContain("openclaw");
+        // Must NOT list the removed targets as supported
+        (0, vitest_1.expect)(stderrOutput).not.toContain("Supported: claude, cursor");
+    });
+    (0, vitest_1.it)("removed targets do not appear in --list output", async () => {
+        const program = new commander_1.Command();
+        program.exitOverride();
+        (0, index_1.registerConnectCommand)(program);
+        let output = "";
+        const origLog = console.log;
+        console.log = (...args) => {
+            output += args.join(" ") + "\n";
+        };
+        try {
+            await program.parseAsync(["node", "mnotes", "connect", "--list"]);
+        }
+        finally {
+            console.log = origLog;
+        }
+        // Active targets present
+        (0, vitest_1.expect)(output).toContain("claude-code");
+        (0, vitest_1.expect)(output).toContain("codex");
+        (0, vitest_1.expect)(output).toContain("openclaw");
+        // Removed targets absent
+        (0, vitest_1.expect)(output).not.toMatch(/\bclaude\b(?!-code)/);
+        (0, vitest_1.expect)(output).not.toContain("~/.cursor/mcp.json");
+        (0, vitest_1.expect)(output).not.toContain("~/.claude/mcp.json");
     });
 });

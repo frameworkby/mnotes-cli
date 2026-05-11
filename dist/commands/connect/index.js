@@ -51,17 +51,19 @@ const wizard_1 = require("./wizard");
 exports.INTEGRATION_TARGETS = [
     {
         name: "claude-code",
-        description: "Connect Claude Code via MCP server config and CLAUDE.md instructions",
+        description: "Connect Claude Code project-level via CLAUDE.md instructions",
     },
     {
         name: "codex",
-        description: "Connect OpenAI Codex via MCP config (experimental)",
+        description: "Connect OpenAI Codex via AGENTS.md instructions",
     },
     {
         name: "openclaw",
         description: "Connect OpenClaw for mobile/conversational use",
     },
 ];
+/** Targets removed in v2.1 that previously wrote a dead /api/mcp URL. */
+const REMOVED_MCP_TARGETS = new Set(["claude", "cursor"]);
 /**
  * Prints the list of available integration targets.
  */
@@ -90,15 +92,15 @@ function printConnectionStatus() {
     }
 }
 /**
- * Resolves the workspace ID — uses --workspace flag if provided, otherwise
- * prompts interactively after validating the connection.
+ * Resolves the workspace ID from env var, per-cwd config, or global config default.
+ * Prompts interactively if no workspace is configured.
  *
- * When a workspace value is provided (flag, env, or config), validates it
- * against the API by matching on ID or slug. If not found, prompts to create.
+ * When a workspace value is found (env/config), validates it against the API by
+ * matching on ID or slug. If not found, prompts to create.
  */
 async function resolveWorkspace(opts) {
-    // Check flag, env, dir map, global config
-    const fromConfig = (0, config_1.resolveConfig)({ workspaceId: opts.workspace });
+    // Check MNOTES_WORKSPACE_ID env, per-cwd map, global config default
+    const fromConfig = (0, config_1.resolveConfig)({});
     const candidate = fromConfig.workspaceId;
     if (candidate) {
         // Validate the candidate against the API
@@ -135,9 +137,6 @@ async function resolveWorkspace(opts) {
     return resolved.id;
 }
 /**
- * Handles the `claude-code` integration target.
- */
-/**
  * Normalize the base URL: strip trailing slashes and any legacy /api/mcp suffix.
  * Earlier versions of the CLI pointed at the MCP endpoint directly; we accept
  * those URLs and reduce them back to the bare server origin.
@@ -145,16 +144,47 @@ async function resolveWorkspace(opts) {
 function normalizeBaseUrl(raw) {
     return raw.replace(/\/+$/, "").replace(/\/api\/mcp$/i, "");
 }
+/**
+ * Prints a structured connection error to stderr and exits non-zero.
+ * Provides actionable hints based on the error kind.
+ */
+function printConnectionError(url, validation) {
+    if (validation.kind === "auth") {
+        process.stderr.write(`Error: Authentication failed for ${url}: ${validation.error}\n`);
+        process.stderr.write(`Hint: Run: npx mnotes auth login\n`);
+    }
+    else if (validation.kind === "timeout") {
+        process.stderr.write(`Error: Connection to ${url} timed out: ${validation.error}\n`);
+        process.stderr.write(`Hint: Check your network connection and try again.\n`);
+    }
+    else {
+        process.stderr.write(`Error: Cannot connect to ${url}: ${validation.error}\n`);
+    }
+    process.exit(1);
+}
+/**
+ * Handles the `claude-code` integration target.
+ */
 async function handleClaudeCode(opts) {
     const config = (0, config_1.resolveConfig)(opts);
     const url = normalizeBaseUrl(config.baseUrl);
     const apiKey = config.apiKey;
     const validation = await (0, config_utils_1.validateConnection)(url, apiKey);
     if (!validation.ok) {
-        process.stderr.write(`Error: Cannot connect to ${url}: ${validation.error}\n`);
+        if (validation.kind === "auth") {
+            process.stderr.write(`Error: Authentication failed for ${url}: ${validation.error}\n`);
+            process.stderr.write(`Hint: Run: npx mnotes auth login\n`);
+        }
+        else if (validation.kind === "timeout") {
+            process.stderr.write(`Error: Connection to ${url} timed out: ${validation.error}\n`);
+            process.stderr.write(`Hint: Check your network connection and try again.\n`);
+        }
+        else {
+            process.stderr.write(`Error: Cannot connect to ${url}: ${validation.error}\n`);
+        }
         process.exit(1);
     }
-    const workspaceId = await resolveWorkspace({ url, apiKey, workspace: opts.workspace });
+    const workspaceId = await resolveWorkspace({ url, apiKey, });
     const dir = process.cwd();
     // Core setup — always runs.
     // We deliberately do NOT write `.mcp.json` here: the m-notes server no longer
@@ -182,7 +212,8 @@ async function handleClaudeCode(opts) {
     if (selectedItems.length === 0) {
         return;
     }
-    const results = (0, wizard_1.scaffoldItems)(dir, selectedItems, { url, workspaceId });
+    const client = (0, client_1.createClient)(url, apiKey);
+    const results = await (0, wizard_1.scaffoldItems)(dir, selectedItems, { url, workspaceId, client, autoLog: opts.autoLog });
     printScaffoldResults(results);
 }
 /**
@@ -215,7 +246,7 @@ async function handleCodex(opts) {
         process.stderr.write(`Error: Cannot connect to ${url}: ${validation.error}\n`);
         process.exit(1);
     }
-    const workspaceId = await resolveWorkspace({ url, apiKey, workspace: opts.workspace });
+    const workspaceId = await resolveWorkspace({ url, apiKey, });
     const dir = process.cwd();
     // No `.mcp.json` written — the m-notes MCP endpoint was removed. The agent
     // talks to the v1 HTTP API, and the API key lives only in the CLI config
@@ -240,7 +271,7 @@ async function handleOpenClaw(opts) {
         process.stderr.write(`Error: Cannot connect to ${url}: ${validation.error}\n`);
         process.exit(1);
     }
-    const workspaceId = await resolveWorkspace({ url, apiKey, workspace: opts.workspace });
+    const workspaceId = await resolveWorkspace({ url, apiKey, });
     const configDir = path.dirname(configPath);
     // Ensure config directory exists
     fs.mkdirSync(configDir, { recursive: true });
@@ -264,10 +295,10 @@ function registerConnectCommand(program) {
         .option("--status", "Show connection status for agents in current directory")
         .option("--url <url>", "m-notes URL (skip prompt)")
         .option("--api-key <key>", "API key (skip prompt)")
-        .option("--workspace <id>", "Workspace ID")
         .option("--config-path <path>", "Config file path (openclaw only)")
         .option("--no-wizard", "Skip the extras wizard (core setup only)")
         .option("--all", "Install all extras without prompting")
+        .option("--no-auto-log", "Skip PostToolUse auto-log hook registration (default: enabled)")
         .action(async (target, localOpts) => {
         // Merge parent program options (--api-key, --url) with subcommand options.
         // Commander v4 with passCommandToAction(false) passes parent-level flags
@@ -286,11 +317,20 @@ function registerConnectCommand(program) {
             printConnectionStatus();
             return;
         }
+        if (target && REMOVED_MCP_TARGETS.has(target)) {
+            process.stderr.write(`Error: 'connect ${target}' was removed in v2.1 — it wrote a dead /api/mcp URL.\n` +
+                `Use 'connect claude-code' instead (writes CLAUDE.md instructions, no MCP required).\n` +
+                `If you previously ran 'connect ${target}', remove the stale 'm-notes' entry from\n` +
+                `~/.${target}/mcp.json to avoid connection errors.\n`);
+            process.exit(1);
+            return;
+        }
         if (target === "claude-code") {
             await handleClaudeCode({
                 ...opts,
                 noWizard: opts.wizard === false,
                 all: opts.all,
+                autoLog: opts.autoLog,
             });
             return;
         }
@@ -303,7 +343,7 @@ function registerConnectCommand(program) {
             return;
         }
         if (target) {
-            process.stderr.write(`Error: Unknown integration target "${target}". Use --list to see available targets.\n`);
+            process.stderr.write(`Unsupported target '${target}'. Supported: ${exports.INTEGRATION_TARGETS.map((t) => t.name).join(", ")}.\n`);
             process.exit(1);
             return;
         }

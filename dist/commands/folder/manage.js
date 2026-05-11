@@ -15,8 +15,7 @@ exports.manageFoldersAction = {
         .makeOptionMandatory(true))
         .option("--id <id>", "Folder ID (required for rename and delete)")
         .option("--name <name>", "Folder name (required for create and rename)")
-        .option("--parent-id <id>", "Parent folder ID (optional, for create)")
-        .option("--workspace-id <id>", "Workspace ID (required for create)"),
+        .option("--parent-id <id>", "Parent folder ID (optional, for create)"),
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
@@ -26,9 +25,9 @@ exports.manageFoldersAction = {
             case "create": {
                 if (!input.name)
                     throw new Error("--name is required for create action");
-                const workspaceId = input.workspaceId ?? config.workspaceId;
+                const workspaceId = config.workspaceId;
                 if (!workspaceId) {
-                    throw new Error("workspaceId is required for create (use --workspace-id or set MNOTES_WORKSPACE_ID)");
+                    throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
                 }
                 return client.createFolder({
                     name: input.name,

@@ -9,13 +9,12 @@ exports.extractEntitiesAction = {
     mcpTool: "extract_entities",
     positional: ["noteId"],
     args: (cmd) => cmd
-        .argument("<noteId>", "Source note ID")
-        .option("--workspace-id <id>", "Workspace ID"),
+        .argument("<noteId>", "Source note ID"),
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         if (!workspaceId)
-            throw new Error("workspaceId is required");
+            throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
         return client.extractEntities({ noteId: input.noteId, workspaceId });
     },

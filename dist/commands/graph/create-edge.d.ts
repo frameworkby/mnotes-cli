@@ -1,7 +1,6 @@
 import type { ActionDescriptor } from "../_register-group";
 import type { GraphEdgeRecord } from "../../client";
 interface CreateEdgeInput {
-    workspaceId?: string;
     sourceId: string;
     targetId: string;
     edgeType?: "wikilink" | "related" | "parent" | "tagged" | "custom";

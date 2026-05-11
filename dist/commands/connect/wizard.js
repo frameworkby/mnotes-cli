@@ -43,6 +43,7 @@ exports.WIZARD_CHOICES = [
     { value: "hooks", label: "Session hooks", description: "Auto-load context on session start" },
     { value: "skills", label: "Skills (/store, /recall)", description: "Slash commands for knowledge management" },
     { value: "agents", label: "Knowledge manager agent", description: "Agent for managing project knowledge" },
+    { value: "wiki-bootstrap", label: "Wiki bootstrap", description: "Create wiki/index and wiki/log notes if absent" },
 ];
 exports.ALL_WIZARD_ITEMS = exports.WIZARD_CHOICES.map((c) => c.value);
 /**
@@ -83,8 +84,11 @@ async function promptWizardSelection() {
 /**
  * Scaffolds selected items into the target directory.
  * Merges with existing files rather than overwriting.
+ *
+ * Async because wiki-bootstrap makes an API call. File-only items
+ * (hooks, skills, agents) are trivially awaitable — behaviour unchanged.
  */
-function scaffoldItems(dir, items, opts) {
+async function scaffoldItems(dir, items, opts) {
     const results = [];
     for (const item of items) {
         switch (item) {
@@ -97,9 +101,35 @@ function scaffoldItems(dir, items, opts) {
             case "agents":
                 results.push(scaffoldAgents(dir, opts));
                 break;
+            case "wiki-bootstrap":
+                results.push(await scaffoldWikiBootstrap(opts));
+                break;
         }
     }
     return results;
+}
+/**
+ * Calls the wiki bootstrap API endpoint to ensure wiki/index and wiki/log
+ * notes exist in the workspace.
+ *
+ * Result type choice: synthetic strings in filesWritten (e.g.
+ * "[api] wiki/index: created") rather than a new apiActions field.
+ * Rationale: printScaffoldResults already iterates filesWritten — no printer
+ * changes needed, no type surface growth. The "[api]" prefix makes API
+ * actions visually distinct from file paths in the output.
+ */
+async function scaffoldWikiBootstrap(opts) {
+    if (!opts.client) {
+        throw new Error("wiki-bootstrap requires a client instance in WizardOpts");
+    }
+    const result = await opts.client.wikiBootstrap(opts.workspaceId);
+    return {
+        item: "wiki-bootstrap",
+        filesWritten: [
+            `[api] wiki/index: ${result.index}`,
+            `[api] wiki/log: ${result.log}`,
+        ],
+    };
 }
 /**
  * Merges hooks into `<project>/.claude/settings.json` and writes bash scripts to
@@ -116,7 +146,7 @@ function scaffoldHooks(dir, opts) {
     fs.mkdirSync(hookScriptsDir, { recursive: true });
     const filesWritten = [];
     // 1. Write bash scripts to ~/.claude/hooks/mnotes/scripts/
-    const scripts = (0, index_1.generateHookScripts)(opts);
+    const scripts = (0, index_1.generateHookScripts)({ ...opts, autoLog: opts.autoLog });
     for (const script of scripts) {
         const scriptPath = path.join(hookScriptsDir, script.filename);
         fs.writeFileSync(scriptPath, script.content, { mode: 0o755 });
@@ -131,36 +161,51 @@ function scaffoldHooks(dir, opts) {
     catch {
         // File doesn't exist or invalid — start fresh
     }
-    const newHooks = (0, index_1.generateHooksTemplate)(opts);
-    // Merge hooks: preserve existing hook entries, append new ones.
-    // Claude Code hooks format: { "Event": [{ matcher, hooks: [{ type, command }] }] }
+    const newHooks = (0, index_1.generateHooksTemplate)({ ...opts, autoLog: opts.autoLog });
+    // Merge hooks: drop any existing entry that invokes one of OUR scripts (by
+    // filename, not exact command — argument shape has changed across CLI
+    // versions, e.g. legacy positional workspace-id vs current
+    // MNOTES_WORKSPACE_ID env-var prefix). Then append our current entries.
+    // Non-m-notes hooks are preserved untouched. Identity = command contains
+    // any of our script filenames. (#938)
+    const MNOTES_SCRIPT_NAMES = ["mnotes-session-start.sh", "mnotes-session-stop.sh", "mnotes-post-tool-use.sh"];
+    const isMnotesCommand = (cmd) => typeof cmd === "string" && MNOTES_SCRIPT_NAMES.some((n) => cmd.includes(n));
+    const isMnotesEntry = (entry) => {
+        if (typeof entry !== "object" || entry === null)
+            return false;
+        const e = entry;
+        if (Array.isArray(e.hooks)) {
+            for (const h of e.hooks) {
+                if (typeof h === "object" && h !== null && isMnotesCommand(h.command)) {
+                    return true;
+                }
+            }
+        }
+        if (isMnotesCommand(e.command))
+            return true;
+        return false;
+    };
     const existingHooks = (existing.hooks ?? {});
     const mergedHooks = { ...existingHooks };
     for (const [event, hookList] of Object.entries(newHooks)) {
         if (!hookList)
             continue;
         const existingList = mergedHooks[event] ?? [];
-        // Extract all existing commands for dedup (handles both new and legacy format)
-        const existingCommands = new Set();
-        for (const entry of existingList) {
-            if (typeof entry !== "object" || entry === null)
-                continue;
-            const e = entry;
-            // New format: { matcher, hooks: [{ command }] }
-            if (Array.isArray(e.hooks)) {
-                for (const h of e.hooks) {
-                    if (typeof h === "object" && h !== null && "command" in h) {
-                        existingCommands.add(h.command);
-                    }
-                }
-            }
-            // Legacy format: { type, command }
-            if ("command" in e && typeof e.command === "string") {
-                existingCommands.add(e.command);
-            }
+        const preserved = existingList.filter((e) => !isMnotesEntry(e));
+        mergedHooks[event] = [...preserved, ...hookList];
+    }
+    // Strip empty arrays for events we no longer emit but that may still
+    // contain only-m-notes entries from previous installs.
+    for (const event of Object.keys(mergedHooks)) {
+        const list = mergedHooks[event] ?? [];
+        const filtered = list.filter((e) => !isMnotesEntry(e));
+        const fromUs = newHooks[event] ?? [];
+        if (fromUs.length === 0 && filtered.length === 0) {
+            delete mergedHooks[event];
         }
-        const newEntries = hookList.filter((entry) => entry.hooks.every((h) => !existingCommands.has(h.command)));
-        mergedHooks[event] = [...existingList, ...newEntries];
+        else if (fromUs.length === 0) {
+            mergedHooks[event] = filtered;
+        }
     }
     existing.hooks = mergedHooks;
     // Add a marker comment in a metadata field so we can identify m-notes hooks

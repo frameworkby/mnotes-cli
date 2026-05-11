@@ -11,7 +11,6 @@ exports.searchNotesAction = {
     positional: ["query"],
     args: (cmd) => cmd
         .argument("<query>", "Search query")
-        .option("--workspace <id>", "Workspace ID")
         .option("--limit <n>", "Max results to display", (v) => parseInt(v, 10))
         .option("--semantic", "Use semantic (vector) search instead of full-text"),
     run: async (input, ctx) => {
@@ -20,7 +19,7 @@ exports.searchNotesAction = {
         const res = await client.searchNotes({
             query: input.query,
             mode: input.semantic ? "semantic" : "fulltext",
-            workspaceId: input.workspace ?? config.workspaceId,
+            workspaceId: config.workspaceId,
         });
         let results = res.data.results;
         if (input.limit !== undefined && input.limit > 0) {

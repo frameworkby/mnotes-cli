@@ -2,7 +2,6 @@ import type { ActionDescriptor } from "../_register-group";
 import type { SearchResult } from "../../client";
 interface SearchInput {
     query: string;
-    workspace?: string;
     limit?: number;
     semantic?: boolean;
 }

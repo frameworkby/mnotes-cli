@@ -170,6 +170,7 @@ export async function handleClaudeCode(opts: {
   apiKey?: string;
   noWizard?: boolean;
   all?: boolean;
+  autoLog?: boolean;
 }): Promise<void> {
   const config = resolveConfig(opts);
   const url = normalizeBaseUrl(config.baseUrl);
@@ -225,7 +226,7 @@ export async function handleClaudeCode(opts: {
   }
 
   const client = createClient(url, apiKey);
-  const results = await scaffoldItems(dir, selectedItems, { url, workspaceId, client });
+  const results = await scaffoldItems(dir, selectedItems, { url, workspaceId, client, autoLog: opts.autoLog });
   printScaffoldResults(results);
 }
 
@@ -331,6 +332,7 @@ export function registerConnectCommand(program: Command): void {
     .option("--config-path <path>", "Config file path (openclaw only)")
     .option("--no-wizard", "Skip the extras wizard (core setup only)")
     .option("--all", "Install all extras without prompting")
+    .option("--no-auto-log", "Skip PostToolUse auto-log hook registration (default: enabled)")
     .action(
       async (
         target: string | undefined,
@@ -342,6 +344,7 @@ export function registerConnectCommand(program: Command): void {
           configPath?: string;
           wizard?: boolean;
           all?: boolean;
+          autoLog?: boolean;
         }
       ) => {
         // Merge parent program options (--api-key, --url) with subcommand options.
@@ -378,6 +381,7 @@ export function registerConnectCommand(program: Command): void {
             ...opts,
             noWizard: opts.wizard === false,
             all: opts.all,
+            autoLog: opts.autoLog,
           });
           return;
         }

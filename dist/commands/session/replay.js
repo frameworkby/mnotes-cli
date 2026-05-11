@@ -9,11 +9,10 @@ exports.sessionReplayAction = {
     mcpTool: "get_session_replay",
     positional: ["id"],
     args: (cmd) => cmd
-        .argument("<id>", "Session trace ID")
-        .option("--workspace-id <id>", "Workspace ID"),
+        .argument("<id>", "Session trace ID"),
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
         return client.getSessionReplay(input.id, workspaceId);
     },

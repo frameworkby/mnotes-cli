@@ -116,7 +116,7 @@ When the user supplies a source (URL, paste, file):
    - At least one \`[[wikilink]]\` to another touched note
    - Frontmatter updated (especially \`updated\`, \`sources\`, \`related\`)
 4. **Summarize**: tell the user which notes were created vs. updated.
-5. **Log the ingest**: \`mnotes wiki log append --kind ingest --ref "<short source ref>" --summary "<one-line gist>"\`
+5. **Log the ingest**: the PostToolUse hook appends the log entry automatically when you run \`mnotes notes create\` / \`mnotes wiki ingest\`. You do not need to call \`wiki log append\` manually — the hook handles it.
 6. **Refresh the index**: \`mnotes wiki index refresh\`
 
 A single source touching fewer than 5 notes is a red flag — that's a sign you're treating the wiki as a dumping ground rather than a connected graph.
@@ -128,7 +128,7 @@ When answering a non-trivial question:
 1. **Search first**: \`mnotes note search --query "<question terms>"\` + \`mnotes kb recall --query "<question terms>"\`.
 2. **Answer from the wiki**: synthesise from what you find. Prefer existing notes over re-deriving from scratch.
 3. **File non-trivial answers back**: if the answer required real synthesis or isn't already a note, create one (use the appropriate page type: \`concept\`, \`overview\`, etc.). This is the compounding loop — answering questions grows the wiki.
-4. **Log the query**: \`mnotes wiki log append --kind query --ref "<question slug>" --summary "<one-line answer synopsis>"\`
+4. **Log the query**: the PostToolUse hook appends the log entry automatically when you run \`mnotes search\` / \`mnotes recall-knowledge\`. You do not need to call \`wiki log append\` manually — the hook handles it.
 
 Questions answered and not filed are knowledge lost.
 
@@ -141,7 +141,7 @@ Periodically (session start on large workspaces; after ingests):
 - **Broken wikilinks** → \`[[X]]\` targets that don't exist. Create a stub note or fix the link.
 - **Stale** → notes untouched >90 days referenced by new sources. Update them.
 
-After running \`mnotes wiki lint\`, append a log entry: \`mnotes wiki log append --kind lint --ref "<short summary>" --summary "<counts or salient findings>"\`
+After running \`mnotes wiki lint\`, the PostToolUse hook appends the log entry automatically. You do not need to call \`wiki log append\` manually — the hook handles it. Call \`mnotes wiki log append --kind decision\` only for explicit decisions, which no hook can infer.
 
 Report findings as a short list; ask before bulk-deleting.
 

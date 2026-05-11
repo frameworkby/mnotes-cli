@@ -23,7 +23,6 @@ exports.createNodeAction = {
     describe: "Create a new graph node (note | tag | concept) in a workspace.",
     mcpTool: "create_node",
     args: (cmd) => cmd
-        .option("--workspace-id <id>", "Workspace ID")
         .requiredOption("--label <s>", "Node label")
         .addOption(new commander_1.Option("--node-type <t>", "Node type").choices([
         "note",
@@ -34,9 +33,9 @@ exports.createNodeAction = {
         .option("--metadata <json>", "JSON object with extra metadata"),
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         if (!workspaceId) {
-            throw new Error("workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)");
+            throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
         }
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
         return client.createGraphNode({

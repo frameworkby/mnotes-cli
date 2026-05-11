@@ -23,7 +23,6 @@ exports.createEdgeAction = {
     describe: "Create a directed edge between two graph nodes.",
     mcpTool: "create_edge",
     args: (cmd) => cmd
-        .option("--workspace-id <id>", "Workspace ID")
         .requiredOption("--source-id <id>", "Source node ID")
         .requiredOption("--target-id <id>", "Target node ID")
         .addOption(new commander_1.Option("--edge-type <t>", "Edge type").choices([
@@ -37,9 +36,9 @@ exports.createEdgeAction = {
         .option("--metadata <json>", "JSON object with extra metadata"),
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         if (!workspaceId) {
-            throw new Error("workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)");
+            throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
         }
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
         return client.createGraphEdge({

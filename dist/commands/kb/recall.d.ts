@@ -5,7 +5,6 @@ interface RecallInput {
     tags?: string;
     limit?: number;
     decayWindow?: number;
-    workspaceId?: string;
 }
 export declare const recallAction: ActionDescriptor<RecallInput, RecallEntry[]>;
 export {};

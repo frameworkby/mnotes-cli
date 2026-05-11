@@ -6,6 +6,8 @@ const recall_1 = require("./recall");
 const store_1 = require("./store");
 const memory_1 = require("./memory");
 const ingest_1 = require("./ingest");
+const ingest_external_1 = require("./ingest-external");
+const check_ingested_1 = require("./check-ingested");
 const decay_1 = require("./decay");
 const archive_1 = require("./archive");
 const consolidate_1 = require("./consolidate");
@@ -21,6 +23,8 @@ function registerKbGroup(program) {
         store_1.storeAction,
         memory_1.memoryAction,
         ingest_1.ingestAction,
+        ingest_external_1.ingestExternalAction,
+        check_ingested_1.checkIngestedAction,
         decay_1.decayAction,
         archive_1.archiveAction,
         consolidate_1.consolidateAction,

@@ -15,7 +15,6 @@ interface ManageInput {
     id?: string;
     name?: string;
     parentId?: string;
-    workspaceId?: string;
 }
 type ManageOutput = FolderRecord | {
     deleted: string;

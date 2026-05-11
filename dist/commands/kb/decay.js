@@ -12,13 +12,12 @@ exports.decayAction = {
         .option("--limit <n>", "Max entries (default 20, max 200)", (v) => parseInt(v, 10))
         .option("--decay-window <n>", "Days for full decay (default 90, max 365)", (v) => parseInt(v, 10))
         .option("--tags <csv>", "Comma-separated tags filter")
-        .option("--max-importance <n>", "Only entries below this importance", (v) => parseFloat(v))
-        .option("--workspace-id <id>", "Workspace ID"),
+        .option("--max-importance <n>", "Only entries below this importance", (v) => parseFloat(v)),
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         if (!workspaceId) {
-            throw new Error("workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)");
+            throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
         }
         const tags = input.tags
             ? input.tags.split(",").map((t) => t.trim()).filter(Boolean)

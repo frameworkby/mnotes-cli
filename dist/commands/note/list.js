@@ -10,7 +10,6 @@ exports.listAction = {
     mcpTool: "list_notes",
     aliases: ["list"], // legacy `mnotes list`
     args: (cmd) => cmd
-        .option("--workspace-id <id>", "Workspace ID")
         .option("--folder-id <id>", "Folder ID")
         .option("--cursor <cursor>", "Pagination cursor")
         .option("--limit <n>", "Max notes to return", (v) => parseInt(v, 10)),
@@ -18,7 +17,7 @@ exports.listAction = {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
         const apiResp = await client.listNotes({
-            workspaceId: input.workspaceId ?? config.workspaceId,
+            workspaceId: config.workspaceId,
             folderId: input.folderId,
             cursor: input.cursor,
             limit: input.limit,

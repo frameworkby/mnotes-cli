@@ -4,7 +4,6 @@ interface Input {
     type: string;
     limit?: number;
     propertyFilters?: string;
-    workspaceId?: string;
 }
 export declare const queryByTypeAction: ActionDescriptor<Input, QueryByTypeResult>;
 export {};

@@ -5,7 +5,6 @@ interface ListTasksInput {
     tag?: string;
     noteId?: string;
     limit?: number;
-    workspaceId?: string;
 }
 export declare const listTasksAction: ActionDescriptor<ListTasksInput, TaskItem[]>;
 export {};

@@ -4,7 +4,6 @@ interface GenerateMocInput {
     scopeType: "folder" | "tag";
     scopeId: string;
     limit?: number;
-    workspaceId?: string;
 }
 export declare const generateMocAction: ActionDescriptor<GenerateMocInput, MocResult>;
 export {};

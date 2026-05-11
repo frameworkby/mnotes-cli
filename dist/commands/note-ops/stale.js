@@ -9,13 +9,12 @@ exports.staleAction = {
     mcpTool: "stale_notes",
     args: (cmd) => cmd
         .option("--days-since <n>", "Days since last update (1-365)", (v) => parseInt(v, 10))
-        .option("--limit <n>", "Max results (1-200)", (v) => parseInt(v, 10))
-        .option("--workspace-id <id>", "Workspace ID"),
+        .option("--limit <n>", "Max results (1-200)", (v) => parseInt(v, 10)),
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         if (!workspaceId)
-            throw new Error("workspaceId is required");
+            throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
         return client.staleNotes({
             workspaceId,

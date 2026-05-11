@@ -9,7 +9,6 @@ function registerSearchCommand(program) {
         .command("search <query>")
         .description("Search notes")
         .option("--semantic", "Use semantic (vector) search instead of full-text")
-        .option("--workspace-id <id>", "Workspace ID")
         .action(async (query, opts) => {
         const globalOpts = program.opts();
         const config = (0, config_1.resolveConfig)(globalOpts);

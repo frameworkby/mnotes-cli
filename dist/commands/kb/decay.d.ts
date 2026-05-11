@@ -6,7 +6,6 @@ interface DecayInput {
     decayWindow?: number;
     tags?: string;
     maxImportance?: number;
-    workspaceId?: string;
 }
 export declare const decayAction: ActionDescriptor<DecayInput, DecayEntry[]>;
 export {};

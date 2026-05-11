@@ -10,13 +10,12 @@ exports.saveConversationAction = {
     args: (cmd) => cmd
         .requiredOption("--messages <json>", 'JSON array: [{"role":"user|assistant","content":"..."}]')
         .option("--title <s>", "Optional conversation title")
-        .option("--source <s>", "Optional source identifier")
-        .option("--workspace-id <id>", "Workspace ID"),
+        .option("--source <s>", "Optional source identifier"),
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         if (!workspaceId) {
-            throw new Error("workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)");
+            throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
         }
         const messages = JSON.parse(input.messages);
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);

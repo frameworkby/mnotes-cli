@@ -2,7 +2,6 @@ import type { ActionDescriptor } from "../_register-group";
 import type { RelatedNote } from "../../client";
 interface RelatedInput {
     id: string;
-    workspaceId?: string;
     limit?: number;
     minSimilarity?: number;
 }

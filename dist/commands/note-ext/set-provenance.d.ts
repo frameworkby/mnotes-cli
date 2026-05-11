@@ -6,7 +6,6 @@ interface Input {
     id: string;
     source: SourceValue;
     ref: string;
-    workspaceId?: string;
 }
 export declare const setProvenanceAction: ActionDescriptor<Input, SetProvenanceResult>;
 export {};

@@ -24,6 +24,7 @@ const tag_1 = require("./commands/tag");
 const ws_1 = require("./commands/ws");
 const info_1 = require("./commands/info");
 const composite_1 = require("./commands/composite");
+const wiki_1 = require("./commands/wiki");
 const read_1 = require("./commands/read");
 const search_1 = require("./commands/search");
 const create_1 = require("./commands/create");
@@ -61,6 +62,7 @@ function buildProgram() {
     (0, ws_1.registerWsGroup)(program);
     (0, info_1.registerInfoGroup)(program);
     (0, composite_1.registerCompositeGroup)(program);
+    (0, wiki_1.registerWikiGroup)(program);
     (0, read_1.registerReadCommand)(program);
     (0, search_1.registerSearchCommand)(program);
     (0, create_1.registerCreateCommand)(program);

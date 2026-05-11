@@ -11,8 +11,7 @@ exports.listTasksAction = {
         .option("--status <s>", "Filter: open | done | all (default all)")
         .option("--tag <tag>", "Filter to notes with this tag")
         .option("--note-id <id>", "Filter to tasks from a specific note")
-        .option("--limit <n>", "Max results (1-500, default 200)", (v) => parseInt(v, 10))
-        .option("--workspace-id <id>", "Workspace ID"),
+        .option("--limit <n>", "Max results (1-500, default 200)", (v) => parseInt(v, 10)),
     run: async (input, ctx) => {
         if (input.status &&
             input.status !== "all" &&
@@ -21,9 +20,9 @@ exports.listTasksAction = {
             throw new Error("--status must be 'all', 'open', or 'done'");
         }
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         if (!workspaceId) {
-            throw new Error("workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)");
+            throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
         }
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
         return client.listTasks({

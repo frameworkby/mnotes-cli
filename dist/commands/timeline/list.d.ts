@@ -1,7 +1,6 @@
 import type { ActionDescriptor } from "../_register-group";
 import type { TimelineEntry } from "../../client";
 interface TimelineListInput {
-    workspaceId?: string;
     from?: string;
     to?: string;
     limit?: number;

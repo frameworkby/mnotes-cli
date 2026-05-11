@@ -6,7 +6,6 @@ interface MemoryInput {
     source?: string;
     confidence?: number;
     tags?: string;
-    workspaceId?: string;
 }
 export declare const memoryAction: ActionDescriptor<MemoryInput, MemoryUpsertResult>;
 export {};

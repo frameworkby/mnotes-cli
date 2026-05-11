@@ -6,5 +6,4 @@ export interface Config {
 export declare function resolveConfig(opts: {
     apiKey?: string;
     url?: string;
-    workspaceId?: string;
 }): Config;

@@ -8,12 +8,11 @@ exports.listSessionsAction = {
     describe: "List recent session traces for the user (paginated). Returns id, sessionLabel, startedAt, endedAt, toolCallCount, and noteIds.",
     mcpTool: "list_sessions",
     args: (cmd) => cmd
-        .option("--workspace-id <id>", "Workspace ID")
         .option("--limit <n>", "Max results (1-50, default 20)", (v) => parseInt(v, 10))
         .option("--cursor <id>", "Pagination cursor"),
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
         return client.listSessions({
             workspaceId,

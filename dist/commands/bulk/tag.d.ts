@@ -4,7 +4,6 @@ interface Input {
     noteIds: string;
     tags: string;
     op: "add" | "remove";
-    workspaceId?: string;
 }
 export declare const bulkTagAction: ActionDescriptor<Input, BulkOpResult>;
 export {};

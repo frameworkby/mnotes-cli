@@ -10,8 +10,7 @@ exports.ingestAction = {
     mcpTool: "knowledge_ingest",
     args: (cmd) => cmd
         .option("--file <path>", "Path to a JSON file containing the entries array")
-        .option("--entries <json>", "Inline JSON array of entries (alternative to --file)")
-        .option("--workspace-id <id>", "Workspace ID"),
+        .option("--entries <json>", "Inline JSON array of entries (alternative to --file)"),
     run: async (input, ctx) => {
         if (!input.file && !input.entries) {
             throw new Error("--file or --entries is required");
@@ -33,9 +32,9 @@ exports.ingestAction = {
             throw new Error("Entries must be a JSON array");
         }
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         if (!workspaceId) {
-            throw new Error("workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)");
+            throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
         }
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
         return client.knowledgeIngest({ entries, workspaceId });

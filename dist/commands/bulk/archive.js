@@ -8,13 +8,12 @@ exports.bulkArchiveAction = {
     describe: "Archive multiple notes, removing them from default note listings without deleting them. Already-archived notes are silently skipped.",
     mcpTool: "bulk_archive",
     args: (cmd) => cmd
-        .requiredOption("--note-ids <csv>", "Comma-separated note IDs (1-100)")
-        .option("--workspace-id <id>", "Workspace ID"),
+        .requiredOption("--note-ids <csv>", "Comma-separated note IDs (1-100)"),
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         if (!workspaceId) {
-            throw new Error("workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)");
+            throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
         }
         const noteIds = input.noteIds
             .split(",")

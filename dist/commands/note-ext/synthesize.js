@@ -9,13 +9,12 @@ exports.synthesizeAction = {
     mcpTool: "synthesize_notes",
     args: (cmd) => cmd
         .requiredOption("--note-ids <csv>", "Comma-separated note IDs (2-20)")
-        .option("--title <title>", "Optional title override for synthesised note")
-        .option("--workspace-id <id>", "Workspace ID"),
+        .option("--title <title>", "Optional title override for synthesised note"),
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         if (!workspaceId) {
-            throw new Error("workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)");
+            throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
         }
         const noteIds = input.noteIds
             .split(",")

@@ -134,6 +134,15 @@ function createClient(baseUrl, apiKey) {
         async knowledgeIngest(opts) {
             return request("POST", "/api/v1/knowledge/ingest", opts);
         },
+        async checkIngestedSources(opts) {
+            return request("POST", "/api/v1/knowledge/check-ingested", opts);
+        },
+        async wikiLint(opts) {
+            return request("POST", "/api/v1/notes/wiki-lint", opts);
+        },
+        async ingestExternal(opts) {
+            return request("POST", "/api/v1/knowledge/ingest-external", opts);
+        },
         async knowledgeDecay(opts) {
             return request("POST", "/api/v1/knowledge/decay", opts);
         },
@@ -549,6 +558,14 @@ function createClient(baseUrl, apiKey) {
         async getWorkspaceRole(id) {
             return request("GET", `/api/v1/workspaces/${encodeURIComponent(id)}/role`);
         },
+        /**
+         * Stamps `firstAgentConnectAt` on the workspace (idempotent — server-side
+         * null guard means only the first call has any effect).
+         * Called by handleClaude / handleCursor after writing config to disk.
+         */
+        async markAgentConnected(id) {
+            await request("POST", `/api/v1/workspaces/${encodeURIComponent(id)}/mark-agent-connected`);
+        },
         async updateWorkspace(id, opts) {
             return request("PATCH", `/api/v1/workspaces/${encodeURIComponent(id)}`, opts);
         },
@@ -570,6 +587,26 @@ function createClient(baseUrl, apiKey) {
         },
         async projectContextLoad(opts) {
             return request("POST", "/api/v1/composites/project-context-load", opts);
+        },
+        // ── Wiki index / log (#936) ────────────────────────────────────────────────
+        async wikiBootstrap(workspaceId) {
+            return request("POST", "/api/v1/wiki/bootstrap", {
+                workspaceId,
+            });
+        },
+        async wikiIndexRefresh(workspaceId) {
+            return request("POST", "/api/v1/wiki/index/refresh", {
+                workspaceId,
+            });
+        },
+        async wikiLogAppend(opts) {
+            return request("POST", "/api/v1/wiki/log/append", opts);
+        },
+        async wikiLogTail(opts) {
+            const params = new URLSearchParams({ workspaceId: opts.workspaceId });
+            if (opts.limit != null)
+                params.set("limit", String(opts.limit));
+            return request("GET", `/api/v1/wiki/log/tail?${params.toString()}`);
         },
         async generateAgentInstructions(opts) {
             const params = new URLSearchParams();

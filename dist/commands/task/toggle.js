@@ -11,13 +11,12 @@ exports.toggleTaskAction = {
         .requiredOption("--note-id <id>", "Note ID containing the task")
         .requiredOption("--task-index <n>", "1-based line number of the checkbox (from `task list`)", (v) => parseInt(v, 10))
         .option("--done", "Force the task to done")
-        .option("--not-done", "Force the task to undone")
-        .option("--workspace-id <id>", "Workspace ID"),
+        .option("--not-done", "Force the task to undone"),
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         if (!workspaceId) {
-            throw new Error("workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)");
+            throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
         }
         if (input.done && input.notDone) {
             throw new Error("--done and --not-done are mutually exclusive");

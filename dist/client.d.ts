@@ -98,6 +98,94 @@ export interface KnowledgeIngestRow {
     status: "created" | "updated";
     noteId: string;
 }
+export interface IngestExternalResult {
+    noteId: string;
+    status: "created" | "updated";
+    title: string;
+}
+export interface CheckIngestedSourceRow {
+    sourceUrl: string;
+    status: "exists" | "not_found";
+    noteId?: string;
+    lastUpdated?: string;
+}
+export interface CheckIngestedSourcesResult {
+    data: CheckIngestedSourceRow[];
+}
+export interface WikiBootstrapResult {
+    index: "created" | "exists";
+    log: "created" | "exists";
+}
+export interface WikiIndexRefreshResult {
+    added: number;
+    removed: number;
+    unchanged: number;
+    total: number;
+}
+export interface WikiLogAppendResult {
+    appended: string;
+}
+export interface WikiLogEntry {
+    timestamp?: string;
+    kind?: string;
+    ref?: string;
+    summary?: string;
+    raw: string;
+    parsed: boolean;
+}
+export interface WikiLogTailResult {
+    entries: WikiLogEntry[];
+}
+export type WikiLintCheck = "orphans" | "broken-wikilinks" | "contradictions" | "stale";
+export interface WikiLintOrphan {
+    id: string;
+    title: string;
+    updatedAt: string;
+}
+export interface WikiLintBrokenWikilink {
+    noteId: string;
+    noteTitle: string;
+    target: string;
+}
+export interface WikiLintContradiction {
+    id: string;
+    noteA: {
+        id: string;
+        title: string | null;
+    };
+    noteB: {
+        id: string;
+        title: string | null;
+    };
+    similarity: number;
+    confidence: number;
+    description: string | null;
+    scannedAt: string;
+}
+export interface WikiLintStale {
+    id: string;
+    title: string;
+    updatedAt: string;
+    referencedBy: {
+        id: string;
+        title: string;
+        updatedAt: string;
+    };
+}
+export interface WikiLintResult {
+    orphans: WikiLintOrphan[];
+    brokenWikilinks: WikiLintBrokenWikilink[];
+    contradictions: WikiLintContradiction[];
+    stale: WikiLintStale[];
+    summary: {
+        totals: {
+            orphans: number;
+            brokenWikilinks: number;
+            contradictions: number;
+            stale: number;
+        };
+    };
+}
 export interface DecayEntry {
     key: string | null;
     title: string;
@@ -659,6 +747,25 @@ export declare function createClient(baseUrl: string, apiKey: string): {
         entries: KnowledgeIngestEntry[];
         workspaceId: string;
     }): Promise<KnowledgeIngestRow[]>;
+    checkIngestedSources(opts: {
+        workspaceId: string;
+        sourceUrls: string[];
+    }): Promise<CheckIngestedSourcesResult>;
+    wikiLint(opts: {
+        workspaceId: string;
+        checks?: WikiLintCheck[];
+        limitPerCheck?: number;
+    }): Promise<WikiLintResult>;
+    ingestExternal(opts: {
+        workspaceId: string;
+        title: string;
+        content: string;
+        sourceType: "web_page" | "pdf" | "email" | "slack" | "meeting" | "other";
+        sourceUrl?: string;
+        sourceRef?: string;
+        tags?: string[];
+        folderId?: string;
+    }): Promise<IngestExternalResult>;
     knowledgeDecay(opts: {
         workspaceId: string;
         threshold?: number;
@@ -1012,6 +1119,12 @@ export declare function createClient(baseUrl: string, apiKey: string): {
     }): Promise<unknown>;
     getWorkspaceContext(workspaceId: string): Promise<unknown>;
     getWorkspaceRole(id: string): Promise<unknown>;
+    /**
+     * Stamps `firstAgentConnectAt` on the workspace (idempotent — server-side
+     * null guard means only the first call has any effect).
+     * Called by handleClaude / handleCursor after writing config to disk.
+     */
+    markAgentConnected(id: string): Promise<void>;
     updateWorkspace(id: string, opts: {
         name?: string;
         description?: string | null;
@@ -1040,6 +1153,18 @@ export declare function createClient(baseUrl: string, apiKey: string): {
         path?: string;
         [k: string]: unknown;
     }): Promise<unknown>;
+    wikiBootstrap(workspaceId: string): Promise<WikiBootstrapResult>;
+    wikiIndexRefresh(workspaceId: string): Promise<WikiIndexRefreshResult>;
+    wikiLogAppend(opts: {
+        workspaceId: string;
+        kind: "ingest" | "query" | "lint" | "decision";
+        ref: string;
+        summary?: string;
+    }): Promise<WikiLogAppendResult>;
+    wikiLogTail(opts: {
+        workspaceId: string;
+        limit?: number;
+    }): Promise<WikiLogTailResult>;
     generateAgentInstructions(opts: {
         workspaceId?: string;
         client?: string;

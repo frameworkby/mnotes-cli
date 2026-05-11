@@ -1,7 +1,6 @@
 import type { ActionDescriptor } from "../_register-group";
 import type { NoteListItem } from "../../client";
 interface ListInput {
-    workspaceId?: string;
     folderId?: string;
     cursor?: string;
     limit?: number;

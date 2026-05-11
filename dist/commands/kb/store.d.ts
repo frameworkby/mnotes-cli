@@ -6,7 +6,6 @@ interface StoreInput {
     source?: string;
     confidence?: number;
     tags?: string;
-    workspaceId?: string;
 }
 export declare const storeAction: ActionDescriptor<StoreInput, KnowledgeStoreResult>;
 export {};

@@ -4,7 +4,6 @@ interface CreateInput {
     content?: string;
     folder?: string;
     tags?: string[];
-    workspace?: string;
 }
 interface CreateOutput {
     id: string;

@@ -4,6 +4,7 @@ exports.registerReadCommand = registerReadCommand;
 const config_1 = require("../config");
 const client_1 = require("../client");
 const output_1 = require("../output");
+const telemetry_1 = require("../lib/telemetry");
 function registerReadCommand(program) {
     program
         .command("read <id>")
@@ -18,6 +19,17 @@ function registerReadCommand(program) {
         }
         else {
             (0, output_1.printNote)(result.data);
+        }
+        const note = result.data;
+        if ((0, telemetry_1.isDigestNote)({ title: note.title })) {
+            void (0, telemetry_1.sendTelemetryEvent)({
+                event: "digest_note_opened",
+                props: {
+                    source: "cli",
+                    age_hours: (0, telemetry_1.bucketAgeHours)(note.createdAt),
+                    session_index: (0, telemetry_1.nextDigestSessionIndex)(),
+                },
+            });
         }
     });
 }

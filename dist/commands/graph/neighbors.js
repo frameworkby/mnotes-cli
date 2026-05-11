@@ -8,15 +8,14 @@ exports.neighborsAction = {
     describe: "Fetch graph neighbors of a node up to a given depth (BFS, distinct nodes).",
     mcpTool: "get_neighbors",
     args: (cmd) => cmd
-        .option("--workspace-id <id>", "Workspace ID")
         .requiredOption("--node-id <id>", "Start node ID")
         .option("--depth <n>", "Traversal depth (1-3)", (v) => parseInt(v, 10), 1)
         .option("--edge-type <t>", "Filter edges by type"),
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         if (!workspaceId) {
-            throw new Error("workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)");
+            throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
         }
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
         return client.getNeighbors({

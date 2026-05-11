@@ -28,6 +28,8 @@ export const ALL_WIZARD_ITEMS: WizardItem[] = WIZARD_CHOICES.map((c) => c.value)
 export interface WizardOpts {
   url: string;
   workspaceId: string;
+  /** When false, the PostToolUse auto-log hook is not generated. Default: true. */
+  autoLog?: boolean;
   /** Required only when wiki-bootstrap is selected */
   client?: MNotesClient;
 }
@@ -162,7 +164,7 @@ function scaffoldHooks(dir: string, opts: WizardOpts): ScaffoldResult {
   const filesWritten: string[] = [];
 
   // 1. Write bash scripts to ~/.claude/hooks/mnotes/scripts/
-  const scripts = generateHookScripts(opts);
+  const scripts = generateHookScripts({ ...opts, autoLog: opts.autoLog });
   for (const script of scripts) {
     const scriptPath = path.join(hookScriptsDir, script.filename);
     fs.writeFileSync(scriptPath, script.content, { mode: 0o755 });
@@ -178,7 +180,7 @@ function scaffoldHooks(dir: string, opts: WizardOpts): ScaffoldResult {
     // File doesn't exist or invalid — start fresh
   }
 
-  const newHooks = generateHooksTemplate(opts);
+  const newHooks = generateHooksTemplate({ ...opts, autoLog: opts.autoLog });
 
   // Merge hooks: drop any existing entry that invokes one of OUR scripts (by
   // filename, not exact command — argument shape has changed across CLI
@@ -186,7 +188,7 @@ function scaffoldHooks(dir: string, opts: WizardOpts): ScaffoldResult {
   // MNOTES_WORKSPACE_ID env-var prefix). Then append our current entries.
   // Non-m-notes hooks are preserved untouched. Identity = command contains
   // any of our script filenames. (#938)
-  const MNOTES_SCRIPT_NAMES = ["mnotes-session-start.sh", "mnotes-session-stop.sh"];
+  const MNOTES_SCRIPT_NAMES = ["mnotes-session-start.sh", "mnotes-session-stop.sh", "mnotes-post-tool-use.sh"];
   const isMnotesCommand = (cmd: unknown): boolean =>
     typeof cmd === "string" && MNOTES_SCRIPT_NAMES.some((n) => cmd.includes(n));
   const isMnotesEntry = (entry: unknown): boolean => {

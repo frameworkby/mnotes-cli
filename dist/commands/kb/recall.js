@@ -15,13 +15,12 @@ exports.recallAction = {
         .requiredOption("--query <text>", "Natural language query")
         .option("--tags <csv>", "Comma-separated tags filter")
         .option("--limit <n>", "Max results (default 10, max 50)", (v) => parseInt(v, 10))
-        .option("--decay-window <n>", "Days for full freshness decay (default 90)", (v) => parseInt(v, 10))
-        .option("--workspace-id <id>", "Workspace ID"),
+        .option("--decay-window <n>", "Days for full freshness decay (default 90)", (v) => parseInt(v, 10)),
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         if (!workspaceId) {
-            throw new Error("workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)");
+            throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
         }
         const tags = input.tags
             ? input.tags

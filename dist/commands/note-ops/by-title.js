@@ -8,13 +8,12 @@ exports.byTitleAction = {
     describe: "Look up a note by exact title.",
     mcpTool: "get_note_by_title",
     args: (cmd) => cmd
-        .requiredOption("--title <s>", "Exact note title")
-        .option("--workspace-id <id>", "Workspace ID"),
+        .requiredOption("--title <s>", "Exact note title"),
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         if (!workspaceId)
-            throw new Error("workspaceId is required");
+            throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
         return client.getNoteByTitle({ workspaceId, title: input.title });
     },

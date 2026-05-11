@@ -6,7 +6,6 @@ interface SessionLogInput {
     decisions?: string;
     actions?: string;
     tags?: string;
-    workspaceId?: string;
 }
 export declare const sessionLogAction: ActionDescriptor<SessionLogInput, SessionLogResult>;
 export {};

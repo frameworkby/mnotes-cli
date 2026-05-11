@@ -9,13 +9,12 @@ exports.suggestTagsAction = {
     mcpTool: "suggest_tags",
     positional: ["id"],
     args: (cmd) => cmd
-        .argument("<id>", "Note ID")
-        .option("--workspace-id <id>", "Workspace ID"),
+        .argument("<id>", "Note ID"),
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         if (!workspaceId) {
-            throw new Error("workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)");
+            throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
         }
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
         return client.suggestTags(input.id, workspaceId);

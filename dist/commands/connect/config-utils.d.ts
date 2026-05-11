@@ -43,14 +43,24 @@ export declare function writeClaudeMdBlock(dir: string, content: string): void;
  * Creates the file if it doesn't exist.
  */
 export declare function writeInstructionBlock(dir: string, filename: string, content: string): void;
+export type ConnectionErrorKind = "auth" | "timeout" | "network";
+export interface ConnectionFailure {
+    ok: false;
+    error: string;
+    kind: ConnectionErrorKind;
+}
+export interface ConnectionSuccess {
+    ok: true;
+}
+export type ConnectionResult = ConnectionSuccess | ConnectionFailure;
 /**
  * Validates a connection to an m-notes instance by calling the health endpoint.
- * Returns true if the server responds successfully.
+ * Returns ok=true on success, or a typed failure with a `kind` discriminant:
+ *   - "auth"    — 401/403 response (expired or revoked token)
+ *   - "timeout" — request timed out
+ *   - "network" — any other network / HTTP error
  */
-export declare function validateConnection(url: string, apiKey: string): Promise<{
-    ok: boolean;
-    error?: string;
-}>;
+export declare function validateConnection(url: string, apiKey: string): Promise<ConnectionResult>;
 /**
  * Detects which agents are connected in a given directory by reading config files.
  */

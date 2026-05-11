@@ -12,16 +12,15 @@ exports.setProvenanceAction = {
     args: (cmd) => cmd
         .argument("<id>", "Note ID")
         .requiredOption("--source <type>", `Source type (${SOURCE_VALUES.join("|")})`)
-        .requiredOption("--ref <text>", "Reference string (e.g. URL, tool name)")
-        .option("--workspace-id <id>", "Workspace ID"),
+        .requiredOption("--ref <text>", "Reference string (e.g. URL, tool name)"),
     run: async (input, ctx) => {
         if (!SOURCE_VALUES.includes(input.source)) {
             throw new Error(`--source must be one of: ${SOURCE_VALUES.join(", ")}`);
         }
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         if (!workspaceId) {
-            throw new Error("workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)");
+            throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
         }
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
         return client.setProvenance(input.id, {

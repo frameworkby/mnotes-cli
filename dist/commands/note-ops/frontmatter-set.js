@@ -10,13 +10,12 @@ exports.frontmatterSetAction = {
     positional: ["id"],
     args: (cmd) => cmd
         .argument("<id>", "Note ID")
-        .requiredOption("--fields <json>", "JSON object of fields")
-        .option("--workspace-id <id>", "Workspace ID"),
+        .requiredOption("--fields <json>", "JSON object of fields"),
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         if (!workspaceId)
-            throw new Error("workspaceId is required");
+            throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
         const fields = JSON.parse(input.fields);
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
         return client.setNoteFrontmatter(input.id, { workspaceId, fields });

@@ -9,13 +9,12 @@ exports.bulkKnowledgeRecallAction = {
     mcpTool: "bulk_knowledge_recall",
     args: (cmd) => cmd
         .requiredOption("--queries <csv>", "Comma-separated tag patterns (1-20)")
-        .option("--limit <n>", "Max entries per pattern (default 20, max 100)", (v) => parseInt(v, 10))
-        .option("--workspace-id <id>", "Workspace ID"),
+        .option("--limit <n>", "Max entries per pattern (default 20, max 100)", (v) => parseInt(v, 10)),
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         if (!workspaceId) {
-            throw new Error("workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)");
+            throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
         }
         const queries = input.queries
             .split(",")

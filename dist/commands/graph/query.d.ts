@@ -1,7 +1,6 @@
 import type { ActionDescriptor } from "../_register-group";
 import type { GraphResult } from "../../client";
 interface QueryInput {
-    workspaceId?: string;
     nodeType?: string;
     labelContains?: string;
     edgeType?: string;

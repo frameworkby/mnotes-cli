@@ -9,7 +9,6 @@ exports.linkAction = {
     describe: "Create a typed relationship edge between two knowledge entries (by key or note ID). Useful for declaring supports/contradicts/extends/replaces/depends_on/related links.",
     mcpTool: "knowledge_link",
     args: (cmd) => cmd
-        .option("--workspace-id <id>", "Workspace ID")
         .addOption(new commander_1.Option("--relation-type <t>", "Relationship type")
         .choices([
         "supports",
@@ -28,9 +27,9 @@ exports.linkAction = {
         .option("--confidence <n>", "Confidence 0.0–1.0", (v) => parseFloat(v)),
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         if (!workspaceId) {
-            throw new Error("workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)");
+            throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
         }
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
         return client.knowledgeLink({

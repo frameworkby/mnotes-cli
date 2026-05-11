@@ -1,7 +1,6 @@
 import type { ActionDescriptor } from "../_register-group";
 import type { KnowledgeLinkResult } from "../../client";
 interface LinkInput {
-    workspaceId?: string;
     relationType: "supports" | "contradicts" | "extends" | "replaces" | "depends_on" | "related";
     sourceKey?: string;
     sourceNoteId?: string;

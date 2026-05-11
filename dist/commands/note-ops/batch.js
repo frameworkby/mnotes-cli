@@ -8,13 +8,12 @@ exports.batchAction = {
     describe: "Fetch multiple notes by ID (max 50).",
     mcpTool: "get_notes",
     args: (cmd) => cmd
-        .requiredOption("--ids <csv>", "Comma-separated note IDs (max 50)")
-        .option("--workspace-id <id>", "Workspace ID"),
+        .requiredOption("--ids <csv>", "Comma-separated note IDs (max 50)"),
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         if (!workspaceId)
-            throw new Error("workspaceId is required");
+            throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
         const ids = input.ids
             .split(",")
             .map((s) => s.trim())

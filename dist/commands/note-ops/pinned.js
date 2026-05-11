@@ -7,12 +7,12 @@ exports.pinnedAction = {
     name: "pinned",
     describe: "List pinned notes for the workspace.",
     mcpTool: "list_pinned",
-    args: (cmd) => cmd.option("--workspace-id <id>", "Workspace ID"),
+    args: (cmd) => cmd,
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         if (!workspaceId)
-            throw new Error("workspaceId is required");
+            throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
         return client.listPinned(workspaceId);
     },

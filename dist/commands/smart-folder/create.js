@@ -10,16 +10,15 @@ exports.createSmartFolderAction = {
     args: (cmd) => cmd
         .requiredOption("--name <name>", "Smart folder name")
         .requiredOption("--query <q>", "Search query")
-        .requiredOption("--mode <m>", "Search mode: fulltext or semantic")
-        .option("--workspace-id <id>", "Workspace ID"),
+        .requiredOption("--mode <m>", "Search mode: fulltext or semantic"),
     run: async (input, ctx) => {
         if (input.mode !== "fulltext" && input.mode !== "semantic") {
             throw new Error("--mode must be 'fulltext' or 'semantic'");
         }
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         if (!workspaceId) {
-            throw new Error("workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)");
+            throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
         }
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
         return client.createSmartFolder({

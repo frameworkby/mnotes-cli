@@ -19,8 +19,7 @@ exports.createNoteAction = {
         .requiredOption("--title <title>", "Note title")
         .option("--content <content>", "Note content (otherwise read from stdin)")
         .option("--folder <id>", "Folder ID")
-        .option("--tags <tags...>", "Tags (space-separated)")
-        .option("--workspace <id>", "Workspace ID"),
+        .option("--tags <tags...>", "Tags (space-separated)"),
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
@@ -35,7 +34,7 @@ exports.createNoteAction = {
             content,
             folderId: input.folder,
             tags: input.tags,
-            workspaceId: input.workspace ?? config.workspaceId,
+            workspaceId: config.workspaceId,
         });
         return res.data;
     },

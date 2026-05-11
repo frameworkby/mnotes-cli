@@ -10,16 +10,15 @@ exports.generateMocAction = {
     args: (cmd) => cmd
         .requiredOption("--scope-type <type>", "Scope type: folder or tag")
         .requiredOption("--scope-id <id>", "Folder ID or tag name")
-        .option("--limit <n>", "Max notes (1-200, default 50)", (v) => parseInt(v, 10))
-        .option("--workspace-id <id>", "Workspace ID"),
+        .option("--limit <n>", "Max notes (1-200, default 50)", (v) => parseInt(v, 10)),
     run: async (input, ctx) => {
         if (input.scopeType !== "folder" && input.scopeType !== "tag") {
             throw new Error("--scope-type must be 'folder' or 'tag'");
         }
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
-        const workspaceId = input.workspaceId ?? config.workspaceId;
+        const workspaceId = config.workspaceId;
         if (!workspaceId) {
-            throw new Error("workspaceId is required (use --workspace-id or set MNOTES_WORKSPACE_ID)");
+            throw new Error("No workspace configured. Run `mnotes login` or set MNOTES_WORKSPACE_ID.");
         }
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
         return client.generateMoc({
