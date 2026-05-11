@@ -32,13 +32,18 @@ export const updateNoteAction: ActionDescriptor<UpdateInput, UpdateOutput> = {
   positional: ["id"],
   args: (cmd: Command) =>
     cmd
-      .argument("<id>", "Note ID")
+      .arguments("[id]")
+      .option("--id <id>", "Note ID (alias for positional)")
       .option("--title <title>", "New title")
       .option("--content <content>", "New content (otherwise read from stdin)")
       .option("--folder <id>", "New folder ID")
       .option("--tags <tags...>", "Replace tags (space-separated)"),
 
   run: async (input, ctx) => {
+    if (!input.id) {
+      process.stderr.write("Error: Note ID required — pass as positional or via --id <id>\n");
+      process.exit(1);
+    }
     const config = resolveConfig(ctx.globalOpts);
     const client = createClient(config.baseUrl, config.apiKey);
 

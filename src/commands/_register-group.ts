@@ -117,7 +117,13 @@ export function registerGroup(
       const input: Record<string, unknown> = { ...opts };
       if (action.positional) {
         action.positional.forEach((name, i) => {
-          input[name] = positionalValues[i];
+          // Only let a positional overwrite an option value when the positional
+          // was actually supplied. This allows `--id <id>` to act as an alias
+          // for a positional that was declared optional (`[id]`).
+          const positionalValue = positionalValues[i];
+          if (positionalValue !== undefined) {
+            input[name] = positionalValue;
+          }
         });
       }
 

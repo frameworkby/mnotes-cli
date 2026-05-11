@@ -4,6 +4,7 @@ import { createClient } from "../../client";
 import type { ActionDescriptor } from "../_register-group";
 
 interface Input {
+  days?: number;
   daysSince?: number;
   limit?: number;
 }
@@ -14,6 +15,9 @@ export const staleAction: ActionDescriptor<Input, unknown> = {
   mcpTool: "stale_notes",
   args: (cmd: Command) =>
     cmd
+      .option("--days <n>", "Days since last update (1-365) — alias for --days-since", (v) =>
+        parseInt(v, 10),
+      )
       .option("--days-since <n>", "Days since last update (1-365)", (v) =>
         parseInt(v, 10),
       )
@@ -25,7 +29,7 @@ export const staleAction: ActionDescriptor<Input, unknown> = {
     const client = createClient(config.baseUrl, config.apiKey);
     return client.staleNotes({
       workspaceId,
-      daysSince: input.daysSince,
+      daysSince: input.daysSince ?? input.days,
       limit: input.limit,
     });
   },
