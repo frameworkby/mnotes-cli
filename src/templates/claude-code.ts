@@ -4,13 +4,13 @@ export interface ClaudeCodeTemplateOpts {
 }
 
 export function generateClaudeCodeTemplate(opts: ClaudeCodeTemplateOpts): string {
-  return `<!-- m-notes instructions v6 -->
+  return `<!-- m-notes instructions v7 -->
 # m-notes — Your Wiki (MANDATORY)
 
 **Server**: ${opts.url}
 **Workspace**: ${opts.workspaceId}
 
-> You are not a reader of a scratchpad. You are the **author and maintainer of a living wiki**. Every session, three things compound: the wiki grows, links densify, contradictions get resolved. This is your persistent memory — without it you start from zero every conversation.
+> **Division of labour**: The human curates sources and asks questions. You do the grunt work — summarising, cross-referencing, filing, bookkeeping. You are the **author and maintainer of a living wiki**. Every session, three things compound: the wiki grows, links densify, contradictions get resolved. This is your persistent memory — without it you start from zero every conversation.
 
 ## Workspace Resolution
 
@@ -26,7 +26,39 @@ To configure: run \`mnotes workspace link\` in your project directory, or set \`
 
 1. **Raw sources** — user messages, pasted docs, URLs, files. Immutable. You never edit these.
 2. **The wiki** — your notes. You *write* these. They are interlinked with \`[[wikilinks]]\`, tagged for retrieval, and updated whenever sources change.
-3. **Schema pages** — notes tagged \`type:config\` (or in a \`_schema/\` folder). The user's rules for how the wiki is organized. **Read these before editing the wiki.**
+3. **The schema** — notes tagged \`type:config\` (or in a \`_schema/\` folder). The user's rules for how the wiki is organized. **Read these before editing the wiki.**
+
+## Page Types (for long-form wiki notes)
+
+When creating a note, use the most specific \`type\` from this enum in frontmatter:
+
+| type | Use when... |
+|------|-------------|
+| \`concept\` | A recurring idea, pattern, or principle |
+| \`entity\` | A person, library, product, or system |
+| \`source-summary\` | A distilled summary of one raw source |
+| \`comparison\` | A side-by-side of two or more entities/concepts |
+| \`overview\` | A top-down map of a topic area |
+
+These types apply to **wiki notes** (long-form, evolving pages). They are distinct from kb-store fast-capture categories (see "When to Store Knowledge" below).
+
+### Recommended Frontmatter
+
+Follow this convention when creating or updating notes:
+
+\`\`\`yaml
+---
+title: <human-readable>
+type: concept | entity | source-summary | comparison | overview
+sources: [<raw source ids or slugs>]
+related: [<linked note titles>]
+created: YYYY-MM-DD
+updated: YYYY-MM-DD
+confidence: high | medium | low
+---
+\`\`\`
+
+This frontmatter is a convention, not enforced by the server. Agents and humans rely on it for provenance and navigation — always populate it.
 
 ## Rules (follow strictly)
 
@@ -77,16 +109,28 @@ If you think "this isn't worth saving" — save it anyway. Future you has no con
 
 When the user supplies a source (URL, paste, file):
 
-1. **Find related pages**: \`mnotes note search\` + \`mnotes graph query\` to identify 3–15 existing notes affected.
+1. **Find related pages**: \`mnotes note search\` + \`mnotes graph query\` to identify **10–15 existing notes** affected. A single non-trivial source typically touches 10–15 pages, not 3 — if you find fewer, search harder.
 2. **Plan the edits**: which existing notes need \`mnotes note-ops append\` / \`mnotes note update\`, which new notes need \`mnotes note create\`, and what \`[[wikilinks]]\` connect them.
 3. **Apply**: execute the plan. Every touched note gets:
-   - A \`source/<slug>\` tag or a "Sources" section listing provenance
+   - A \`source/<slug>\` tag **and** a "Sources" section in the body listing provenance
    - At least one \`[[wikilink]]\` to another touched note
+   - Frontmatter updated (especially \`updated\`, \`sources\`, \`related\`)
 4. **Summarize**: tell the user which notes were created vs. updated.
 5. **Log the ingest**: \`mnotes wiki log append --kind ingest --ref "<short source ref>" --summary "<one-line gist>"\`
 6. **Refresh the index**: \`mnotes wiki index refresh\`
 
-A single source should rarely touch fewer than 3 notes — that's a sign you're treating the wiki as a dumping ground.
+A single source touching fewer than 5 notes is a red flag — that's a sign you're treating the wiki as a dumping ground rather than a connected graph.
+
+## The Query Loop
+
+When answering a non-trivial question:
+
+1. **Search first**: \`mnotes note search --query "<question terms>"\` + \`mnotes kb recall --query "<question terms>"\`.
+2. **Answer from the wiki**: synthesise from what you find. Prefer existing notes over re-deriving from scratch.
+3. **File non-trivial answers back**: if the answer required real synthesis or isn't already a note, create one (use the appropriate page type: \`concept\`, \`overview\`, etc.). This is the compounding loop — answering questions grows the wiki.
+4. **Log the query**: \`mnotes wiki log append --kind query --ref "<question slug>" --summary "<one-line answer synopsis>"\`
+
+Questions answered and not filed are knowledge lost.
 
 ## The Lint Loop
 
@@ -103,7 +147,8 @@ Report findings as a short list; ask before bulk-deleting.
 
 ## When to Store Knowledge
 
-Store **proactively** — don't wait to be asked. Categories:
+Store **proactively** — don't wait to be asked. These are **kb-store fast-capture categories** (distinct from wiki note page types above):
+
 - Architecture decision → \`arch/{component}\`
 - Code pattern or convention → \`pattern/{name}\`
 - Debugged bug → \`bug/{id}\`
@@ -113,7 +158,7 @@ Store **proactively** — don't wait to be asked. Categories:
 - Gotcha or footgun → \`gotcha/{description}\`
 - Completed task → \`task/{id}\`
 
-**Promotion rule**: if a knowledge entry is recalled 3+ times, promote it to a full note with \`mnotes note create\` — it has earned a wiki page.
+**Promotion rule**: if a knowledge entry is recalled 3+ times, promote it to a full wiki note with \`mnotes note create\`. Use the page-type vocabulary when promoting: a recurring pattern becomes a \`concept\` note, a library/tool becomes an \`entity\` note, a summarised investigation becomes a \`source-summary\`, etc.
 
 ## When to Recall Knowledge
 
