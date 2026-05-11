@@ -85,10 +85,8 @@ export const bulkDeleteAction: ActionDescriptor<Input, BulkDeleteResult> = {
         totalRequested: noteIds.length,
         deleted: [],
         failed: [],
-        // Attach dry-run preview list as a non-standard field visible via JSON
-        // and renderHuman. The type is intentionally widened here for MCP callers.
-        ...(({ dryRunTargets: noteIds } as unknown) as object),
-      } as BulkDeleteResult & { dryRunTargets: string[] };
+        dryRunTargets: noteIds,
+      } as unknown as BulkDeleteResult & { dryRunTargets: string[] };
     }
 
     // ── Live delete loop ──────────────────────────────────────────────────────

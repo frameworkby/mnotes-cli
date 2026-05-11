@@ -157,7 +157,7 @@ describe("lintAction.run", () => {
     mockWikiLint = vi.fn();
     vi.mocked(clientModule.createClient).mockReturnValue({
       wikiLint: mockWikiLint,
-    } as ReturnType<typeof clientModule.createClient>);
+    } as unknown as ReturnType<typeof clientModule.createClient>);
   });
 
   it("filters orphans by default (no flags)", async () => {
