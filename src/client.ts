@@ -658,11 +658,33 @@ export interface BulkKnowledgeRecallResult {
   totalEntries: number;
 }
 
-export function createClient(baseUrl: string, apiKey: string) {
+export interface CreateClientOptions {
+  /** Session ID grouping all requests from one CLI invocation into one trace row. */
+  sessionId?: string;
+  /** Human-readable label (typically the command name, e.g. "note list"). */
+  sessionLabel?: string;
+}
+
+let cliSession: { sessionId?: string; sessionLabel?: string } = {};
+
+/**
+ * Called once at CLI startup so every subsequent `createClient` call automatically
+ * tags requests with the same `X-Mnotes-Session-Id` — making one CLI invocation
+ * produce one SessionTrace row server-side.
+ */
+export function setCliSession(s: { sessionId: string; sessionLabel?: string }): void {
+  cliSession = { sessionId: s.sessionId, sessionLabel: s.sessionLabel };
+}
+
+export function createClient(baseUrl: string, apiKey: string, opts: CreateClientOptions = {}) {
+  const sessionId = opts.sessionId ?? cliSession.sessionId;
+  const sessionLabel = opts.sessionLabel ?? cliSession.sessionLabel;
   const headers: Record<string, string> = {
     Authorization: `Bearer ${apiKey}`,
     "Content-Type": "application/json",
   };
+  if (sessionId) headers["X-Mnotes-Session-Id"] = sessionId;
+  if (sessionLabel) headers["X-Mnotes-Session-Label"] = sessionLabel;
 
   async function request<T>(
     method: string,

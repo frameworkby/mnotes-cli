@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
+import { randomUUID } from "node:crypto";
+import { setCliSession } from "./client";
 import { registerNoteGroup } from "./commands/note";
 import { registerWorkspaceGroup } from "./commands/workspace";
 import { registerFolderGroup } from "./commands/folder";
@@ -77,6 +79,12 @@ export function buildProgram(): Command {
 }
 
 if (require.main === module) {
+  // Tag every outgoing request from this CLI invocation with one session id, so
+  // they group into a single SessionTrace row visible on /activity.
+  const sessionId = process.env.MNOTES_SESSION_ID || randomUUID();
+  const sessionLabel = process.argv.slice(2).filter((a) => !a.startsWith("-")).join(" ").slice(0, 255) || undefined;
+  setCliSession({ sessionId, sessionLabel });
+
   buildProgram()
     .parseAsync(process.argv)
     .catch((err: Error) => {
