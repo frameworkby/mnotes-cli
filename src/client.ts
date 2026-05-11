@@ -168,6 +168,7 @@ export interface WikiLintOrphan {
   id: string;
   title: string;
   updatedAt: string;
+  archived: boolean;
 }
 
 export interface WikiLintBrokenWikilink {

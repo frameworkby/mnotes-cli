@@ -2,12 +2,18 @@ import type { Command } from "commander";
 import { resolveConfig } from "../../config";
 import { createClient } from "../../client";
 import type { ActionDescriptor } from "../_register-group";
-import type { WikiLintCheck, WikiLintResult } from "../../client";
+import type { WikiLintCheck, WikiLintOrphan, WikiLintResult } from "../../client";
+
+// System-generated notes that can never have inbound links by design.
+// Used as a client-side post-filter unless --include-system is passed.
+export const SYSTEM_NOTE_TITLES = ["Wiki Activity Log", "Wiki Index"] as const;
 
 interface LintInput {
   checks?: string;
   limit?: string;
   json?: boolean;
+  includeArchived?: boolean;
+  includeSystem?: boolean;
 }
 
 const VALID_CHECKS: readonly WikiLintCheck[] = [
@@ -30,6 +36,43 @@ function parseChecksCsv(csv: string): WikiLintCheck[] {
     }
   }
   return parts as WikiLintCheck[];
+}
+
+/**
+ * Post-filter orphan list based on --include-archived and --include-system flags.
+ * Recomputes the orphan total to match the displayed list.
+ */
+export function filterOrphans(
+  result: WikiLintResult,
+  includeArchived: boolean,
+  includeSystem: boolean,
+): WikiLintResult {
+  let orphans: WikiLintOrphan[] = result.orphans;
+
+  if (!includeArchived) {
+    orphans = orphans.filter((o) => !o.archived);
+  }
+
+  if (!includeSystem) {
+    const systemTitles = new Set<string>(SYSTEM_NOTE_TITLES);
+    orphans = orphans.filter((o) => !systemTitles.has(o.title));
+  }
+
+  if (orphans.length === result.orphans.length) {
+    return result;
+  }
+
+  return {
+    ...result,
+    orphans,
+    summary: {
+      ...result.summary,
+      totals: {
+        ...result.summary.totals,
+        orphans: orphans.length,
+      },
+    },
+  };
 }
 
 function renderHuman(out: WikiLintResult): void {
@@ -76,7 +119,9 @@ function renderHuman(out: WikiLintResult): void {
 export const lintAction: ActionDescriptor<LintInput, WikiLintResult> = {
   name: "lint",
   describe:
-    "Run all wiki-health checks (orphans, broken-wikilinks, contradictions, stale) in one call. Use --checks to subset.",
+    "Run all wiki-health checks (orphans, broken-wikilinks, contradictions, stale) in one call. " +
+    "Use --checks to subset. By default, archived notes and system-generated notes (Wiki Activity Log, Wiki Index) " +
+    "are excluded from the orphans list. Pass --include-archived or --include-system to opt back in.",
   mcpTool: "wiki_lint",
   args: (cmd: Command) =>
     cmd
@@ -88,7 +133,15 @@ export const lintAction: ActionDescriptor<LintInput, WikiLintResult> = {
         "--limit <n>",
         "Max rows per check (default 100, max 500)",
       )
-      .option("--json", "Emit full JSON envelope"),
+      .option("--json", "Emit full JSON envelope")
+      .option(
+        "--include-archived",
+        "Include archived notes in the orphans list (excluded by default)",
+      )
+      .option(
+        "--include-system",
+        "Include system-generated notes (Wiki Activity Log, Wiki Index) in the orphans list (excluded by default)",
+      ),
 
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
@@ -110,7 +163,8 @@ export const lintAction: ActionDescriptor<LintInput, WikiLintResult> = {
       limitPerCheck = n;
     }
 
-    return client.wikiLint({ workspaceId, checks, limitPerCheck });
+    const raw = await client.wikiLint({ workspaceId, checks, limitPerCheck });
+    return filterOrphans(raw, input.includeArchived ?? false, input.includeSystem ?? false);
   },
 
   renderHuman,
