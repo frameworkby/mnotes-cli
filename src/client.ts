@@ -228,6 +228,8 @@ export interface ArchiveStaleEntry {
 export interface ArchiveStaleResult {
   archivedCount: number;
   entries: ArchiveStaleEntry[];
+  /** Only present in key-mode responses */
+  missing?: string[];
 }
 
 export interface ConsolidateResult {
@@ -999,12 +1001,11 @@ export function createClient(baseUrl: string, apiKey: string) {
       return request<DecayEntry[]>("POST", "/api/v1/knowledge/decay", opts);
     },
 
-    async archiveStaleMemories(opts: {
-      workspaceId: string;
-      maxDecayScore?: number;
-      maxImportance?: number;
-      dryRun?: boolean;
-    }): Promise<ArchiveStaleResult> {
+    async archiveStaleMemories(
+      opts:
+        | { workspaceId: string; keys: string[]; dryRun?: boolean }
+        | { workspaceId: string; maxDecayScore?: number; maxImportance?: number; dryRun?: boolean },
+    ): Promise<ArchiveStaleResult> {
       return request<ArchiveStaleResult>(
         "POST",
         "/api/v1/knowledge/archive-stale",
