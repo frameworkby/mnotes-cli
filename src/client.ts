@@ -125,6 +125,37 @@ export interface CheckIngestedSourcesResult {
   data: CheckIngestedSourceRow[];
 }
 
+// ── Wiki index / log shapes ─────────────────────────────────────────────────
+
+export interface WikiBootstrapResult {
+  index: "created" | "exists";
+  log: "created" | "exists";
+}
+
+export interface WikiIndexRefreshResult {
+  added: number;
+  removed: number;
+  unchanged: number;
+  total: number;
+}
+
+export interface WikiLogAppendResult {
+  appended: string;
+}
+
+export interface WikiLogEntry {
+  timestamp?: string;
+  kind?: string;
+  ref?: string;
+  summary?: string;
+  raw: string;
+  parsed: boolean;
+}
+
+export interface WikiLogTailResult {
+  entries: WikiLogEntry[];
+}
+
 // ── Wiki lint shapes ────────────────────────────────────────────────────────
 
 export type WikiLintCheck =
@@ -1956,6 +1987,41 @@ export function createClient(baseUrl: string, apiKey: string) {
       [k: string]: unknown;
     }): Promise<unknown> {
       return request("POST", "/api/v1/composites/project-context-load", opts);
+    },
+
+    // ── Wiki index / log (#936) ────────────────────────────────────────────────
+
+    async wikiBootstrap(workspaceId: string): Promise<WikiBootstrapResult> {
+      return request<WikiBootstrapResult>("POST", "/api/v1/wiki/bootstrap", {
+        workspaceId,
+      });
+    },
+
+    async wikiIndexRefresh(workspaceId: string): Promise<WikiIndexRefreshResult> {
+      return request<WikiIndexRefreshResult>("POST", "/api/v1/wiki/index/refresh", {
+        workspaceId,
+      });
+    },
+
+    async wikiLogAppend(opts: {
+      workspaceId: string;
+      kind: "ingest" | "query" | "lint" | "decision";
+      ref: string;
+      summary?: string;
+    }): Promise<WikiLogAppendResult> {
+      return request<WikiLogAppendResult>("POST", "/api/v1/wiki/log/append", opts);
+    },
+
+    async wikiLogTail(opts: {
+      workspaceId: string;
+      limit?: number;
+    }): Promise<WikiLogTailResult> {
+      const params = new URLSearchParams({ workspaceId: opts.workspaceId });
+      if (opts.limit != null) params.set("limit", String(opts.limit));
+      return request<WikiLogTailResult>(
+        "GET",
+        `/api/v1/wiki/log/tail?${params.toString()}`,
+      );
     },
 
     async generateAgentInstructions(opts: {

@@ -4,7 +4,7 @@ export interface ClaudeCodeTemplateOpts {
 }
 
 export function generateClaudeCodeTemplate(opts: ClaudeCodeTemplateOpts): string {
-  return `<!-- m-notes instructions v5 -->
+  return `<!-- m-notes instructions v6 -->
 # m-notes — Your Wiki (MANDATORY)
 
 **Server**: ${opts.url}
@@ -44,6 +44,8 @@ To configure: run \`mnotes workspace link\` in your project directory, or set \`
 These are not suggestions. Skip any step and the wiki degrades.
 
 ### Session Start (before ANY work)
+- [ ] Run \`mnotes wiki log tail --limit 10\` — see recent ingest/lint/decision activity before anything else
+- [ ] Read the Wiki Index: \`mnotes note-ops by-title --title "Wiki Index"\` — find relevant pages and drill in before falling back to search
 - [ ] Run \`mnotes composite project-load\`
 - [ ] Run \`mnotes kb recall --query "<topic>"\` — past you already figured things out
 - [ ] Run \`mnotes note search --query "<topic>"\` for related wiki pages
@@ -81,6 +83,8 @@ When the user supplies a source (URL, paste, file):
    - A \`source/<slug>\` tag or a "Sources" section listing provenance
    - At least one \`[[wikilink]]\` to another touched note
 4. **Summarize**: tell the user which notes were created vs. updated.
+5. **Log the ingest**: \`mnotes wiki log append --kind ingest --ref "<short source ref>" --summary "<one-line gist>"\`
+6. **Refresh the index**: \`mnotes wiki index refresh\`
 
 A single source should rarely touch fewer than 3 notes — that's a sign you're treating the wiki as a dumping ground.
 
@@ -92,6 +96,8 @@ Periodically (session start on large workspaces; after ingests):
 - **Orphans** → \`mnotes graph query-note\` for notes with zero inbound or outbound links. Link them or delete.
 - **Broken wikilinks** → \`[[X]]\` targets that don't exist. Create a stub note or fix the link.
 - **Stale** → notes untouched >90 days referenced by new sources. Update them.
+
+After running \`mnotes wiki lint\`, append a log entry: \`mnotes wiki log append --kind lint --ref "<short summary>" --summary "<counts or salient findings>"\`
 
 Report findings as a short list; ask before bulk-deleting.
 
@@ -225,5 +231,12 @@ Workspace is resolved automatically from env/config. No \`--workspace-id\` flag 
 | \`mnotes graph create-edge\` | Link two nodes |
 | \`mnotes graph query\` | Search graph |
 | \`mnotes graph neighbors\` | Explore connections |
-| \`mnotes graph query-note\` | Subgraph around a note |`;
+| \`mnotes graph query-note\` | Subgraph around a note |
+
+### Wiki Index & Log
+| Command | When to use |
+|---------|------------|
+| \`mnotes wiki log tail --limit N\` | Read last N log entries (default 20, most recent first) — run at session start |
+| \`mnotes wiki log append --kind <ingest\|query\|lint\|decision> --ref <text> [--summary <text>]\` | Append a timestamped log entry |
+| \`mnotes wiki index refresh\` | Regenerate the Wiki Index from current notes; outputs added/removed/unchanged/total |`;
 }

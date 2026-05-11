@@ -224,7 +224,8 @@ export async function handleClaudeCode(opts: {
     return;
   }
 
-  const results = scaffoldItems(dir, selectedItems, { url, workspaceId });
+  const client = createClient(url, apiKey);
+  const results = await scaffoldItems(dir, selectedItems, { url, workspaceId, client });
   printScaffoldResults(results);
 }
 

@@ -9,14 +9,18 @@ import {
   generateAgentTemplates,
 } from "../../templates/claude-code/index";
 import type { ClaudeCodeHooks } from "../../templates/claude-code/index";
+import type { createClient } from "../../client";
+
+type MNotesClient = ReturnType<typeof createClient>;
 
 /** Items the wizard can scaffold */
-export type WizardItem = "hooks" | "skills" | "agents";
+export type WizardItem = "hooks" | "skills" | "agents" | "wiki-bootstrap";
 
 export const WIZARD_CHOICES: { value: WizardItem; label: string; description: string }[] = [
   { value: "hooks", label: "Session hooks", description: "Auto-load context on session start" },
   { value: "skills", label: "Skills (/store, /recall)", description: "Slash commands for knowledge management" },
   { value: "agents", label: "Knowledge manager agent", description: "Agent for managing project knowledge" },
+  { value: "wiki-bootstrap", label: "Wiki bootstrap", description: "Create wiki/index and wiki/log notes if absent" },
 ];
 
 export const ALL_WIZARD_ITEMS: WizardItem[] = WIZARD_CHOICES.map((c) => c.value);
@@ -24,6 +28,8 @@ export const ALL_WIZARD_ITEMS: WizardItem[] = WIZARD_CHOICES.map((c) => c.value)
 export interface WizardOpts {
   url: string;
   workspaceId: string;
+  /** Required only when wiki-bootstrap is selected */
+  client?: MNotesClient;
 }
 
 export interface ScaffoldResult {
@@ -81,12 +87,15 @@ export async function promptWizardSelection(): Promise<WizardItem[]> {
 /**
  * Scaffolds selected items into the target directory.
  * Merges with existing files rather than overwriting.
+ *
+ * Async because wiki-bootstrap makes an API call. File-only items
+ * (hooks, skills, agents) are trivially awaitable — behaviour unchanged.
  */
-export function scaffoldItems(
+export async function scaffoldItems(
   dir: string,
   items: WizardItem[],
   opts: WizardOpts
-): ScaffoldResult[] {
+): Promise<ScaffoldResult[]> {
   const results: ScaffoldResult[] = [];
 
   for (const item of items) {
@@ -100,10 +109,39 @@ export function scaffoldItems(
       case "agents":
         results.push(scaffoldAgents(dir, opts));
         break;
+      case "wiki-bootstrap":
+        results.push(await scaffoldWikiBootstrap(opts));
+        break;
     }
   }
 
   return results;
+}
+
+/**
+ * Calls the wiki bootstrap API endpoint to ensure wiki/index and wiki/log
+ * notes exist in the workspace.
+ *
+ * Result type choice: synthetic strings in filesWritten (e.g.
+ * "[api] wiki/index: created") rather than a new apiActions field.
+ * Rationale: printScaffoldResults already iterates filesWritten — no printer
+ * changes needed, no type surface growth. The "[api]" prefix makes API
+ * actions visually distinct from file paths in the output.
+ */
+async function scaffoldWikiBootstrap(opts: WizardOpts): Promise<ScaffoldResult> {
+  if (!opts.client) {
+    throw new Error("wiki-bootstrap requires a client instance in WizardOpts");
+  }
+
+  const result = await opts.client.wikiBootstrap(opts.workspaceId);
+
+  return {
+    item: "wiki-bootstrap",
+    filesWritten: [
+      `[api] wiki/index: ${result.index}`,
+      `[api] wiki/log: ${result.log}`,
+    ],
+  };
 }
 
 /**

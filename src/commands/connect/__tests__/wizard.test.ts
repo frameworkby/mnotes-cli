@@ -23,6 +23,10 @@ vi.mock("../../../client", () => ({
     createWorkspace: async (name: string) => ({
       data: { id: name, name, slug: name, isDefault: false },
     }),
+    wikiBootstrap: async (_workspaceId: string) => ({
+      index: "created" as const,
+      log: "created" as const,
+    }),
   }),
 }));
 
@@ -181,8 +185,8 @@ describe("agents templates", () => {
 // T-2: Wizard choices structure
 // =============================================================
 describe("wizard choices", () => {
-  it("has three items: hooks, skills, agents", () => {
-    expect(ALL_WIZARD_ITEMS).toEqual(["hooks", "skills", "agents"]);
+  it("has four items: hooks, skills, agents, wiki-bootstrap", () => {
+    expect(ALL_WIZARD_ITEMS).toEqual(["hooks", "skills", "agents", "wiki-bootstrap"]);
   });
 
   it("each choice has value, label, and description", () => {
@@ -216,8 +220,8 @@ describe("scaffoldItems: hooks", () => {
     else process.env.HOME = origHome;
   });
 
-  it("writes scripts to global ~/.claude/hooks/mnotes/scripts/ and settings.json to project (AC-4)", () => {
-    const results = scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
+  it("writes scripts to global ~/.claude/hooks/mnotes/scripts/ and settings.json to project (AC-4)", async () => {
+    const results = await scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
     expect(results).toHaveLength(1);
     expect(results[0].item).toBe("hooks");
     // 1 bash script (SessionStart only after #939) + settings.json
@@ -256,7 +260,7 @@ describe("scaffoldItems: hooks", () => {
     expect(startContent).not.toContain("--workspace-id");
   });
 
-  it("merges hooks into existing settings.json (AC-5)", () => {
+  it("merges hooks into existing settings.json (AC-5)", async () => {
     const claudeDir = path.join(tmpDir, ".claude");
     fs.mkdirSync(claudeDir, { recursive: true });
 
@@ -272,7 +276,7 @@ describe("scaffoldItems: hooks", () => {
       "utf-8"
     );
 
-    scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
+    await scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
 
     const settings = JSON.parse(
       fs.readFileSync(path.join(claudeDir, "settings.json"), "utf-8")
@@ -287,9 +291,9 @@ describe("scaffoldItems: hooks", () => {
     expect(settings.hooks.SessionStart).toHaveLength(1);
   });
 
-  it("does not duplicate hooks on re-run (AC-5)", () => {
-    scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
-    scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
+  it("does not duplicate hooks on re-run (AC-5)", async () => {
+    await scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
+    await scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
 
     const settings = JSON.parse(
       fs.readFileSync(path.join(tmpDir, ".claude", "settings.json"), "utf-8")
@@ -302,7 +306,7 @@ describe("scaffoldItems: hooks", () => {
   // env var prefix) get cleaned up: SessionStart is replaced with the current
   // form; Stop entries are removed entirely (no replacement) since #939 no
   // longer registers a Stop hook.
-  it("replaces legacy SessionStart and removes legacy Stop on re-run (#938/#939)", () => {
+  it("replaces legacy SessionStart and removes legacy Stop on re-run (#938/#939)", async () => {
     const claudeDir = path.join(tmpDir, ".claude");
     fs.mkdirSync(claudeDir, { recursive: true });
 
@@ -324,7 +328,7 @@ describe("scaffoldItems: hooks", () => {
       "utf-8"
     );
 
-    scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
+    await scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
 
     const settings = JSON.parse(
       fs.readFileSync(path.join(claudeDir, "settings.json"), "utf-8")
@@ -341,7 +345,7 @@ describe("scaffoldItems: hooks", () => {
     expect(settings.hooks.Stop).toBeUndefined();
   });
 
-  it("removes a legacy Stop entry while preserving non-mnotes Stop hooks (#939)", () => {
+  it("removes a legacy Stop entry while preserving non-mnotes Stop hooks (#939)", async () => {
     const claudeDir = path.join(tmpDir, ".claude");
     fs.mkdirSync(claudeDir, { recursive: true });
 
@@ -361,7 +365,7 @@ describe("scaffoldItems: hooks", () => {
       "utf-8"
     );
 
-    scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
+    await scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
 
     const settings = JSON.parse(
       fs.readFileSync(path.join(claudeDir, "settings.json"), "utf-8")
@@ -375,7 +379,7 @@ describe("scaffoldItems: hooks", () => {
     expect(stopCommands.some((c) => c.includes("mnotes-session-stop.sh"))).toBe(false);
   });
 
-  it("preserves non-mnotes hooks on the same events (#938)", () => {
+  it("preserves non-mnotes hooks on the same events (#938)", async () => {
     const claudeDir = path.join(tmpDir, ".claude");
     fs.mkdirSync(claudeDir, { recursive: true });
 
@@ -402,7 +406,7 @@ describe("scaffoldItems: hooks", () => {
       "utf-8"
     );
 
-    scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
+    await scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
 
     const settings = JSON.parse(
       fs.readFileSync(path.join(claudeDir, "settings.json"), "utf-8")
@@ -421,10 +425,10 @@ describe("scaffoldItems: hooks", () => {
     ).toBe(1);
   });
 
-  it("idempotent: running connect three times produces a single SessionStart entry, no Stop (#938/#939)", () => {
-    scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
-    scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
-    scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
+  it("idempotent: running connect three times produces a single SessionStart entry, no Stop (#938/#939)", async () => {
+    await scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
+    await scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
+    await scaffoldItems(tmpDir, ["hooks"], DEFAULT_OPTS);
 
     const settings = JSON.parse(
       fs.readFileSync(path.join(tmpDir, ".claude", "settings.json"), "utf-8")
@@ -456,8 +460,8 @@ describe("scaffoldItems: skills", () => {
     cleanTmpDir(tmpDir);
   });
 
-  it("creates skill files as .claude/skills/<name>/SKILL.md (AC-4)", () => {
-    const results = scaffoldItems(tmpDir, ["skills"], DEFAULT_OPTS);
+  it("creates skill files as .claude/skills/<name>/SKILL.md (AC-4)", async () => {
+    const results = await scaffoldItems(tmpDir, ["skills"], DEFAULT_OPTS);
     expect(results).toHaveLength(1);
     expect(results[0].item).toBe("skills");
     expect(results[0].filesWritten.length).toBeGreaterThan(0);
@@ -467,8 +471,8 @@ describe("scaffoldItems: skills", () => {
     expect(fs.existsSync(path.join(skillsDir, "mnotes-recall", "SKILL.md"))).toBe(true);
   });
 
-  it("generated skill files include header (AC-8)", () => {
-    scaffoldItems(tmpDir, ["skills"], DEFAULT_OPTS);
+  it("generated skill files include header (AC-8)", async () => {
+    await scaffoldItems(tmpDir, ["skills"], DEFAULT_OPTS);
 
     const storeContent = fs.readFileSync(
       path.join(tmpDir, ".claude", "skills", "mnotes-store", "SKILL.md"),
@@ -477,7 +481,7 @@ describe("scaffoldItems: skills", () => {
     expect(storeContent).toContain("Generated by m-notes CLI");
   });
 
-  it("preserves user-created skill files (AC-5)", () => {
+  it("preserves user-created skill files (AC-5)", async () => {
     const storeDir = path.join(tmpDir, ".claude", "skills", "mnotes-store");
     fs.mkdirSync(storeDir, { recursive: true });
 
@@ -488,7 +492,7 @@ describe("scaffoldItems: skills", () => {
       "utf-8"
     );
 
-    scaffoldItems(tmpDir, ["skills"], DEFAULT_OPTS);
+    await scaffoldItems(tmpDir, ["skills"], DEFAULT_OPTS);
 
     // The user file should be preserved
     const content = fs.readFileSync(path.join(storeDir, "SKILL.md"), "utf-8");
@@ -501,7 +505,7 @@ describe("scaffoldItems: skills", () => {
     ).toBe(true);
   });
 
-  it("overwrites m-notes generated skill files on re-run (AC-5)", () => {
+  it("overwrites m-notes generated skill files on re-run (AC-5)", async () => {
     const skillPath = path.join(tmpDir, ".claude", "skills", "mnotes-store", "SKILL.md");
 
     // Seed file with stale content that an older CLI version would have written.
@@ -512,7 +516,7 @@ describe("scaffoldItems: skills", () => {
       "utf-8"
     );
 
-    scaffoldItems(tmpDir, ["skills"], { url: "http://new-url.com", workspaceId: "ws-new" });
+    await scaffoldItems(tmpDir, ["skills"], { url: "http://new-url.com", workspaceId: "ws-new" });
 
     const content = fs.readFileSync(skillPath, "utf-8");
     // Stale content gone, current template installed (CLI command surface).
@@ -535,8 +539,8 @@ describe("scaffoldItems: agents", () => {
     cleanTmpDir(tmpDir);
   });
 
-  it("creates agent files in .claude/agents/ (AC-4)", () => {
-    const results = scaffoldItems(tmpDir, ["agents"], DEFAULT_OPTS);
+  it("creates agent files in .claude/agents/ (AC-4)", async () => {
+    const results = await scaffoldItems(tmpDir, ["agents"], DEFAULT_OPTS);
     expect(results).toHaveLength(1);
     expect(results[0].item).toBe("agents");
     expect(results[0].filesWritten.length).toBeGreaterThan(0);
@@ -546,8 +550,8 @@ describe("scaffoldItems: agents", () => {
     ).toBe(true);
   });
 
-  it("generated agent files include header (AC-8)", () => {
-    scaffoldItems(tmpDir, ["agents"], DEFAULT_OPTS);
+  it("generated agent files include header (AC-8)", async () => {
+    await scaffoldItems(tmpDir, ["agents"], DEFAULT_OPTS);
 
     const content = fs.readFileSync(
       path.join(tmpDir, ".claude", "agents", "knowledge-manager.md"),
@@ -556,7 +560,7 @@ describe("scaffoldItems: agents", () => {
     expect(content).toContain("Generated by m-notes CLI");
   });
 
-  it("preserves user-created agent files (AC-5)", () => {
+  it("preserves user-created agent files (AC-5)", async () => {
     const agentsDir = path.join(tmpDir, ".claude", "agents");
     fs.mkdirSync(agentsDir, { recursive: true });
 
@@ -566,7 +570,7 @@ describe("scaffoldItems: agents", () => {
       "utf-8"
     );
 
-    scaffoldItems(tmpDir, ["agents"], DEFAULT_OPTS);
+    await scaffoldItems(tmpDir, ["agents"], DEFAULT_OPTS);
 
     const content = fs.readFileSync(
       path.join(agentsDir, "knowledge-manager.md"),
@@ -590,14 +594,19 @@ describe("scaffoldItems: all items", () => {
     cleanTmpDir(tmpDir);
   });
 
-  it("scaffolds hooks, skills, and agents when all selected (AC-7)", () => {
-    const results = scaffoldItems(tmpDir, ALL_WIZARD_ITEMS, DEFAULT_OPTS);
-    expect(results).toHaveLength(3);
+  it("scaffolds hooks, skills, agents, and wiki-bootstrap when all selected (AC-7)", async () => {
+    const mockClient = {
+      wikiBootstrap: vi.fn().mockResolvedValue({ index: "created", log: "created" }),
+    } as unknown as Parameters<typeof scaffoldItems>[2]["client"];
+
+    const results = await scaffoldItems(tmpDir, ALL_WIZARD_ITEMS, { ...DEFAULT_OPTS, client: mockClient });
+    expect(results).toHaveLength(4);
 
     const items = results.map((r) => r.item);
     expect(items).toContain("hooks");
     expect(items).toContain("skills");
     expect(items).toContain("agents");
+    expect(items).toContain("wiki-bootstrap");
 
     // Verify files exist
     expect(fs.existsSync(path.join(tmpDir, ".claude", "settings.json"))).toBe(true);
@@ -606,14 +615,110 @@ describe("scaffoldItems: all items", () => {
     expect(fs.existsSync(path.join(tmpDir, ".claude", "agents", "knowledge-manager.md"))).toBe(true);
   });
 
-  it("scaffolds partial selection", () => {
-    const results = scaffoldItems(tmpDir, ["hooks", "agents"], DEFAULT_OPTS);
+  it("scaffolds partial selection", async () => {
+    const results = await scaffoldItems(tmpDir, ["hooks", "agents"], DEFAULT_OPTS);
     expect(results).toHaveLength(2);
 
     expect(fs.existsSync(path.join(tmpDir, ".claude", "settings.json"))).toBe(true);
     expect(fs.existsSync(path.join(tmpDir, ".claude", "agents", "knowledge-manager.md"))).toBe(true);
     // Skills should NOT exist
     expect(fs.existsSync(path.join(tmpDir, ".claude", "skills"))).toBe(false);
+  });
+});
+
+// =============================================================
+// T-3: scaffoldItems — wiki-bootstrap
+// =============================================================
+describe("scaffoldItems: wiki-bootstrap", () => {
+  it("calls client.wikiBootstrap with the resolved workspaceId and returns synthetic strings", async () => {
+    const mockWikiBootstrap = vi.fn().mockResolvedValue({ index: "created", log: "exists" });
+    const mockClient = { wikiBootstrap: mockWikiBootstrap } as unknown as Parameters<typeof scaffoldItems>[2]["client"];
+
+    const results = await scaffoldItems(".", ["wiki-bootstrap"], {
+      ...DEFAULT_OPTS,
+      client: mockClient,
+    });
+
+    expect(mockWikiBootstrap).toHaveBeenCalledOnce();
+    expect(mockWikiBootstrap).toHaveBeenCalledWith(DEFAULT_OPTS.workspaceId);
+
+    expect(results).toHaveLength(1);
+    expect(results[0].item).toBe("wiki-bootstrap");
+    expect(results[0].filesWritten).toEqual([
+      "[api] wiki/index: created",
+      "[api] wiki/log: exists",
+    ]);
+  });
+
+  it("reflects both 'exists' statuses when notes already present", async () => {
+    const mockClient = {
+      wikiBootstrap: vi.fn().mockResolvedValue({ index: "exists", log: "exists" }),
+    } as unknown as Parameters<typeof scaffoldItems>[2]["client"];
+
+    const results = await scaffoldItems(".", ["wiki-bootstrap"], {
+      ...DEFAULT_OPTS,
+      client: mockClient,
+    });
+
+    expect(results[0].filesWritten).toEqual([
+      "[api] wiki/index: exists",
+      "[api] wiki/log: exists",
+    ]);
+  });
+
+  it("throws if no client is provided", async () => {
+    await expect(
+      scaffoldItems(".", ["wiki-bootstrap"], DEFAULT_OPTS)
+    ).rejects.toThrow("wiki-bootstrap requires a client instance");
+  });
+
+  it("mixed run: hooks + wiki-bootstrap — both execute and produce the right summary", async () => {
+    const tmpDir = makeTmpDir();
+    const fakeHome = makeTmpDir();
+    const origHome = process.env.HOME;
+    process.env.HOME = fakeHome;
+
+    try {
+      const mockClient = {
+        wikiBootstrap: vi.fn().mockResolvedValue({ index: "created", log: "created" }),
+      } as unknown as Parameters<typeof scaffoldItems>[2]["client"];
+
+      const results = await scaffoldItems(tmpDir, ["hooks", "wiki-bootstrap"], {
+        ...DEFAULT_OPTS,
+        client: mockClient,
+      });
+
+      expect(results).toHaveLength(2);
+
+      const hooksResult = results.find((r) => r.item === "hooks");
+      const wikiResult = results.find((r) => r.item === "wiki-bootstrap");
+
+      expect(hooksResult).toBeDefined();
+      expect(hooksResult!.filesWritten.length).toBeGreaterThan(0);
+
+      expect(wikiResult).toBeDefined();
+      expect(wikiResult!.filesWritten).toEqual([
+        "[api] wiki/index: created",
+        "[api] wiki/log: created",
+      ]);
+
+      // hooks file exists on disk; wiki-bootstrap writes nothing to disk
+      expect(fs.existsSync(path.join(tmpDir, ".claude", "settings.json"))).toBe(true);
+    } finally {
+      process.env.HOME = origHome;
+      cleanTmpDir(tmpDir);
+      cleanTmpDir(fakeHome);
+    }
+  });
+
+  it("surfaces API errors without swallowing them", async () => {
+    const mockClient = {
+      wikiBootstrap: vi.fn().mockRejectedValue(new Error("API unavailable")),
+    } as unknown as Parameters<typeof scaffoldItems>[2]["client"];
+
+    await expect(
+      scaffoldItems(".", ["wiki-bootstrap"], { ...DEFAULT_OPTS, client: mockClient })
+    ).rejects.toThrow("API unavailable");
   });
 });
 
