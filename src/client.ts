@@ -312,6 +312,7 @@ export interface KbStats {
   staleCount: number;
   conflictCount: number;
   embeddingCoverage: number;
+  missingEmbeddingKeys: string[];
 }
 
 // ── Graph types ──────────────────────────────────────────────────────────

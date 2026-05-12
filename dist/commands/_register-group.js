@@ -65,7 +65,7 @@ actions) {
                 (0, output_1.printJson)(result);
             }
             else {
-                action.renderHuman(result);
+                action.renderHuman(result, input);
             }
         };
         const sub = groupCmd

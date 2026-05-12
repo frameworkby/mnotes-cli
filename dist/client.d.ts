@@ -297,6 +297,7 @@ export interface KbStats {
     staleCount: number;
     conflictCount: number;
     embeddingCoverage: number;
+    missingEmbeddingKeys: string[];
 }
 export interface GraphNode {
     id: string;

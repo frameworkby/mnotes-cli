@@ -52,7 +52,7 @@ function attachLeaf<TInput, TOutput>(
       if (ctx.json || !action.renderHuman) {
         printJson(result);
       } else {
-        action.renderHuman(result as never);
+        action.renderHuman(result as never, input as never);
       }
     };
 

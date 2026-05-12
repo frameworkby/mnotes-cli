@@ -46,8 +46,11 @@ export interface ActionDescriptor<TInput = Record<string, unknown>, TOutput = un
   aliases?: string[];
   /** Action handler — returns the MCP-shaped JSON payload. */
   run: (input: TInput, ctx: ActionContext) => Promise<TOutput>;
-  /** Optional human-readable renderer; falls back to `printJson` when absent. */
-  renderHuman?: (output: TOutput) => void;
+  /** Optional human-readable renderer; falls back to `printJson` when absent.
+   * The framework always passes `input` so renderers can gate output on flags
+   * without leaking CLI state into the JSON/MCP payload.  Existing renderers
+   * that ignore the second arg keep working. */
+  renderHuman?: (output: TOutput, input?: TInput) => void;
 }
 
 /**
@@ -139,7 +142,7 @@ export function registerGroup(
       if (ctx.json || !action.renderHuman) {
         printJson(result);
       } else {
-        action.renderHuman(result as never);
+        action.renderHuman(result as never, input as never);
       }
     };
 
