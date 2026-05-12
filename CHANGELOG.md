@@ -3,6 +3,33 @@
 All notable changes to the CLI are documented here. The CLI follows semver
 independent of the app — see `feedback_release_versioning` in agent memory.
 
+## Unreleased (#976)
+
+### Breaking change
+
+`mnotes connect claude-code` is removed. Invoking it prints a redirect to the
+Claude Code plugin and exits 1. Claude Code integration is now handled by
+the plugin (`frameworkby/mnotes-claude-plugin`), which ships hooks, skills,
+and the `knowledge-manager` sub-agent as a managed unit.
+
+**Migration:**
+```
+/plugin marketplace add frameworkby/mnotes-claude-plugin
+/plugin install mnotes@mnotes
+# Then run /mnotes:setup inside Claude Code
+```
+
+Clean up old scaffolded files if you previously ran `mnotes connect claude-code`:
+```bash
+rm -rf .claude/skills/mnotes-store .claude/skills/mnotes-recall .claude/agents/knowledge-manager.md
+rm -rf ~/.claude/hooks/mnotes/
+# Also remove 'mnotes-*.sh' hook entries from .claude/settings.json
+```
+
+Full guide: https://github.com/frameworkby/remedy-pod-m-notes/blob/main/docs/claude-code-plugin.md
+
+`mnotes connect codex` and `mnotes connect openclaw` are unaffected.
+
 ## 2.0.0 — 2026-05-06
 
 ### Breaking change

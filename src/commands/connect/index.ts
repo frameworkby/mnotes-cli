@@ -2,24 +2,16 @@ import { Command } from "commander";
 import * as fs from "fs";
 import * as path from "path";
 import * as readline from "readline";
-import { detectConnectedAgents, validateConnection, writeClaudeMdBlock, writeInstructionBlock } from "./config-utils";
+import { detectConnectedAgents, validateConnection, writeInstructionBlock } from "./config-utils";
 import { resolveWorkspaceInteractively } from "./workspace-prompt";
 import { resolveConfig } from "../../config";
 import { createClient } from "../../client";
 import { sendTelemetry } from "./telemetry";
-import { generateClaudeCodeTemplate } from "../../templates/claude-code";
 import { generateCodexTemplate } from "../../templates/codex";
 import { generateOpenClawTemplate } from "../../templates/openclaw";
-import { promptWizardSelection, scaffoldItems, ALL_WIZARD_ITEMS } from "./wizard";
-import type { WizardItem, ScaffoldResult } from "./wizard";
 
 /** Available integration targets with descriptions */
 export const INTEGRATION_TARGETS = [
-  {
-    name: "claude-code",
-    description:
-      "Connect Claude Code project-level via CLAUDE.md instructions",
-  },
   {
     name: "codex",
     description: "Connect OpenAI Codex via AGENTS.md instructions",
@@ -163,92 +155,6 @@ function printConnectionError(url: string, validation: { ok: false; error: strin
 }
 
 /**
- * Handles the `claude-code` integration target.
- */
-export async function handleClaudeCode(opts: {
-  url?: string;
-  apiKey?: string;
-  noWizard?: boolean;
-  all?: boolean;
-  autoLog?: boolean;
-}): Promise<void> {
-  const config = resolveConfig(opts);
-  const url = normalizeBaseUrl(config.baseUrl);
-  const apiKey = config.apiKey;
-
-  const validation = await validateConnection(url, apiKey);
-  if (!validation.ok) {
-    if (validation.kind === "auth") {
-      process.stderr.write(`Error: Authentication failed for ${url}: ${validation.error}\n`);
-      process.stderr.write(`Hint: Run: npx mnotes auth login\n`);
-    } else if (validation.kind === "timeout") {
-      process.stderr.write(`Error: Connection to ${url} timed out: ${validation.error}\n`);
-      process.stderr.write(`Hint: Check your network connection and try again.\n`);
-    } else {
-      process.stderr.write(`Error: Cannot connect to ${url}: ${validation.error}\n`);
-    }
-    process.exit(1);
-  }
-
-  const workspaceId = await resolveWorkspace({ url, apiKey, });
-
-  const dir = process.cwd();
-
-  // Core setup — always runs.
-  // We deliberately do NOT write `.mcp.json` here: the m-notes server no longer
-  // exposes an MCP endpoint, and writing the API key into a project-level file
-  // is a credential-leakage risk (see #594). The CLI's own config file
-  // (`~/.mnotes/config.json`) remains the single source of truth for the API
-  // key — `mnotes login` writes it there.
-  const template = generateClaudeCodeTemplate({ url, workspaceId });
-  writeClaudeMdBlock(dir, template);
-
-  console.log("Connected. Your AI client is configured to use the m-notes v1 API.");
-  console.log(`  CLAUDE.md  -> Agent instructions added`);
-  console.log(`  API base   -> ${url}`);
-  console.log(`  Workspace  -> ${workspaceId}`);
-
-  // Wizard phase — scaffold optional extras
-  if (opts.noWizard) {
-    return;
-  }
-
-  let selectedItems: WizardItem[];
-
-  if (opts.all) {
-    selectedItems = ALL_WIZARD_ITEMS;
-  } else {
-    selectedItems = await promptWizardSelection();
-  }
-
-  if (selectedItems.length === 0) {
-    return;
-  }
-
-  const client = createClient(url, apiKey);
-  const results = await scaffoldItems(dir, selectedItems, { url, workspaceId, client, autoLog: opts.autoLog });
-  printScaffoldResults(results);
-}
-
-/**
- * Prints a summary of scaffolded files.
- */
-function printScaffoldResults(results: ScaffoldResult[]): void {
-  if (results.length === 0) return;
-
-  console.log("\nExtras installed:");
-  for (const result of results) {
-    if (result.filesWritten.length === 0) {
-      console.log(`  ${result.item}: skipped (existing files preserved)`);
-    } else {
-      for (const file of result.filesWritten) {
-        console.log(`  ${result.item}: ${file}`);
-      }
-    }
-  }
-}
-
-/**
  * Handles the `codex` integration target.
  */
 async function handleCodex(opts: {
@@ -261,11 +167,10 @@ async function handleCodex(opts: {
 
   const validation = await validateConnection(url, apiKey);
   if (!validation.ok) {
-    process.stderr.write(`Error: Cannot connect to ${url}: ${validation.error}\n`);
-    process.exit(1);
+    printConnectionError(url, validation);
   }
 
-  const workspaceId = await resolveWorkspace({ url, apiKey, });
+  const workspaceId = await resolveWorkspace({ url, apiKey });
 
   const dir = process.cwd();
 
@@ -296,19 +201,18 @@ async function handleOpenClaw(opts: {
 
   const validation = await validateConnection(url, apiKey);
   if (!validation.ok) {
-    process.stderr.write(`Error: Cannot connect to ${url}: ${validation.error}\n`);
-    process.exit(1);
+    printConnectionError(url, validation);
   }
 
-  const workspaceId = await resolveWorkspace({ url, apiKey, });
+  const workspaceId = await resolveWorkspace({ url, apiKey });
 
   const configDir = path.dirname(configPath);
 
   // Ensure config directory exists
   fs.mkdirSync(configDir, { recursive: true });
 
-  // No `.mcp.json` written — see comment in handleClaudeCode. The m-notes MCP
-  // endpoint was removed, so OpenClaw should hit the v1 HTTP API directly.
+  // No `.mcp.json` written — the m-notes MCP endpoint was removed.
+  // OpenClaw hits the v1 HTTP API directly.
   const template = generateOpenClawTemplate({ url, workspaceId });
   writeInstructionBlock(configDir, "instructions.md", template);
 
@@ -330,9 +234,6 @@ export function registerConnectCommand(program: Command): void {
     .option("--url <url>", "m-notes URL (skip prompt)")
     .option("--api-key <key>", "API key (skip prompt)")
     .option("--config-path <path>", "Config file path (openclaw only)")
-    .option("--no-wizard", "Skip the extras wizard (core setup only)")
-    .option("--all", "Install all extras without prompting")
-    .option("--no-auto-log", "Skip PostToolUse auto-log hook registration (default: enabled)")
     .action(
       async (
         target: string | undefined,
@@ -342,9 +243,6 @@ export function registerConnectCommand(program: Command): void {
           url?: string;
           apiKey?: string;
           configPath?: string;
-          wizard?: boolean;
-          all?: boolean;
-          autoLog?: boolean;
         }
       ) => {
         // Merge parent program options (--api-key, --url) with subcommand options.
@@ -368,7 +266,6 @@ export function registerConnectCommand(program: Command): void {
         if (target && REMOVED_MCP_TARGETS.has(target)) {
           process.stderr.write(
             `Error: 'connect ${target}' was removed in v2.1 — it wrote a dead /api/mcp URL.\n` +
-            `Use 'connect claude-code' instead (writes CLAUDE.md instructions, no MCP required).\n` +
             `If you previously ran 'connect ${target}', remove the stale 'm-notes' entry from\n` +
             `~/.${target}/mcp.json to avoid connection errors.\n`
           );
@@ -377,12 +274,22 @@ export function registerConnectCommand(program: Command): void {
         }
 
         if (target === "claude-code") {
-          await handleClaudeCode({
-            ...opts,
-            noWizard: opts.wizard === false,
-            all: opts.all,
-            autoLog: opts.autoLog,
-          });
+          process.stderr.write(
+            "This command was removed. Install the Claude Code plugin instead:\n" +
+            "\n" +
+            "  /plugin marketplace add frameworkby/mnotes-claude-plugin\n" +
+            "  /plugin install mnotes@mnotes\n" +
+            "\n" +
+            "Then run /mnotes:setup inside Claude Code.\n" +
+            "\n" +
+            "If you ran 'mnotes connect claude-code' previously, clean up the old scaffolded files:\n" +
+            "  rm -rf .claude/skills/mnotes-store .claude/skills/mnotes-recall .claude/agents/knowledge-manager.md\n" +
+            "  rm -rf ~/.claude/hooks/mnotes/\n" +
+            "Also remove m-notes hook entries from .claude/settings.json (look for 'mnotes-*.sh' commands).\n" +
+            "\n" +
+            "Migration guide: https://github.com/frameworkby/remedy-pod-m-notes/blob/main/docs/claude-code-plugin.md\n"
+          );
+          process.exit(1);
           return;
         }
 
@@ -403,7 +310,6 @@ export function registerConnectCommand(program: Command): void {
           process.exit(1);
           return;
         }
-
 
         // No target and no flag — show help
         connect.help();

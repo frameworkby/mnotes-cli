@@ -11,7 +11,6 @@ import {
   writeClaudeMdBlock,
   detectConnectedAgents,
 } from "../config-utils";
-import { generateClaudeCodeTemplate } from "../../../templates/claude-code";
 import { generateCodexTemplate } from "../../../templates/codex";
 import { generateOpenClawTemplate } from "../../../templates/openclaw";
 
@@ -57,10 +56,10 @@ function cleanTmpDir(dir: string): void {
 }
 
 // =============================================================
-// AC-1.6: --list prints all available integration targets
+// AC-1.6: --list prints available integration targets (codex, openclaw only)
 // =============================================================
 describe("mnotes connect --list", () => {
-  it("prints all three integration targets with descriptions", async () => {
+  it("prints active integration targets with descriptions, not claude-code", async () => {
     const program = new Command();
     program.exitOverride(); // throw instead of process.exit
     registerConnectCommand(program);
@@ -78,11 +77,11 @@ describe("mnotes connect --list", () => {
     }
 
     expect(output).toContain("Available integrations:");
-    expect(output).toContain("claude-code");
     expect(output).toContain("codex");
     expect(output).toContain("openclaw");
+    expect(output).not.toContain("claude-code");
 
-    // Each target has a description
+    // Each active target has a description
     for (const target of INTEGRATION_TARGETS) {
       expect(output).toContain(target.name);
       expect(output).toContain(target.description);
@@ -126,21 +125,17 @@ describe("mnotes connect --status", () => {
     }
 
     expect(output).toContain("Agent Connect Status");
-    expect(output).toContain("claude-code");
     expect(output).toContain("not connected");
   });
 
-  it("reports claude-code as connected when .mcp.json has m-notes server", async () => {
-    const mcpConfig = {
-      mcpServers: {
-        "m-notes": {
-          url: "http://localhost:3000/api/mcp",
-        },
-      },
-    };
+  it("detects openclaw from openclaw-mnotes server in .mcp.json", async () => {
     fs.writeFileSync(
       path.join(tmpDir, ".mcp.json"),
-      JSON.stringify(mcpConfig),
+      JSON.stringify({
+        mcpServers: {
+          "openclaw-mnotes": { url: "http://localhost:3000/api/mcp" },
+        },
+      }),
       "utf-8"
     );
 
@@ -160,31 +155,8 @@ describe("mnotes connect --status", () => {
       console.log = origLog;
     }
 
-    expect(output).toMatch(/claude-code\s+connected/);
+    expect(output).toMatch(/openclaw\s+connected/);
     expect(output).toContain("http://localhost:3000/api/mcp");
-  });
-
-  it("reports claude-code as connected when CLAUDE.md has m-notes block", async () => {
-    const claudeMd = `# Project\n\n<!-- m-notes:start -->\nSome instructions\n<!-- m-notes:end -->\n`;
-    fs.writeFileSync(path.join(tmpDir, "CLAUDE.md"), claudeMd, "utf-8");
-
-    const program = new Command();
-    program.exitOverride();
-    registerConnectCommand(program);
-
-    let output = "";
-    const origLog = console.log;
-    console.log = (...args: unknown[]) => {
-      output += args.join(" ") + "\n";
-    };
-
-    try {
-      await program.parseAsync(["node", "mnotes", "connect", "--status"]);
-    } finally {
-      console.log = origLog;
-    }
-
-    expect(output).toMatch(/claude-code\s+connected/);
   });
 });
 
@@ -393,14 +365,13 @@ describe("config-utils: detectConnectedAgents", () => {
     cleanTmpDir(tmpDir);
   });
 
-  it("returns all agents as not connected in empty directory", () => {
+  it("returns codex and openclaw as not connected in empty directory", () => {
     const agents = detectConnectedAgents(tmpDir);
-    expect(agents.get("claude-code")?.connected).toBe(false);
     expect(agents.get("codex")?.connected).toBe(false);
     expect(agents.get("openclaw")?.connected).toBe(false);
   });
 
-  it("detects claude-code and codex from .mcp.json m-notes server", () => {
+  it("detects codex from .mcp.json m-notes server", () => {
     fs.writeFileSync(
       path.join(tmpDir, ".mcp.json"),
       JSON.stringify({
@@ -412,23 +383,9 @@ describe("config-utils: detectConnectedAgents", () => {
     );
 
     const agents = detectConnectedAgents(tmpDir);
-    expect(agents.get("claude-code")?.connected).toBe(true);
-    expect(agents.get("claude-code")?.url).toBe("https://notes.example.com/api/mcp");
     expect(agents.get("codex")?.connected).toBe(true);
     expect(agents.get("codex")?.url).toBe("https://notes.example.com/api/mcp");
     expect(agents.get("openclaw")?.connected).toBe(false);
-  });
-
-  it("detects claude-code from CLAUDE.md block alone", () => {
-    fs.writeFileSync(
-      path.join(tmpDir, "CLAUDE.md"),
-      "<!-- m-notes:start -->\nInstructions\n<!-- m-notes:end -->",
-      "utf-8"
-    );
-
-    const agents = detectConnectedAgents(tmpDir);
-    expect(agents.get("claude-code")?.connected).toBe(true);
-    expect(agents.get("codex")?.connected).toBe(false);
   });
 
   it("detects openclaw from openclaw-mnotes server in .mcp.json", () => {
@@ -449,91 +406,6 @@ describe("config-utils: detectConnectedAgents", () => {
 });
 
 // =============================================================
-// Template generation — generateClaudeCodeTemplate
-// =============================================================
-describe("generateClaudeCodeTemplate", () => {
-  it("includes url and workspaceId in output", () => {
-    const result = generateClaudeCodeTemplate({
-      url: "https://notes.example.com",
-      workspaceId: "ws-abc-123",
-    });
-
-    expect(result).toContain("https://notes.example.com");
-    expect(result).toContain("ws-abc-123");
-  });
-
-  it("includes session lifecycle tools and wiki framing", () => {
-    const result = generateClaudeCodeTemplate({
-      url: "http://localhost:3000",
-      workspaceId: "ws-test",
-    });
-
-    expect(result).toContain("living wiki");
-    expect(result).toContain("Ingest Loop");
-    expect(result).toContain("Lint Loop");
-    expect(result).toContain("mnotes composite project-load");
-    expect(result).toContain("mnotes session resume");
-    expect(result).toContain("mnotes kb store");
-    expect(result).toContain("mnotes session log");
-  });
-
-  it("includes all six key naming conventions (AC-6.2)", () => {
-    const result = generateClaudeCodeTemplate({
-      url: "http://localhost:3000",
-      workspaceId: "ws-test",
-    });
-
-    expect(result).toContain("arch/{component}");
-    expect(result).toContain("pattern/{name}");
-    expect(result).toContain("bug/{id}");
-    expect(result).toContain("dep/{package}");
-    expect(result).toContain("decision/{topic}");
-    expect(result).toContain("context/{area}");
-  });
-
-  it("includes all available MCP tools", () => {
-    const result = generateClaudeCodeTemplate({
-      url: "http://localhost:3000",
-      workspaceId: "ws-test",
-    });
-
-    const expectedTools = [
-      "mnotes composite project-load",
-      "mnotes session resume",
-      "mnotes kb store",
-      "mnotes kb recall",
-      "mnotes bulk knowledge-recall",
-      "mnotes kb snapshot",
-      "mnotes kb scan-conflicts",
-      "mnotes session log",
-      "mnotes composite context-fetch",
-      "mnotes note create",
-      "mnotes note update",
-      "mnotes note-ops append",
-      "mnotes note search",
-      "mnotes note-ops daily",
-      "mnotes graph populate",
-      "mnotes graph query-note",
-    ];
-
-    for (const tool of expectedTools) {
-      expect(result).toContain(tool);
-    }
-  });
-
-  it("does not reference phantom MCP tools", () => {
-    const result = generateClaudeCodeTemplate({
-      url: "http://localhost:3000",
-      workspaceId: "ws-test",
-    });
-
-    // These tool names don't exist in the MCP server — guard against regressions.
-    expect(result).not.toMatch(/\bcreate_folder\b/);
-    expect(result).not.toMatch(/\bmove_note\b/);
-  });
-});
-
-// =============================================================
 // Template generation — generateCodexTemplate (AC-6.3)
 // =============================================================
 describe("generateCodexTemplate", () => {
@@ -547,7 +419,7 @@ describe("generateCodexTemplate", () => {
     expect(result).toContain("ws-abc-123");
   });
 
-  it("is functionally equivalent to Claude Code — has all lifecycle phases (AC-6.3)", () => {
+  it("has all lifecycle phases (AC-6.3)", () => {
     const result = generateCodexTemplate({
       url: "http://localhost:3000",
       workspaceId: "ws-test",
@@ -613,19 +485,6 @@ describe("generateOpenClawTemplate", () => {
     expect(result).toContain("ws-abc-123");
   });
 
-  it("is shorter than Claude Code template (AC-6.4)", () => {
-    const claudeCode = generateClaudeCodeTemplate({
-      url: "http://localhost:3000",
-      workspaceId: "ws-test",
-    });
-    const openclaw = generateOpenClawTemplate({
-      url: "http://localhost:3000",
-      workspaceId: "ws-test",
-    });
-
-    expect(openclaw.length).toBeLessThan(claudeCode.length);
-  });
-
   it("focuses on knowledge_store and recall_knowledge (AC-6.4)", () => {
     const result = generateOpenClawTemplate({
       url: "http://localhost:3000",
@@ -653,162 +512,34 @@ describe("generateOpenClawTemplate", () => {
 // Template storage — .ts files in correct directory (AC-6.6)
 // =============================================================
 describe("template storage (AC-6.6)", () => {
-  it("all three templates are importable as .ts modules", () => {
-    expect(typeof generateClaudeCodeTemplate).toBe("function");
+  it("codex and openclaw templates are importable as .ts modules", () => {
     expect(typeof generateCodexTemplate).toBe("function");
     expect(typeof generateOpenClawTemplate).toBe("function");
   });
 });
 
 // =============================================================
-// mnotes connect claude-code subcommand
+// mnotes connect claude-code — redirect to plugin (removed in v3)
 // =============================================================
-describe("mnotes connect claude-code", () => {
-  let tmpDir: string;
-  let origCwd: () => string;
+describe("mnotes connect claude-code (removed — redirects to plugin)", () => {
   let origExit: (code?: number) => never;
   let exitCode: number | undefined;
-  let origWorkspaceId: string | undefined;
 
   beforeEach(() => {
-    tmpDir = makeTmpDir();
-    origCwd = process.cwd;
-    process.cwd = () => tmpDir;
     exitCode = undefined;
     origExit = process.exit;
     process.exit = ((code?: number) => {
       exitCode = code;
       throw new Error(`process.exit(${code})`);
     }) as never;
-    // Provide a default workspace via env so tests don't hit interactive prompt
-    origWorkspaceId = process.env.MNOTES_WORKSPACE_ID;
-    process.env.MNOTES_WORKSPACE_ID = "ws-123";
   });
 
   afterEach(() => {
-    process.cwd = origCwd;
     process.exit = origExit;
-    if (origWorkspaceId !== undefined) process.env.MNOTES_WORKSPACE_ID = origWorkspaceId;
-    else delete process.env.MNOTES_WORKSPACE_ID;
-    cleanTmpDir(tmpDir);
     vi.restoreAllMocks();
   });
 
-  it("does not write .mcp.json (API key must not leak to project files, #594)", async () => {
-    // Mock validateConnection to return ok
-    const configUtils = await import("../config-utils");
-    vi.spyOn(configUtils, "validateConnection").mockResolvedValue({ ok: true });
-
-    const program = new Command();
-    program.exitOverride();
-    registerConnectCommand(program);
-
-    let output = "";
-    const origLog = console.log;
-    console.log = (...args: unknown[]) => {
-      output += args.join(" ") + "\n";
-    };
-
-    try {
-      await program.parseAsync([
-        "node", "mnotes", "connect", "claude-code",
-        "--url", "http://localhost:3000",
-        "--api-key", "test-key-abc",
-        "--no-wizard",
-      ]);
-    } finally {
-      console.log = origLog;
-    }
-
-    // .mcp.json must NOT be created — the m-notes MCP endpoint is removed,
-    // and writing the API key into a project-level file is a leakage risk.
-    expect(fs.existsSync(path.join(tmpDir, ".mcp.json"))).toBe(false);
-
-    // Verify success output references v1 API, not MCP, and no API key leaks
-    expect(output).toContain("Connected. Your AI client is configured to use the m-notes v1 API.");
-    expect(output).toContain("ws-123");
-    expect(output).not.toContain("/api/mcp");
-    expect(output).not.toContain("test-key-abc");
-  });
-
-  it("writes CLAUDE.md with delimited block on success", async () => {
-    const configUtils = await import("../config-utils");
-    vi.spyOn(configUtils, "validateConnection").mockResolvedValue({ ok: true });
-
-    const program = new Command();
-    program.exitOverride();
-    registerConnectCommand(program);
-
-    const origLog = console.log;
-    console.log = () => {};
-
-    try {
-      await program.parseAsync([
-        "node", "mnotes", "connect", "claude-code",
-        "--url", "http://localhost:3000",
-        "--api-key", "test-key-abc",
-        "--no-wizard",
-      ]);
-    } finally {
-      console.log = origLog;
-    }
-
-    const claudeMd = fs.readFileSync(path.join(tmpDir, "CLAUDE.md"), "utf-8");
-    expect(claudeMd).toContain("<!-- m-notes:start -->");
-    expect(claudeMd).toContain("<!-- m-notes:end -->");
-    expect(claudeMd).toContain("m-notes — Your Wiki");
-    expect(claudeMd).toContain("ws-123");
-  });
-
-  it("replaces existing m-notes block on re-run", async () => {
-    // Write existing CLAUDE.md with old block
-    fs.writeFileSync(
-      path.join(tmpDir, "CLAUDE.md"),
-      "# My Project\n\n<!-- m-notes:start -->\nOld instructions\n<!-- m-notes:end -->\n\n## Other stuff\n",
-      "utf-8"
-    );
-
-    const configUtils = await import("../config-utils");
-    vi.spyOn(configUtils, "validateConnection").mockResolvedValue({ ok: true });
-
-    const program = new Command();
-    program.exitOverride();
-    registerConnectCommand(program);
-
-    const origLog = console.log;
-    console.log = () => {};
-
-    // Override workspace to ws-new for this test
-    process.env.MNOTES_WORKSPACE_ID = "ws-new";
-    try {
-      await program.parseAsync([
-        "node", "mnotes", "connect", "claude-code",
-        "--url", "http://localhost:3000",
-        "--api-key", "test-key-abc",
-        "--no-wizard",
-      ]);
-    } finally {
-      console.log = origLog;
-    }
-
-    const claudeMd = fs.readFileSync(path.join(tmpDir, "CLAUDE.md"), "utf-8");
-    expect(claudeMd).not.toContain("Old instructions");
-    expect(claudeMd).toContain("ws-new");
-    expect(claudeMd).toContain("## Other stuff");
-    expect(claudeMd).toContain("# My Project");
-  });
-
-  it("exits with error when --api-key is missing", async () => {
-    // Ensure no stored config provides an API key (e.g. from a real local
-    // ~/.mnotes/config.json on the developer's machine, or an env var).
-    const loginModule = await import("../../login");
-    vi.spyOn(loginModule, "readConfig").mockReturnValue(null);
-
-    const origApiKey = process.env.MNOTES_API_KEY;
-    const origUrl = process.env.MNOTES_URL;
-    delete process.env.MNOTES_API_KEY;
-    delete process.env.MNOTES_URL;
-
+  it("prints plugin install instructions to stderr and exits 1", async () => {
     const program = new Command();
     program.exitOverride();
     registerConnectCommand(program);
@@ -821,60 +552,21 @@ describe("mnotes connect claude-code", () => {
     };
 
     try {
-      await program.parseAsync([
-        "node", "mnotes", "connect", "claude-code",
-      ]);
+      await program.parseAsync(["node", "mnotes", "connect", "claude-code"]);
     } catch {
       // Expected — process.exit throws
     } finally {
       process.stderr.write = origStderrWrite;
-      if (origApiKey !== undefined) process.env.MNOTES_API_KEY = origApiKey;
-      if (origUrl !== undefined) process.env.MNOTES_URL = origUrl;
     }
 
     expect(exitCode).toBe(1);
-    expect(stderrOutput).toContain("API key required");
+    expect(stderrOutput).toContain("Install the Claude Code plugin instead");
+    expect(stderrOutput).toContain("frameworkby/mnotes-claude-plugin");
+    expect(stderrOutput).toContain("/mnotes:setup");
+    expect(stderrOutput).toContain("docs/claude-code-plugin.md");
   });
 
-  it("uses MNOTES_WORKSPACE_ID env var (AC-5, no interactive prompt)", async () => {
-    const configUtils = await import("../config-utils");
-    vi.spyOn(configUtils, "validateConnection").mockResolvedValue({ ok: true });
-
-    const program = new Command();
-    program.exitOverride();
-    registerConnectCommand(program);
-
-    let output = "";
-    const origLog = console.log;
-    console.log = (...args: unknown[]) => {
-      output += args.join(" ") + "\n";
-    };
-
-    // Override env to a different workspace for this test
-    process.env.MNOTES_WORKSPACE_ID = "ws-explicit-id";
-    try {
-      await program.parseAsync([
-        "node", "mnotes", "connect", "claude-code",
-        "--url", "http://localhost:3000",
-        "--api-key", "test-key",
-        "--no-wizard",
-      ]);
-    } finally {
-      console.log = origLog;
-    }
-
-    expect(output).toContain("ws-explicit-id");
-    expect(output).toContain("Connected. Your AI client is configured to use the m-notes v1 API.");
-  });
-
-  it("exits with error when validation fails", async () => {
-    const configUtils = await import("../config-utils");
-    vi.spyOn(configUtils, "validateConnection").mockResolvedValue({
-      ok: false,
-      error: "Connection refused",
-      kind: "network" as const,
-    });
-
+  it("includes cleanup instructions for old scaffolded files", async () => {
     const program = new Command();
     program.exitOverride();
     registerConnectCommand(program);
@@ -887,51 +579,16 @@ describe("mnotes connect claude-code", () => {
     };
 
     try {
-      await program.parseAsync([
-        "node", "mnotes", "connect", "claude-code",
-        "--url", "http://localhost:3000",
-        "--api-key", "test-key",
-      ]);
+      await program.parseAsync(["node", "mnotes", "connect", "claude-code"]);
     } catch {
       // Expected — process.exit throws
     } finally {
       process.stderr.write = origStderrWrite;
     }
 
-    expect(exitCode).toBe(1);
-    expect(stderrOutput).toContain("Cannot connect to");
-    expect(stderrOutput).toContain("Connection refused");
-  });
-
-  it("normalizes trailing slashes in URL output", async () => {
-    const configUtils = await import("../config-utils");
-    vi.spyOn(configUtils, "validateConnection").mockResolvedValue({ ok: true });
-
-    const program = new Command();
-    program.exitOverride();
-    registerConnectCommand(program);
-
-    const origLog = console.log;
-    let output = "";
-    console.log = (...args: unknown[]) => {
-      output += args.join(" ") + "\n";
-    };
-
-    try {
-      await program.parseAsync([
-        "node", "mnotes", "connect", "claude-code",
-        "--url", "http://localhost:3000///",
-        "--api-key", "test-key-abc",
-        "--no-wizard",
-      ]);
-    } finally {
-      console.log = origLog;
-    }
-
-    // No .mcp.json written, and the printed API base has no trailing slashes.
-    expect(fs.existsSync(path.join(tmpDir, ".mcp.json"))).toBe(false);
-    expect(output).toContain("http://localhost:3000");
-    expect(output).not.toMatch(/http:\/\/localhost:3000\/+\s/);
+    expect(stderrOutput).toContain(".claude/skills/mnotes-store");
+    expect(stderrOutput).toContain("~/.claude/hooks/mnotes/");
+    expect(stderrOutput).toContain(".claude/settings.json");
   });
 });
 
@@ -979,7 +636,6 @@ describe("mnotes connect <removed targets>", () => {
     expect(exitCode).toBe(1);
     expect(stderrOutput).toContain("removed in v2.1");
     expect(stderrOutput).toContain("/api/mcp");
-    expect(stderrOutput).toContain("connect claude-code");
     expect(stderrOutput).toContain("~/.claude/mcp.json");
   });
 
@@ -1006,7 +662,6 @@ describe("mnotes connect <removed targets>", () => {
     expect(exitCode).toBe(1);
     expect(stderrOutput).toContain("removed in v2.1");
     expect(stderrOutput).toContain("/api/mcp");
-    expect(stderrOutput).toContain("connect claude-code");
     expect(stderrOutput).toContain("~/.cursor/mcp.json");
   });
 
@@ -1032,10 +687,9 @@ describe("mnotes connect <removed targets>", () => {
 
     expect(exitCode).toBe(1);
     expect(stderrOutput).toContain("Unsupported target 'vscode'");
-    expect(stderrOutput).toContain("claude-code");
     expect(stderrOutput).toContain("codex");
     expect(stderrOutput).toContain("openclaw");
-    // Must NOT list the removed targets as supported
+    // Must NOT list removed targets as supported
     expect(stderrOutput).not.toContain("Supported: claude, cursor");
   });
 
@@ -1057,10 +711,10 @@ describe("mnotes connect <removed targets>", () => {
     }
 
     // Active targets present
-    expect(output).toContain("claude-code");
     expect(output).toContain("codex");
     expect(output).toContain("openclaw");
     // Removed targets absent
+    expect(output).not.toContain("claude-code");
     expect(output).not.toMatch(/\bclaude\b(?!-code)/);
     expect(output).not.toContain("~/.cursor/mcp.json");
     expect(output).not.toContain("~/.claude/mcp.json");
