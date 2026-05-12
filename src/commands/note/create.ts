@@ -3,6 +3,7 @@ import { resolveConfig } from "../../config";
 import { createClient } from "../../client";
 import { printSuccess } from "../../output";
 import type { ActionDescriptor } from "../_register-group";
+import { maybeWarnTitleSlash } from "../_title-slash-warning";
 
 async function readStdin(): Promise<string> {
   const chunks: Buffer[] = [];
@@ -41,6 +42,8 @@ export const createNoteAction: ActionDescriptor<CreateInput, CreateOutput> = {
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);
     const client = createClient(config.baseUrl, config.apiKey);
+
+    maybeWarnTitleSlash(input.title, Boolean(input.folder));
 
     let content = input.content;
     if (content === undefined && !process.stdin.isTTY) {

@@ -2,6 +2,7 @@ import { Command } from "commander";
 import { resolveConfig } from "../config";
 import { createClient } from "../client";
 import { printJson, printSuccess } from "../output";
+import { maybeWarnTitleSlash } from "./_title-slash-warning";
 
 async function readStdin(): Promise<string> {
   const chunks: Buffer[] = [];
@@ -30,8 +31,11 @@ export function registerCreateCommand(program: Command): void {
         }
       }
 
+      const title = opts.title as string;
+      maybeWarnTitleSlash(title, Boolean(opts.folderId));
+
       const result = await client.createNote({
-        title: opts.title as string,
+        title,
         content,
         folderId: opts.folderId as string | undefined,
         workspaceId: (opts.workspaceId as string | undefined) || config.workspaceId,

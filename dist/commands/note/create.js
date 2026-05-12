@@ -4,6 +4,7 @@ exports.createNoteAction = void 0;
 const config_1 = require("../../config");
 const client_1 = require("../../client");
 const output_1 = require("../../output");
+const _title_slash_warning_1 = require("../_title-slash-warning");
 async function readStdin() {
     const chunks = [];
     for await (const chunk of process.stdin) {
@@ -23,6 +24,7 @@ exports.createNoteAction = {
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
+        (0, _title_slash_warning_1.maybeWarnTitleSlash)(input.title, Boolean(input.folder));
         let content = input.content;
         if (content === undefined && !process.stdin.isTTY) {
             const stdinContent = await readStdin();

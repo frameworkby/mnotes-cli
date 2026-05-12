@@ -4,6 +4,7 @@ exports.registerCreateCommand = registerCreateCommand;
 const config_1 = require("../config");
 const client_1 = require("../client");
 const output_1 = require("../output");
+const _title_slash_warning_1 = require("./_title-slash-warning");
 async function readStdin() {
     const chunks = [];
     for await (const chunk of process.stdin) {
@@ -28,8 +29,10 @@ function registerCreateCommand(program) {
                 content = undefined;
             }
         }
+        const title = opts.title;
+        (0, _title_slash_warning_1.maybeWarnTitleSlash)(title, Boolean(opts.folderId));
         const result = await client.createNote({
-            title: opts.title,
+            title,
             content,
             folderId: opts.folderId,
             workspaceId: opts.workspaceId || config.workspaceId,
