@@ -740,6 +740,12 @@ export declare function createClient(baseUrl: string, apiKey: string, opts?: Cre
     deleteFolder(id: string): Promise<{
         deleted: string;
     }>;
+    listEmptyFolders(opts: {
+        workspaceId: string;
+        folderId?: string;
+    }): Promise<{
+        folderIds: string[];
+    }>;
     moveFolder(id: string, parentId: string | null): Promise<FolderRecord>;
     getRecentNotes(opts: {
         since: string;

@@ -900,6 +900,17 @@ export function createClient(baseUrl: string, apiKey: string, opts: CreateClient
       );
     },
 
+    async listEmptyFolders(opts: {
+      workspaceId: string;
+      folderId?: string;
+    }): Promise<{ folderIds: string[] }> {
+      return request<{ folderIds: string[] }>(
+        "POST",
+        "/api/v1/folders/list-empty",
+        opts,
+      );
+    },
+
     async moveFolder(id: string, parentId: string | null): Promise<FolderRecord> {
       return request<FolderRecord>(
         "POST",

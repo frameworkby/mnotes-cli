@@ -115,6 +115,9 @@ function createClient(baseUrl, apiKey, opts = {}) {
         async deleteFolder(id) {
             return request("DELETE", `/api/v1/folders/${encodeURIComponent(id)}`);
         },
+        async listEmptyFolders(opts) {
+            return request("POST", "/api/v1/folders/list-empty", opts);
+        },
         async moveFolder(id, parentId) {
             return request("POST", `/api/v1/folders/${encodeURIComponent(id)}/move`, { parentId });
         },
