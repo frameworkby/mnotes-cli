@@ -25,11 +25,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/frameworkby/remedy-pod-m-notes.git",
-    "directory": "packages/cli"
+    "url": "https://github.com/frameworkby/mnotes-cli.git"
   },
-  "homepage": "https://github.com/frameworkby/remedy-pod-m-notes/tree/main/packages/cli",
-  "license": "SEE LICENSE IN ../../LICENSE",
+  "homepage": "https://github.com/frameworkby/mnotes-cli",
+  "license": "SEE LICENSE IN ./LICENSE",
   "dependencies": {
     "commander": "^14.0.3",
     "open": "^10.2.0",
