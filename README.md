@@ -136,7 +136,11 @@ the aliases are stable through the next major release.
 
 ### Migration note (v2.1.0) — `connect claude` and `connect cursor` removed
 
-`mnotes connect claude` and `mnotes connect cursor` have been removed. Both targets wrote a dead `${url}/api/mcp` URL into `~/.claude/mcp.json` and `~/.cursor/mcp.json` respectively — the m-notes MCP endpoint no longer exists. Use `mnotes connect claude-code` instead (writes CLAUDE.md instructions that invoke the v1 HTTP API via CLI). If you previously ran either removed command, delete the stale `m-notes` entry from `~/.claude/mcp.json` or `~/.cursor/mcp.json` to avoid connection errors in your AI client.
+`mnotes connect claude` and `mnotes connect cursor` have been removed. Both targets wrote a dead `${url}/api/mcp` URL into `~/.claude/mcp.json` and `~/.cursor/mcp.json` respectively — the m-notes MCP endpoint no longer exists. If you previously ran either removed command, delete the stale `m-notes` entry from `~/.claude/mcp.json` or `~/.cursor/mcp.json` to avoid connection errors in your AI client.
+
+### Migration note — `connect claude-code` removed
+
+`mnotes connect claude-code` has been removed. Claude Code integration is now handled by the Claude Code plugin, which ships hooks, skills, and the `knowledge-manager` sub-agent as a managed unit. See the [Claude Code Plugin guide](../../docs/claude-code-plugin.md) for install and migration instructions. `mnotes connect codex` and `mnotes connect openclaw` are unaffected.
 
 ### Auditing parity
 
