@@ -10,8 +10,14 @@ exports.getNoteAction = {
     describe: "Get a note by ID",
     mcpTool: "get_note",
     positional: ["id"],
-    args: (cmd) => cmd.argument("<id>", "Note ID"),
+    args: (cmd) => cmd
+        .arguments("[id]")
+        .option("--id <id>", "Note ID (alias for positional)"),
     run: async (input, ctx) => {
+        if (!input.id) {
+            process.stderr.write("Error: Note ID required — pass as positional or via --id <id>\n");
+            process.exit(1);
+        }
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
         const res = await client.getNote(input.id);

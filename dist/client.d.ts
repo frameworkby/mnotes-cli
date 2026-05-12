@@ -141,21 +141,26 @@ export interface WikiLintOrphan {
     id: string;
     title: string;
     updatedAt: string;
+    archived: boolean;
+    isKb: boolean;
 }
 export interface WikiLintBrokenWikilink {
     noteId: string;
     noteTitle: string;
     target: string;
+    isKb: boolean;
 }
 export interface WikiLintContradiction {
     id: string;
     noteA: {
         id: string;
         title: string | null;
+        isKb: boolean;
     };
     noteB: {
         id: string;
         title: string | null;
+        isKb: boolean;
     };
     similarity: number;
     confidence: number;
@@ -166,10 +171,12 @@ export interface WikiLintStale {
     id: string;
     title: string;
     updatedAt: string;
+    isKb: boolean;
     referencedBy: {
         id: string;
         title: string;
         updatedAt: string;
+        isKb: boolean;
     };
 }
 export interface WikiLintResult {
@@ -203,6 +210,8 @@ export interface ArchiveStaleEntry {
 export interface ArchiveStaleResult {
     archivedCount: number;
     entries: ArchiveStaleEntry[];
+    /** Only present in key-mode responses */
+    missing?: string[];
 }
 export interface ConsolidateResult {
     consolidatedNoteId: string;
@@ -597,7 +606,22 @@ export interface BulkKnowledgeRecallResult {
     groups: BulkKnowledgeRecallGroup[];
     totalEntries: number;
 }
-export declare function createClient(baseUrl: string, apiKey: string): {
+export interface CreateClientOptions {
+    /** Session ID grouping all requests from one CLI invocation into one trace row. */
+    sessionId?: string;
+    /** Human-readable label (typically the command name, e.g. "note list"). */
+    sessionLabel?: string;
+}
+/**
+ * Called once at CLI startup so every subsequent `createClient` call automatically
+ * tags requests with the same `X-Mnotes-Session-Id` — making one CLI invocation
+ * produce one SessionTrace row server-side.
+ */
+export declare function setCliSession(s: {
+    sessionId: string;
+    sessionLabel?: string;
+}): void;
+export declare function createClient(baseUrl: string, apiKey: string, opts?: CreateClientOptions): {
     listNotes(opts?: {
         workspaceId?: string;
         folderId?: string;
@@ -775,6 +799,10 @@ export declare function createClient(baseUrl: string, apiKey: string): {
         maxImportance?: number;
     }): Promise<DecayEntry[]>;
     archiveStaleMemories(opts: {
+        workspaceId: string;
+        keys: string[];
+        dryRun?: boolean;
+    } | {
         workspaceId: string;
         maxDecayScore?: number;
         maxImportance?: number;

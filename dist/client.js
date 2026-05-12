@@ -1,11 +1,27 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.setCliSession = setCliSession;
 exports.createClient = createClient;
-function createClient(baseUrl, apiKey) {
+let cliSession = {};
+/**
+ * Called once at CLI startup so every subsequent `createClient` call automatically
+ * tags requests with the same `X-Mnotes-Session-Id` — making one CLI invocation
+ * produce one SessionTrace row server-side.
+ */
+function setCliSession(s) {
+    cliSession = { sessionId: s.sessionId, sessionLabel: s.sessionLabel };
+}
+function createClient(baseUrl, apiKey, opts = {}) {
+    const sessionId = opts.sessionId ?? cliSession.sessionId;
+    const sessionLabel = opts.sessionLabel ?? cliSession.sessionLabel;
     const headers = {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
     };
+    if (sessionId)
+        headers["X-Mnotes-Session-Id"] = sessionId;
+    if (sessionLabel)
+        headers["X-Mnotes-Session-Label"] = sessionLabel;
     async function request(method, path, body) {
         const url = `${baseUrl}${path}`;
         const res = await fetch(url, {

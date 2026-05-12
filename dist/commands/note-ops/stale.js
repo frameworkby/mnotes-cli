@@ -8,6 +8,7 @@ exports.staleAction = {
     describe: "List notes not updated in N days (default 30).",
     mcpTool: "stale_notes",
     args: (cmd) => cmd
+        .option("--days <n>", "Days since last update (1-365) — alias for --days-since", (v) => parseInt(v, 10))
         .option("--days-since <n>", "Days since last update (1-365)", (v) => parseInt(v, 10))
         .option("--limit <n>", "Max results (1-200)", (v) => parseInt(v, 10)),
     run: async (input, ctx) => {
@@ -18,7 +19,7 @@ exports.staleAction = {
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
         return client.staleNotes({
             workspaceId,
-            daysSince: input.daysSince,
+            daysSince: input.daysSince ?? input.days,
             limit: input.limit,
         });
     },

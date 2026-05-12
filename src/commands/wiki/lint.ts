@@ -14,6 +14,7 @@ interface LintInput {
   json?: boolean;
   includeArchived?: boolean;
   includeSystem?: boolean;
+  notesOnly?: boolean;
 }
 
 const VALID_CHECKS: readonly WikiLintCheck[] = [
@@ -36,6 +37,45 @@ function parseChecksCsv(csv: string): WikiLintCheck[] {
     }
   }
   return parts as WikiLintCheck[];
+}
+
+/**
+ * Post-filter all lint categories to exclude kb entries (notes with a key)
+ * when --notes-only is passed. Recomputes all summary totals.
+ */
+export function filterNotesOnly(result: WikiLintResult): WikiLintResult {
+  const orphans = result.orphans.filter((o) => !o.isKb);
+  const brokenWikilinks = result.brokenWikilinks.filter((b) => !b.isKb);
+  const contradictions = result.contradictions.filter(
+    (c) => !c.noteA.isKb && !c.noteB.isKb,
+  );
+  const stale = result.stale.filter((s) => !s.isKb);
+
+  if (
+    orphans.length === result.orphans.length &&
+    brokenWikilinks.length === result.brokenWikilinks.length &&
+    contradictions.length === result.contradictions.length &&
+    stale.length === result.stale.length
+  ) {
+    return result;
+  }
+
+  return {
+    ...result,
+    orphans,
+    brokenWikilinks,
+    contradictions,
+    stale,
+    summary: {
+      ...result.summary,
+      totals: {
+        orphans: orphans.length,
+        brokenWikilinks: brokenWikilinks.length,
+        contradictions: contradictions.length,
+        stale: stale.length,
+      },
+    },
+  };
 }
 
 /**
@@ -121,7 +161,8 @@ export const lintAction: ActionDescriptor<LintInput, WikiLintResult> = {
   describe:
     "Run all wiki-health checks (orphans, broken-wikilinks, contradictions, stale) in one call. " +
     "Use --checks to subset. By default, archived notes and system-generated notes (Wiki Activity Log, Wiki Index) " +
-    "are excluded from the orphans list. Pass --include-archived or --include-system to opt back in.",
+    "are excluded from the orphans list. Pass --include-archived or --include-system to opt back in. " +
+    "Pass --notes-only to exclude kb entries (notes with a key) from all lint categories.",
   mcpTool: "wiki_lint",
   args: (cmd: Command) =>
     cmd
@@ -141,6 +182,10 @@ export const lintAction: ActionDescriptor<LintInput, WikiLintResult> = {
       .option(
         "--include-system",
         "Include system-generated notes (Wiki Activity Log, Wiki Index) in the orphans list (excluded by default)",
+      )
+      .option(
+        "--notes-only",
+        "Exclude kb entries (notes with a key) from all lint categories",
       ),
 
   run: async (input, ctx) => {
@@ -164,7 +209,8 @@ export const lintAction: ActionDescriptor<LintInput, WikiLintResult> = {
     }
 
     const raw = await client.wikiLint({ workspaceId, checks, limitPerCheck });
-    return filterOrphans(raw, input.includeArchived ?? false, input.includeSystem ?? false);
+    const afterOrphans = filterOrphans(raw, input.includeArchived ?? false, input.includeSystem ?? false);
+    return input.notesOnly ? filterNotesOnly(afterOrphans) : afterOrphans;
   },
 
   renderHuman,

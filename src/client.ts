@@ -169,18 +169,20 @@ export interface WikiLintOrphan {
   title: string;
   updatedAt: string;
   archived: boolean;
+  isKb: boolean;
 }
 
 export interface WikiLintBrokenWikilink {
   noteId: string;
   noteTitle: string;
   target: string;
+  isKb: boolean;
 }
 
 export interface WikiLintContradiction {
   id: string;
-  noteA: { id: string; title: string | null };
-  noteB: { id: string; title: string | null };
+  noteA: { id: string; title: string | null; isKb: boolean };
+  noteB: { id: string; title: string | null; isKb: boolean };
   similarity: number;
   confidence: number;
   description: string | null;
@@ -191,7 +193,8 @@ export interface WikiLintStale {
   id: string;
   title: string;
   updatedAt: string;
-  referencedBy: { id: string; title: string; updatedAt: string };
+  isKb: boolean;
+  referencedBy: { id: string; title: string; updatedAt: string; isKb: boolean };
 }
 
 export interface WikiLintResult {

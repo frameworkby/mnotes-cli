@@ -2,6 +2,8 @@ import type { ActionDescriptor } from "../_register-group";
 import type { NoteListItem } from "../../client";
 interface ListInput {
     folderId?: string;
+    /** Alias for folderId — accepted when the user types --folder instead of --folder-id. */
+    folder?: string;
     cursor?: string;
     limit?: number;
 }

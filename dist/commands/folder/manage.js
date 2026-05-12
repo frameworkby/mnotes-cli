@@ -4,6 +4,7 @@ exports.manageFoldersAction = void 0;
 const commander_1 = require("commander");
 const config_1 = require("../../config");
 const client_1 = require("../../client");
+const output_1 = require("../../output");
 exports.manageFoldersAction = {
     name: "manage",
     // Mirrored verbatim from MCP `manage_folders` description.
@@ -16,6 +17,14 @@ exports.manageFoldersAction = {
         .option("--id <id>", "Folder ID (required for rename and delete)")
         .option("--name <name>", "Folder name (required for create and rename)")
         .option("--parent-id <id>", "Parent folder ID (optional, for create)"),
+    renderHuman: (output) => {
+        if ("deleted" in output) {
+            (0, output_1.printSuccess)(`Folder ${output.deleted} deleted`);
+        }
+        else {
+            console.log(`${output.id}  ${output.name}`);
+        }
+    },
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);

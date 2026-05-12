@@ -3,6 +3,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.buildProgram = buildProgram;
 const commander_1 = require("commander");
+const node_crypto_1 = require("node:crypto");
+const client_1 = require("./client");
 const note_1 = require("./commands/note");
 const workspace_1 = require("./commands/workspace");
 const folder_1 = require("./commands/folder");
@@ -73,6 +75,11 @@ function buildProgram() {
     return program;
 }
 if (require.main === module) {
+    // Tag every outgoing request from this CLI invocation with one session id, so
+    // they group into a single SessionTrace row visible on /activity.
+    const sessionId = process.env.MNOTES_SESSION_ID || (0, node_crypto_1.randomUUID)();
+    const sessionLabel = process.argv.slice(2).filter((a) => !a.startsWith("-")).join(" ").slice(0, 255) || undefined;
+    (0, client_1.setCliSession)({ sessionId, sessionLabel });
     buildProgram()
         .parseAsync(process.argv)
         .catch((err) => {

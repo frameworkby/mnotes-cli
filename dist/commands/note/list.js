@@ -11,14 +11,16 @@ exports.listAction = {
     aliases: ["list"], // legacy `mnotes list`
     args: (cmd) => cmd
         .option("--folder-id <id>", "Folder ID")
+        .option("--folder <id>", "Alias for --folder-id")
         .option("--cursor <cursor>", "Pagination cursor")
         .option("--limit <n>", "Max notes to return", (v) => parseInt(v, 10)),
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
+        const folderId = input.folderId ?? input.folder;
         const apiResp = await client.listNotes({
             workspaceId: config.workspaceId,
-            folderId: input.folderId,
+            folderId,
             cursor: input.cursor,
             limit: input.limit,
         });
