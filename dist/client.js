@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.setCliSession = setCliSession;
+exports.toAsciiHeader = toAsciiHeader;
 exports.createClient = createClient;
 let cliSession = {};
 /**
@@ -11,6 +12,14 @@ let cliSession = {};
 function setCliSession(s) {
     cliSession = { sessionId: s.sessionId, sessionLabel: s.sessionLabel };
 }
+// HTTP header values must be ByteString (each char ≤ 0xFF). Node's fetch throws
+// "Cannot convert argument to a ByteString" when a header contains a non-Latin-1
+// char like an em-dash or emoji. CLI args can easily contain those, so coerce
+// anything we put in a header through this filter.
+function toAsciiHeader(s) {
+    // Replace any char outside printable ASCII (0x20–0x7E) plus tab with '?'.
+    return s.replace(/[^\x20-\x7E\t]/g, "?");
+}
 function createClient(baseUrl, apiKey, opts = {}) {
     const sessionId = opts.sessionId ?? cliSession.sessionId;
     const sessionLabel = opts.sessionLabel ?? cliSession.sessionLabel;
@@ -19,9 +28,9 @@ function createClient(baseUrl, apiKey, opts = {}) {
         "Content-Type": "application/json",
     };
     if (sessionId)
-        headers["X-Mnotes-Session-Id"] = sessionId;
+        headers["X-Mnotes-Session-Id"] = toAsciiHeader(sessionId);
     if (sessionLabel)
-        headers["X-Mnotes-Session-Label"] = sessionLabel;
+        headers["X-Mnotes-Session-Label"] = toAsciiHeader(sessionLabel);
     async function request(method, path, body) {
         const url = `${baseUrl}${path}`;
         const res = await fetch(url, {

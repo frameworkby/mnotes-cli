@@ -622,6 +622,7 @@ export declare function setCliSession(s: {
     sessionId: string;
     sessionLabel?: string;
 }): void;
+export declare function toAsciiHeader(s: string): string;
 export declare function createClient(baseUrl: string, apiKey: string, opts?: CreateClientOptions): {
     listNotes(opts?: {
         workspaceId?: string;

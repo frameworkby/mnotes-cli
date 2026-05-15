@@ -3,6 +3,16 @@
 All notable changes to the CLI are documented here. The CLI follows semver
 independent of the app — see `feedback_release_versioning` in agent memory.
 
+## 4.1.1 — 2026-05-15
+
+### Fix
+
+Sanitize the `X-Mnotes-Session-Label` (and `X-Mnotes-Session-Id`) header value
+so it never crashes Node's `fetch` with `Cannot convert argument to a
+ByteString`. CLI args drive the session label, and any non-Latin-1 character
+(em-dash, smart quote, emoji, …) would previously break every outgoing
+request. Non-ASCII chars are now replaced with `?` before being sent.
+
 ## 4.0.0 — 2026-05-12 (#976)
 
 ### Breaking change

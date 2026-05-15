@@ -680,6 +680,15 @@ export function setCliSession(s: { sessionId: string; sessionLabel?: string }): 
   cliSession = { sessionId: s.sessionId, sessionLabel: s.sessionLabel };
 }
 
+// HTTP header values must be ByteString (each char ≤ 0xFF). Node's fetch throws
+// "Cannot convert argument to a ByteString" when a header contains a non-Latin-1
+// char like an em-dash or emoji. CLI args can easily contain those, so coerce
+// anything we put in a header through this filter.
+export function toAsciiHeader(s: string): string {
+  // Replace any char outside printable ASCII (0x20–0x7E) plus tab with '?'.
+  return s.replace(/[^\x20-\x7E\t]/g, "?");
+}
+
 export function createClient(baseUrl: string, apiKey: string, opts: CreateClientOptions = {}) {
   const sessionId = opts.sessionId ?? cliSession.sessionId;
   const sessionLabel = opts.sessionLabel ?? cliSession.sessionLabel;
@@ -687,8 +696,8 @@ export function createClient(baseUrl: string, apiKey: string, opts: CreateClient
     Authorization: `Bearer ${apiKey}`,
     "Content-Type": "application/json",
   };
-  if (sessionId) headers["X-Mnotes-Session-Id"] = sessionId;
-  if (sessionLabel) headers["X-Mnotes-Session-Label"] = sessionLabel;
+  if (sessionId) headers["X-Mnotes-Session-Id"] = toAsciiHeader(sessionId);
+  if (sessionLabel) headers["X-Mnotes-Session-Label"] = toAsciiHeader(sessionLabel);
 
   async function request<T>(
     method: string,
