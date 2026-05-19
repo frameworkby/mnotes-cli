@@ -18,6 +18,7 @@ function registerCreateCommand(program) {
         .description("Create a new note (reads content from stdin)")
         .requiredOption("--title <title>", "Note title")
         .option("--folder-id <id>", "Folder ID")
+        .option("--folder <id>", "Alias for --folder-id")
         .action(async (opts) => {
         const globalOpts = program.opts();
         const config = (0, config_1.resolveConfig)(globalOpts);
@@ -30,11 +31,12 @@ function registerCreateCommand(program) {
             }
         }
         const title = opts.title;
-        (0, _title_slash_warning_1.maybeWarnTitleSlash)(title, Boolean(opts.folderId));
+        const folderId = opts.folderId ?? opts.folder;
+        (0, _title_slash_warning_1.maybeWarnTitleSlash)(title, Boolean(folderId));
         const result = await client.createNote({
             title,
             content,
-            folderId: opts.folderId,
+            folderId,
             workspaceId: opts.workspaceId || config.workspaceId,
         });
         if (globalOpts.json) {

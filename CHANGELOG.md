@@ -3,6 +3,18 @@
 All notable changes to the CLI are documented here. The CLI follows semver
 independent of the app — see `feedback_release_versioning` in agent memory.
 
+## 4.2.0 — 2026-05-19
+
+### Add
+
+`--folder <id>` is now accepted as an alias for `--folder-id <id>` on the
+commands that previously only took the long form: `mnotes create`,
+`mnotes note create`, and `mnotes kb ingest-external`. `--folder-id` remains
+canonical and is listed first in `--help`. When both flags are supplied,
+`--folder-id` wins.
+
+Closes [mnotes-cli#1](https://github.com/frameworkby/mnotes-cli/issues/1).
+
 ## 4.1.1 — 2026-05-15
 
 ### Fix

@@ -16,6 +16,8 @@ async function readStdin(): Promise<string> {
 interface CreateInput {
   title: string;
   content?: string;
+  folderId?: string;
+  /** Alias for folderId — accepted when the user types --folder instead of --folder-id. */
   folder?: string;
   tags?: string[];
 }
@@ -33,7 +35,8 @@ export const createNoteAction: ActionDescriptor<CreateInput, CreateOutput> = {
     cmd
       .requiredOption("--title <title>", "Note title")
       .option("--content <content>", "Note content (otherwise read from stdin)")
-      .option("--folder <id>", "Folder ID")
+      .option("--folder-id <id>", "Folder ID")
+      .option("--folder <id>", "Alias for --folder-id")
       .option(
         "--tags <tags...>",
         "Tags (space-separated)",
@@ -43,7 +46,8 @@ export const createNoteAction: ActionDescriptor<CreateInput, CreateOutput> = {
     const config = resolveConfig(ctx.globalOpts);
     const client = createClient(config.baseUrl, config.apiKey);
 
-    maybeWarnTitleSlash(input.title, Boolean(input.folder));
+    const folderId = input.folderId ?? input.folder;
+    maybeWarnTitleSlash(input.title, Boolean(folderId));
 
     let content = input.content;
     if (content === undefined && !process.stdin.isTTY) {
@@ -54,7 +58,7 @@ export const createNoteAction: ActionDescriptor<CreateInput, CreateOutput> = {
     const res = await client.createNote({
       title: input.title,
       content,
-      folderId: input.folder,
+      folderId,
       tags: input.tags,
       workspaceId: config.workspaceId,
     });

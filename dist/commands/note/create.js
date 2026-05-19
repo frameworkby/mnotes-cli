@@ -19,12 +19,14 @@ exports.createNoteAction = {
     args: (cmd) => cmd
         .requiredOption("--title <title>", "Note title")
         .option("--content <content>", "Note content (otherwise read from stdin)")
-        .option("--folder <id>", "Folder ID")
+        .option("--folder-id <id>", "Folder ID")
+        .option("--folder <id>", "Alias for --folder-id")
         .option("--tags <tags...>", "Tags (space-separated)"),
     run: async (input, ctx) => {
         const config = (0, config_1.resolveConfig)(ctx.globalOpts);
         const client = (0, client_1.createClient)(config.baseUrl, config.apiKey);
-        (0, _title_slash_warning_1.maybeWarnTitleSlash)(input.title, Boolean(input.folder));
+        const folderId = input.folderId ?? input.folder;
+        (0, _title_slash_warning_1.maybeWarnTitleSlash)(input.title, Boolean(folderId));
         let content = input.content;
         if (content === undefined && !process.stdin.isTTY) {
             const stdinContent = await readStdin();
@@ -34,7 +36,7 @@ exports.createNoteAction = {
         const res = await client.createNote({
             title: input.title,
             content,
-            folderId: input.folder,
+            folderId,
             tags: input.tags,
             workspaceId: config.workspaceId,
         });
