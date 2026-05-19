@@ -24,6 +24,8 @@ interface IngestExternalInput {
   sourceRef?: string;
   tags?: string;
   folderId?: string;
+  /** Alias for folderId — accepted when the user types --folder instead of --folder-id. */
+  folder?: string;
 }
 
 export const ingestExternalAction: ActionDescriptor<
@@ -52,7 +54,8 @@ export const ingestExternalAction: ActionDescriptor<
         "Opaque reference (e.g. message ID); never triggers upsert",
       )
       .option("--tags <csv>", "Comma-separated tags")
-      .option("--folder-id <id>", "Target folder (defaults to workspace root)"),
+      .option("--folder-id <id>", "Target folder (defaults to workspace root)")
+      .option("--folder <id>", "Alias for --folder-id"),
 
   run: async (input, ctx) => {
     if (!input.title) throw new Error("--title is required");
@@ -99,7 +102,7 @@ export const ingestExternalAction: ActionDescriptor<
       sourceUrl: input.sourceUrl,
       sourceRef: input.sourceRef,
       tags,
-      folderId: input.folderId,
+      folderId: input.folderId ?? input.folder,
     });
   },
 };
