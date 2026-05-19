@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Build output for tests — the test runner compiles into dist/ alongside the
+# real artifacts, but only the non-test compiled output should ship in the
+# npm package. Keeping these out of git removes review noise from PRs that
+# happen to have run vitest locally.
+dist/**/__tests__/
+
+# Editor / OS noise
+.DS_Store
+*.log
+.vscode/
+.idea/
+
+# Local tool state (Claude Code agent memory)
+.claude/
