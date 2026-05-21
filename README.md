@@ -17,7 +17,7 @@ Prerequisites: Node 20.19 or newer. Node 18 was dropped in Sprint 58 due to the 
 Install globally from PowerShell or `cmd.exe`:
 
 ```powershell
-npm install -g mnotes
+npm install -g mnotes-cli
 ```
 
 Authenticate:
