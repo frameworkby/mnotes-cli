@@ -2,10 +2,38 @@
 
 CLI for [m-notes](https://m-notes.app) AI knowledge base. Manage notes, search, and perform CRUD operations from the terminal.
 
+Runs on Windows 10+, macOS 12+, and Linux. Node 20.19+ required.
+
 ## Install
 
 ```bash
 npm install -g mnotes-cli
+```
+
+### Windows
+
+Prerequisites: Node 20.19 or newer. Node 18 was dropped in Sprint 58 due to the vitest 4 dependency.
+
+Install globally from PowerShell or `cmd.exe`:
+
+```powershell
+npm install -g mnotes
+```
+
+Authenticate:
+
+```powershell
+mnotes login
+```
+
+`mnotes login` opens your default browser and supports both Microsoft Edge and Google Chrome.
+
+The CLI config is written to `%USERPROFILE%\.mnotes\config.json`. Note that POSIX mode bits (chmod 0o600) do not apply on Windows; the config file is created without restrictive POSIX permissions. Ensure your user profile is not shared with other local accounts.
+
+Workspace linking uses Windows path resolution and can be run from any directory:
+
+```powershell
+mnotes workspace link
 ```
 
 ## Setup
