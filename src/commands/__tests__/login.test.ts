@@ -24,6 +24,40 @@ function cleanTmpDir(dir: string): void {
   fs.rmSync(dir, { recursive: true, force: true });
 }
 
+/**
+ * Override the home directory for the duration of a test.
+ * On POSIX, `os.homedir()` reads `HOME`. On Windows, it reads `USERPROFILE`
+ * (with `HOMEDRIVE+HOMEPATH` as fallback). Set all of them so tests work
+ * cross-platform.
+ */
+interface HomeOverride {
+  HOME?: string;
+  USERPROFILE?: string;
+  HOMEDRIVE?: string;
+  HOMEPATH?: string;
+}
+function setHomeDir(dir: string): HomeOverride {
+  const saved: HomeOverride = {
+    HOME: process.env.HOME,
+    USERPROFILE: process.env.USERPROFILE,
+    HOMEDRIVE: process.env.HOMEDRIVE,
+    HOMEPATH: process.env.HOMEPATH,
+  };
+  process.env.HOME = dir;
+  process.env.USERPROFILE = dir;
+  // Clear HOMEDRIVE/HOMEPATH so they don't take precedence over USERPROFILE
+  delete process.env.HOMEDRIVE;
+  delete process.env.HOMEPATH;
+  return saved;
+}
+function restoreHomeDir(saved: HomeOverride): void {
+  for (const k of ["HOME", "USERPROFILE", "HOMEDRIVE", "HOMEPATH"] as const) {
+    const v = saved[k];
+    if (v === undefined) delete process.env[k];
+    else process.env[k] = v;
+  }
+}
+
 // =============================================================
 // maskKey utility
 // =============================================================
@@ -45,16 +79,15 @@ describe("maskKey", () => {
 // =============================================================
 describe("config file operations", () => {
   let tmpDir: string;
-  let origHome: string | undefined;
+  let savedHome: HomeOverride;
 
   beforeEach(() => {
     tmpDir = makeTmpDir();
-    origHome = process.env.HOME;
-    process.env.HOME = tmpDir;
+    savedHome = setHomeDir(tmpDir);
   });
 
   afterEach(() => {
-    process.env.HOME = origHome;
+    restoreHomeDir(savedHome);
     cleanTmpDir(tmpDir);
   });
 
@@ -84,14 +117,17 @@ describe("config file operations", () => {
     expect(fs.existsSync(mnotesDir)).toBe(true);
   });
 
-  it("writeConfig sets restrictive file permissions (0o600)", () => {
-    writeConfig({ apiKey: "mnk_test", serverUrl: "http://localhost:3000" });
+  it.skipIf(process.platform === "win32")(
+    "writeConfig sets restrictive file permissions (0o600)",
+    () => {
+      writeConfig({ apiKey: "mnk_test", serverUrl: "http://localhost:3000" });
 
-    const p = configPath();
-    const stats = fs.statSync(p);
-    const mode = stats.mode & 0o777;
-    expect(mode).toBe(0o600);
-  });
+      const p = configPath();
+      const stats = fs.statSync(p);
+      const mode = stats.mode & 0o777;
+      expect(mode).toBe(0o600);
+    },
+  );
 
   it("readConfig returns null for invalid JSON", () => {
     const mnotesDir = path.join(tmpDir, ".mnotes");
@@ -117,14 +153,13 @@ describe("config file operations", () => {
 // =============================================================
 describe("mnotes login --status", () => {
   let tmpDir: string;
-  let origHome: string | undefined;
+  let savedHome: HomeOverride;
   let origExit: typeof process.exit;
   let exitCode: number | undefined;
 
   beforeEach(() => {
     tmpDir = makeTmpDir();
-    origHome = process.env.HOME;
-    process.env.HOME = tmpDir;
+    savedHome = setHomeDir(tmpDir);
     exitCode = undefined;
     origExit = process.exit;
     process.exit = ((code?: number) => {
@@ -134,7 +169,7 @@ describe("mnotes login --status", () => {
   });
 
   afterEach(() => {
-    process.env.HOME = origHome;
+    restoreHomeDir(savedHome);
     process.exit = origExit;
     cleanTmpDir(tmpDir);
     vi.restoreAllMocks();
@@ -241,14 +276,13 @@ describe("mnotes login --status", () => {
 // =============================================================
 describe("mnotes login --api-key", () => {
   let tmpDir: string;
-  let origHome: string | undefined;
+  let savedHome: HomeOverride;
   let origExit: typeof process.exit;
   let exitCode: number | undefined;
 
   beforeEach(() => {
     tmpDir = makeTmpDir();
-    origHome = process.env.HOME;
-    process.env.HOME = tmpDir;
+    savedHome = setHomeDir(tmpDir);
     exitCode = undefined;
     origExit = process.exit;
     process.exit = ((code?: number) => {
@@ -258,7 +292,7 @@ describe("mnotes login --api-key", () => {
   });
 
   afterEach(() => {
-    process.env.HOME = origHome;
+    restoreHomeDir(savedHome);
     process.exit = origExit;
     cleanTmpDir(tmpDir);
     vi.restoreAllMocks();
@@ -426,15 +460,14 @@ describe("startLocalServer", () => {
 // =============================================================
 describe("resolveConfig with stored login", () => {
   let tmpDir: string;
-  let origHome: string | undefined;
+  let savedHome: HomeOverride;
   let origExit: typeof process.exit;
   let origApiKey: string | undefined;
   let origUrl: string | undefined;
 
   beforeEach(() => {
     tmpDir = makeTmpDir();
-    origHome = process.env.HOME;
-    process.env.HOME = tmpDir;
+    savedHome = setHomeDir(tmpDir);
     origApiKey = process.env.MNOTES_API_KEY;
     origUrl = process.env.MNOTES_URL;
     delete process.env.MNOTES_API_KEY;
@@ -446,7 +479,7 @@ describe("resolveConfig with stored login", () => {
   });
 
   afterEach(() => {
-    process.env.HOME = origHome;
+    restoreHomeDir(savedHome);
     if (origApiKey !== undefined) process.env.MNOTES_API_KEY = origApiKey;
     else delete process.env.MNOTES_API_KEY;
     if (origUrl !== undefined) process.env.MNOTES_URL = origUrl;
