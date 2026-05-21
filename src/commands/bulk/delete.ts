@@ -4,6 +4,18 @@ import { resolveConfig } from "../../config";
 import { createClient } from "../../client";
 import type { ActionDescriptor } from "../_register-group";
 
+/**
+ * Parse newline-delimited note IDs from a file's raw content.
+ * Splits on LF, trims each line (which strips trailing CR for CRLF inputs
+ * produced on Windows), and drops empty lines.
+ */
+export function parseNoteIdsFromFile(raw: string): string[] {
+  return raw
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 export interface BulkDeleteResult {
   totalRequested: number;
   deleted: string[];
@@ -60,10 +72,7 @@ export const bulkDeleteAction: ActionDescriptor<Input, BulkDeleteResult> = {
         .filter(Boolean);
     } else {
       const raw = fs.readFileSync(input.noteIdsFile!, "utf-8");
-      noteIds = raw
-        .split("\n")
-        .map((s) => s.trim())
-        .filter(Boolean);
+      noteIds = parseNoteIdsFromFile(raw);
     }
 
     if (noteIds.length === 0) {

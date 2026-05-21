@@ -63,8 +63,11 @@ export function writeConfig(config: MnotesConfig): void {
   const filePath = configPath();
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(filePath, JSON.stringify(config, null, 2) + "\n", "utf-8");
-  // Restrict permissions to owner only
-  fs.chmodSync(filePath, 0o600);
+  // Restrict permissions to owner only. Skip on Windows: NTFS does not honor
+  // POSIX mode bits; a true equivalent would require ACL APIs (icacls / Win32).
+  if (process.platform !== "win32") {
+    fs.chmodSync(filePath, 0o600);
+  }
 }
 
 /**
