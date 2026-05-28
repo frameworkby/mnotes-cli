@@ -11,7 +11,6 @@ interface Input {
 export const versionsAction: ActionDescriptor<Input, unknown> = {
   name: "versions",
   describe: "List historical versions of a note (default: 10, max 50).",
-  mcpTool: "list_versions",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd

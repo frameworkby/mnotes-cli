@@ -17,7 +17,6 @@ export const scanConflictsAction: ActionDescriptor<
   name: "scan-conflicts",
   describe:
     "Kick off a background scan to detect conflicting/overlapping knowledge entries. Returns a scan ID and the estimated number of pairs to be analysed.",
-  mcpTool: "scan_knowledge_conflicts",
   args: (cmd: Command) =>
     cmd
       .option(

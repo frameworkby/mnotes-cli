@@ -32,7 +32,7 @@ function mockRefresh(result: { added: number; removed: number; unchanged: number
 
 // ── tests ─────────────────────────────────────────────────────────────────────
 
-describe("indexRefreshAction (mcpTool: wiki_index_refresh)", () => {
+describe("indexRefreshAction", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

@@ -220,6 +220,6 @@ describe("bulkDeleteAction", () => {
       (r) => r.group === "bulk" && r.action === "delete",
     );
     expect(entry).toBeDefined();
-    expect(entry?.mcpTool).toBe("bulk_delete");
+    expect(entry?.commandPath).toBe("bulk delete");
   });
 });

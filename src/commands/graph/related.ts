@@ -14,7 +14,6 @@ export const relatedNotesAction: ActionDescriptor<RelatedInput, RelatedNote[]> =
   name: "related",
   describe:
     "Find notes semantically related to the given note via embedding similarity.",
-  mcpTool: "related_notes",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd

@@ -24,10 +24,9 @@ interface UploadInput {
 
 export const uploadFileAction: ActionDescriptor<UploadInput, UploadResult> = {
   name: "upload",
-  // Mirrored verbatim from MCP `upload_file` description.
+  // Mirrored verbatim from the API `upload_file` description.
   describe:
     "Upload a file (image or PDF) to storage. Returns a markdown embed. If noteId is provided, the embed is appended to the note content.",
-  mcpTool: "upload_file",
   args: (cmd: Command) =>
     cmd
       .option(

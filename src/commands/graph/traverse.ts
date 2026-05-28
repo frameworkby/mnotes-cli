@@ -23,7 +23,6 @@ export const traverseAction: ActionDescriptor<TraverseInput, GraphTraverseResult
   name: "traverse",
   describe:
     "Traverse the graph from a start node with edge/node-type filters and a max depth.",
-  mcpTool: "graph_traverse",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--start-node-id <id>", "Start node ID")

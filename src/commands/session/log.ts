@@ -19,7 +19,6 @@ export const sessionLogAction: ActionDescriptor<
   name: "log",
   describe:
     "Log an AI conversation summary with decisions and actions. Creates an audit trail across sessions. If the same sessionId is used again, the new entry is appended to the existing log note.",
-  mcpTool: "session_log",
   args: (cmd: Command) =>
     cmd
       .requiredOption(

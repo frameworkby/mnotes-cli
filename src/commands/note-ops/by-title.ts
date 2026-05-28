@@ -10,7 +10,6 @@ interface Input {
 export const byTitleAction: ActionDescriptor<Input, unknown> = {
   name: "by-title",
   describe: "Look up a note by exact title.",
-  mcpTool: "get_note_by_title",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--title <s>", "Exact note title"),

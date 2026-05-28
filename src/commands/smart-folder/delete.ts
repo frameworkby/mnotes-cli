@@ -14,7 +14,6 @@ export const deleteSmartFolderAction: ActionDescriptor<
 > = {
   name: "delete",
   describe: "Delete a smart folder by ID.",
-  mcpTool: "delete_smart_folder",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd

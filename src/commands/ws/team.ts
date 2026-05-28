@@ -10,7 +10,6 @@ interface Input {
 export const teamAction: ActionDescriptor<Input, unknown> = {
   name: "team",
   describe: "List members of a workspace.",
-  mcpTool: "list_team_members",
   positional: ["id"],
   args: (cmd: Command) => cmd.argument("<id>", "Workspace ID"),
   run: async (input, ctx) => {

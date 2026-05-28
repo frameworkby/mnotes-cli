@@ -10,7 +10,6 @@ interface Input {
 export const frontmatterGetAction: ActionDescriptor<Input, unknown> = {
   name: "frontmatter-get",
   describe: "Read YAML frontmatter fields from a note.",
-  mcpTool: "get_note_frontmatter",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd.argument("<id>", "Note ID"),

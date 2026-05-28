@@ -10,7 +10,6 @@ interface Input {
 export const roleAction: ActionDescriptor<Input, unknown> = {
   name: "role",
   describe: "Show the caller's role and capabilities for a workspace.",
-  mcpTool: "get_workspace_role",
   positional: ["id"],
   args: (cmd: Command) => cmd.argument("<id>", "Workspace ID"),
   run: async (input, ctx) => {

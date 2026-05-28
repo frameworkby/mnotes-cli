@@ -13,7 +13,6 @@ export const queryNoteGraphAction: ActionDescriptor<QueryNoteInput, QueryNoteGra
   name: "query-note",
   describe:
     "Return the local graph (neighbors and edges) around the graph node linked to a note.",
-  mcpTool: "query_note_graph",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--note-id <id>", "Note ID")

@@ -14,7 +14,6 @@ export const consolidateAction: ActionDescriptor<ConsolidateInput, ConsolidateRe
   name: "consolidate",
   describe:
     "Consolidate multiple knowledge notes into a single target note via merge or summarize strategy. Source notes are archived after consolidation.",
-  mcpTool: "consolidate_memories",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--note-ids <csv>", "Comma-separated note IDs to consolidate")

@@ -36,7 +36,7 @@ function mockTail(entries: ReturnType<typeof makeEntry>[]) {
 
 // ── tests ─────────────────────────────────────────────────────────────────────
 
-describe("logTailAction (mcpTool: wiki_log_tail)", () => {
+describe("logTailAction", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

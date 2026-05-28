@@ -16,7 +16,6 @@ export const memoryAction: ActionDescriptor<MemoryInput, MemoryUpsertResult> = {
   name: "memory",
   describe:
     'Store or update a single fact/memory by key. Use this when the user says "remember this" or you need to persist a fact across sessions. Creates a new entry if the key is new, or updates the existing one. Returns whether the entry was created or updated, and the previous content if it was an update (so you can detect what changed).',
-  mcpTool: "memory_upsert",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--key <key>", "Unique identifier for this memory")

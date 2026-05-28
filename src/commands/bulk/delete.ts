@@ -33,7 +33,6 @@ export const bulkDeleteAction: ActionDescriptor<Input, BulkDeleteResult> = {
   name: "delete",
   describe:
     "Delete multiple notes by ID. Requires --force (or --dry-run to preview). Per-ID failures are reported without aborting the batch.",
-  mcpTool: "bulk_delete",
   args: (cmd: Command) =>
     cmd
       .option("--note-ids <csv>", "Comma-separated note IDs (1-100)")

@@ -4,11 +4,13 @@ export interface CodexTemplateOpts {
 }
 
 export function generateCodexTemplate(opts: CodexTemplateOpts): string {
-  return `<!-- m-notes instructions v7 -->
+  return `<!-- m-notes instructions v8 -->
 # m-notes — Your Wiki
 
 Server: ${opts.url}
 Workspace: ${opts.workspaceId}
+
+All access is through the \`mnotes\` CLI (it talks to the m-notes v1 API). Every command accepts \`--workspace ${opts.workspaceId}\` and \`--json\` for machine-readable output.
 
 Division of labour: the human curates sources and asks questions. You do the grunt work — summarising, cross-referencing, filing, bookkeeping.
 
@@ -51,9 +53,9 @@ confidence: high | medium | low
 ## Session Lifecycle
 
 ### Session Start
-- Call \`project_context_load\` with workspaceId "${opts.workspaceId}".
-- To resume, call \`session_context_resume\`.
-- If the graph is empty, call \`populate_graph\` (idempotent).
+- Run \`mnotes composite project-load\` to load workspace context.
+- To resume, run \`mnotes session resume\`.
+- If the graph is empty, run \`mnotes graph populate\` (idempotent).
 - Read any notes tagged \`type:config\` before editing.
 
 ### Non-Negotiable Checklist
@@ -61,36 +63,36 @@ confidence: high | medium | low
 These are not suggestions. Skip any step and the wiki degrades.
 
 **Session Start (before ANY work):**
-- [ ] \`project_context_load\` with workspaceId "${opts.workspaceId}"
-- [ ] \`recall_knowledge\` for the user's topic
-- [ ] \`search_notes\` for related pages
-- [ ] \`populate_graph\` if graph is empty
+- [ ] \`mnotes composite project-load\`
+- [ ] \`mnotes kb recall --query "<the user's topic>"\`
+- [ ] \`mnotes search "<related terms>"\`
+- [ ] \`mnotes graph populate\` if graph is empty
 - [ ] Read \`type:config\` schema notes before editing
 
 Do not skip this. Do not assume you know what's in the wiki.
 
 **During Work (every time you learn something):**
-- [ ] Non-obvious discovery → \`knowledge_store\` immediately
-- [ ] Architecture/design decision → \`arch/{component}\`
-- [ ] Bug fix → \`bug/{id}\` with root cause
-- [ ] Gotcha/footgun → \`gotcha/{description}\`
+- [ ] Non-obvious discovery → \`mnotes kb store\` immediately
+- [ ] Architecture/design decision → key \`arch/{component}\`
+- [ ] Bug fix → key \`bug/{id}\` with root cause
+- [ ] Gotcha/footgun → key \`gotcha/{description}\`
 - [ ] User correction → store it
 
-**What NOT to store:** trivial changes, info obvious from code, duplicates (check \`recall_knowledge\` first).
+**What NOT to store:** trivial changes, info obvious from code, duplicates (check \`mnotes kb recall\` first).
 
 **Session End:**
-- [ ] \`session_log\` with summary, decisions, follow-ups
+- [ ] \`mnotes session log\` with summary, decisions, follow-ups
 - [ ] If you did meaningful work and stored nothing — go back and store it
 
 ### During Work
-- Recall before researching: \`recall_knowledge\`, \`search_notes\`.
-- Store discoveries via \`knowledge_store\` (key: \`<category>/<name>\`, tags: [category]).
+- Recall before researching: \`mnotes kb recall\`, \`mnotes search\`.
+- Store discoveries via \`mnotes kb store --key "<category>/<name>" --content "..." --tags <category>\`.
 - When the user supplies a source (URL/paste/file), run the **ingest loop**:
-  1. \`search_notes\` + \`query_graph\` to find **10–15 related notes** — a non-trivial source typically touches 10–15 pages, not 3
+  1. \`mnotes search\` + \`mnotes graph query\` to find **10–15 related notes** — a non-trivial source typically touches 10–15 pages, not 3
   2. Plan creates/updates with \`[[wikilinks]]\` connecting touched notes; update frontmatter (\`updated\`, \`sources\`, \`related\`)
   3. Apply — each touched note gets a \`source/<slug>\` tag and a "Sources" section
 - **Query loop**: when answering a non-trivial question, search the wiki first; if the answer required real synthesis, file it back as a new note (choose the appropriate page type). This is the compounding loop.
-- Periodically run the **lint loop**: \`scan_knowledge_conflicts\`, find orphans via \`query_note_graph\`, fix broken \`[[wikilinks]]\`, update stale notes. Log result with \`wiki_log_append --kind lint\`.
+- Periodically run the **lint loop**: \`mnotes kb scan-conflicts\`, find orphans via \`mnotes graph query-note\`, fix broken \`[[wikilinks]]\`, update stale notes. Log result with \`mnotes wiki log-append --kind lint\`.
 - Every new or edited note must have at least one outbound \`[[wikilink]]\`.
 
 ### Key Naming Conventions (kb-store fast-capture)
@@ -105,7 +107,7 @@ Do not skip this. Do not assume you know what's in the wiki.
 **Promotion rule**: if a kb entry is recalled 3+ times, promote it to a full wiki note. Use page-type vocabulary: recurring pattern → \`concept\`, library/tool → \`entity\`, summarised investigation → \`source-summary\`.
 
 ### Session End
-- Call \`session_log\` with workspaceId "${opts.workspaceId}", summary, decisions, actions.
+- Run \`mnotes session log --summary "..." \` with decisions and actions.
 
 ## Knowledge Graph
 
@@ -115,24 +117,26 @@ Every note belongs to the graph. Build relationships proactively.
 - Edge types: wikilink, related, parent, tagged, custom
 
 Example:
-  create_node({ label: "Auth Module", nodeType: "concept", workspaceId: "${opts.workspaceId}" })
-  create_edge({ sourceId: "...", targetId: "...", edgeType: "related", workspaceId: "${opts.workspaceId}" })
+  mnotes graph create-node --label "Auth Module" --node-type concept
+  mnotes graph create-edge --source <id> --target <id> --edge-type related
 
-## Available MCP Tools
-- project_context_load -- load context at session start
-- session_context_resume -- resume previous session
-- knowledge_store -- store knowledge entry
-- recall_knowledge -- semantic search
-- bulk_knowledge_recall -- recall by tag pattern
-- knowledge_snapshot -- export all knowledge
-- scan_knowledge_conflicts -- lint for contradictions
-- session_log -- log session summary
-- wiki_log_append -- append ingest/query/lint/decision log entry
-- wiki_index_refresh -- regenerate Wiki Index from current notes
-- create_note / update_note / append_to_note -- note authoring
-- search_notes / get_note / list_notes -- note retrieval
-- context_fetch -- search notes by query
-- populate_graph -- initialize graph (idempotent)
-- create_node / create_edge -- build graph structure
-- query_graph / get_neighbors / query_note_graph -- explore graph`;
+## Common CLI commands
+- \`mnotes composite project-load\` -- load context at session start
+- \`mnotes session resume\` -- resume previous session
+- \`mnotes kb store\` -- store a knowledge entry
+- \`mnotes kb recall\` -- semantic search
+- \`mnotes bulk knowledge-recall\` -- recall by tag pattern
+- \`mnotes kb snapshot\` -- export all knowledge
+- \`mnotes kb scan-conflicts\` -- lint for contradictions
+- \`mnotes session log\` -- log a session summary
+- \`mnotes wiki log-append\` -- append ingest/query/lint/decision log entry
+- \`mnotes wiki index-refresh\` -- regenerate the Wiki Index from current notes
+- \`mnotes note create\` / \`mnotes note update\` / \`mnotes note-ops append\` -- note authoring
+- \`mnotes search\` / \`mnotes note get\` / \`mnotes note list\` -- note retrieval
+- \`mnotes composite context-fetch\` -- search notes by query
+- \`mnotes graph populate\` -- initialize the graph (idempotent)
+- \`mnotes graph create-node\` / \`mnotes graph create-edge\` -- build graph structure
+- \`mnotes graph query\` / \`mnotes graph neighbors\` / \`mnotes graph query-note\` -- explore the graph
+
+Run \`mnotes <group> --help\` for flags on any command.`;
 }

@@ -13,7 +13,6 @@ interface FindPathInput {
 export const findPathAction: ActionDescriptor<FindPathInput, FindPathResult> = {
   name: "find-path",
   describe: "Find the shortest graph path between two nodes (max depth 1-3).",
-  mcpTool: "find_path",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--from-node-id <id>", "Source node ID")

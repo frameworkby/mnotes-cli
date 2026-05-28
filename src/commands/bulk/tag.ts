@@ -14,7 +14,6 @@ export const bulkTagAction: ActionDescriptor<Input, BulkOpResult> = {
   name: "tag",
   describe:
     "Append or remove tags on multiple notes at once. Existing tags on each note are preserved (no duplicates) when adding.",
-  mcpTool: "bulk_tag",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--note-ids <csv>", "Comma-separated note IDs (1-100)")

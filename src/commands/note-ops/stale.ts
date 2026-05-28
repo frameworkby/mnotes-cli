@@ -12,7 +12,6 @@ interface Input {
 export const staleAction: ActionDescriptor<Input, unknown> = {
   name: "stale",
   describe: "List notes not updated in N days (default 30).",
-  mcpTool: "stale_notes",
   args: (cmd: Command) =>
     cmd
       .option("--days <n>", "Days since last update (1-365) — alias for --days-since", (v) =>

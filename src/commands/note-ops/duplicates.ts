@@ -12,7 +12,6 @@ interface Input {
 export const duplicatesAction: ActionDescriptor<Input, unknown> = {
   name: "duplicates",
   describe: "Find semantically-similar duplicates of a note.",
-  mcpTool: "find_duplicates",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--note-id <id>", "Source note ID")

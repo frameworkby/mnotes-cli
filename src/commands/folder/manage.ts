@@ -6,12 +6,12 @@ import type { ActionDescriptor } from "../_register-group";
 import type { FolderRecord } from "../../client";
 
 /**
- * `folder manage` mirrors the MCP `manage_folders` tool which is intentionally
+ * `folder manage` mirrors the `manage_folders` operation which is intentionally
  * action-overloaded (create | rename | delete). Keeping one CLI command
- * preserves a 1:1 parity contract: a single MCP tool maps to a single
+ * preserves a 1:1 contract: a single operation maps to a single
  * `commandPath`. The `--action` flag selects the operation.
  *
- * Response shape varies by action and matches the MCP tool's response:
+ * Response shape varies by action and matches the documented CLI shape:
  *   create / rename → folder record
  *   delete          → `{ deleted: id }`
  */
@@ -26,10 +26,9 @@ type ManageOutput = FolderRecord | { deleted: string };
 
 export const manageFoldersAction: ActionDescriptor<ManageInput, ManageOutput> = {
   name: "manage",
-  // Mirrored verbatim from MCP `manage_folders` description.
+  // Mirrored verbatim from the API `manage_folders` description.
   describe:
     'Create, rename, or delete a folder. Actions: "create" (requires name, optional parentId), "rename" (requires id, name), "delete" (requires id, fails if folder contains notes).',
-  mcpTool: "manage_folders",
   args: (cmd: Command) =>
     cmd
       .addOption(

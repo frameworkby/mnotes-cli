@@ -33,7 +33,6 @@ export const deleteEmptyFoldersAction: ActionDescriptor<DeleteEmptyInput, Delete
   name: "delete-empty",
   describe:
     "Delete all recursively-empty folders in the workspace (no notes anywhere in their subtree). Use --dry-run to preview, --folder to scope to a subtree.",
-  mcpTool: "delete_empty_folders",
 
   args: (cmd: Command) =>
     cmd

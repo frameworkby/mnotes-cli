@@ -10,7 +10,6 @@ interface Input {
 export const orphanAction: ActionDescriptor<Input, unknown> = {
   name: "orphan",
   describe: "List notes with no incoming or outgoing wikilinks.",
-  mcpTool: "orphan_notes",
   args: (cmd: Command) =>
     cmd
       .option("--limit <n>", "Max results (1-200)", (v) => parseInt(v, 10)),

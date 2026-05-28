@@ -13,7 +13,6 @@ interface Input {
 export const updateWsAction: ActionDescriptor<Input, unknown> = {
   name: "update",
   describe: "Update a workspace's name, description, or icon.",
-  mcpTool: "update_workspace",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd

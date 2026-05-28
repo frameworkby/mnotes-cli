@@ -23,7 +23,6 @@ interface ListOutput {
 export const listAction: ActionDescriptor<ListInput, ListOutput> = {
   name: "list",
   describe: "List notes",
-  mcpTool: "list_notes",
   aliases: ["list"], // legacy `mnotes list`
   args: (cmd: Command) =>
     cmd
@@ -44,9 +43,9 @@ export const listAction: ActionDescriptor<ListInput, ListOutput> = {
       limit: input.limit,
     });
 
-    // Reshape API response (`{ data, nextCursor }`) into MCP `list_notes` shape
+    // Reshape API response (`{ data, nextCursor }`) into the documented CLI shape
     // (`{ notes, nextCursor }`). This is the parity contract: top-level keys
-    // match the MCP tool's response.
+    // match the documented CLI shape.
     return {
       notes: apiResp.data,
       nextCursor: apiResp.nextCursor,

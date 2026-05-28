@@ -12,7 +12,6 @@ export const bulkArchiveAction: ActionDescriptor<Input, BulkOpResult> = {
   name: "archive",
   describe:
     "Archive multiple notes, removing them from default note listings without deleting them. Already-archived notes are silently skipped.",
-  mcpTool: "bulk_archive",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--note-ids <csv>", "Comma-separated note IDs (1-100)"),

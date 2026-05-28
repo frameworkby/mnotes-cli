@@ -29,14 +29,13 @@ interface SelectOutput {
  * (PATCH /api/v1/workspaces/:id with { isDefault: true }).
  *
  * Behaviour matrix:
- *   <id> given            → server-side default flip (parity with MCP set_active_workspace)
+ *   <id> given            → server-side default flip
  *   no id, --global       → interactive picker, persists to global config (legacy)
  *   no id, no flag        → interactive picker, persists per-directory mapping (legacy)
  */
 export const selectWorkspaceAction: ActionDescriptor<SelectInput, SelectOutput> = {
   name: "select",
   describe: "Set the active (default) workspace",
-  mcpTool: "set_active_workspace",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd

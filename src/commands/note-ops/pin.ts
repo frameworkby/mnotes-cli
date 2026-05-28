@@ -10,7 +10,6 @@ interface Input {
 export const pinAction: ActionDescriptor<Input, unknown> = {
   name: "pin",
   describe: "Pin a note (max 10 per workspace).",
-  mcpTool: "pin_note",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd.argument("<id>", "Note ID"),

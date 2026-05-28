@@ -12,7 +12,6 @@ export const noteLinksAction: ActionDescriptor<LinksInput, NoteLinksResult> = {
   name: "links",
   describe:
     "List a note's outgoing wikilinks and incoming backlinks (resolved to existing notes).",
-  mcpTool: "get_note_links",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd.argument("<id>", "Note ID"),

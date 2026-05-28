@@ -4,11 +4,13 @@ export interface OpenClawTemplateOpts {
 }
 
 export function generateOpenClawTemplate(opts: OpenClawTemplateOpts): string {
-  return `<!-- m-notes instructions v7 -->
+  return `<!-- m-notes instructions v8 -->
 # m-notes — Your Wiki
 
 **Server**: ${opts.url}
 **Workspace**: ${opts.workspaceId}
+
+All access is through the \`mnotes\` CLI (it talks to the m-notes v1 API). Commands accept \`--workspace ${opts.workspaceId}\` and \`--json\`.
 
 Division of labour: the human curates sources and asks questions. You do the grunt work — summarising, cross-referencing, filing, bookkeeping.
 
@@ -51,16 +53,16 @@ confidence: high | medium | low
 Skip any step and the wiki degrades.
 
 **Session Start (before ANY work):**
-- [ ] \`recall_knowledge\` for the user's topic
-- [ ] \`search_notes\` for related pages
-- [ ] \`populate_graph\` if graph is empty
+- [ ] \`mnotes kb recall --query "<the user's topic>"\`
+- [ ] \`mnotes search "<related terms>"\`
+- [ ] \`mnotes graph populate\` if graph is empty
 
 Do not skip this. Do not assume you know what's in the wiki.
 
 **During Work:**
-- [ ] Non-obvious discovery → \`knowledge_store\` immediately
-- [ ] Decision made → \`decision/{topic}\`
-- [ ] Bug fixed → \`bug/{id}\` with root cause
+- [ ] Non-obvious discovery → \`mnotes kb store\` immediately
+- [ ] Decision made → key \`decision/{topic}\`
+- [ ] Bug fixed → key \`bug/{id}\` with root cause
 - [ ] User correction → store it
 
 **What NOT to store:** trivial changes, info obvious from code, duplicates.
@@ -70,28 +72,25 @@ Do not skip this. Do not assume you know what's in the wiki.
 
 ## Core Loops
 
-**Ingest** — when given a source (URL/paste): find **10–15 related notes** via \`search_notes\` + \`recall_knowledge\` — a non-trivial source typically touches 10–15 pages, not 3. Update or create, link them with \`[[wikilinks]]\`, add a "Sources" section and \`source/<slug>\` tag to each touched note. Update frontmatter (\`updated\`, \`sources\`, \`related\`). Log with \`wiki_log_append --kind ingest\`. Refresh index with \`wiki_index_refresh\`.
+**Ingest** — when given a source (URL/paste): find **10–15 related notes** via \`mnotes search\` + \`mnotes kb recall\` — a non-trivial source typically touches 10–15 pages, not 3. Update or create, link them with \`[[wikilinks]]\`, add a "Sources" section and \`source/<slug>\` tag to each touched note. Update frontmatter (\`updated\`, \`sources\`, \`related\`). Log with \`mnotes wiki log-append --kind ingest\`. Refresh index with \`mnotes wiki index-refresh\`.
 
-**Query** — when answering a non-trivial question: search the wiki first; if the answer required real synthesis, file it back as a new note using the appropriate page type (\`concept\`, \`overview\`, etc.). Log with \`wiki_log_append --kind query\`. This is the compounding loop.
+**Query** — when answering a non-trivial question: search the wiki first; if the answer required real synthesis, file it back as a new note using the appropriate page type (\`concept\`, \`overview\`, etc.). Log with \`mnotes wiki log-append --kind query\`. This is the compounding loop.
 
-**Lint** — periodically check for contradictions, orphan notes, broken wikilinks, stale entries. Log findings with \`wiki_log_append --kind lint\`.
+**Lint** — periodically check for contradictions, orphan notes, broken wikilinks, stale entries. Log findings with \`mnotes wiki log-append --kind lint\`.
 
 ## Quick Reference
 
 Store knowledge:
 \`\`\`
-Call knowledge_store with:
-  - workspaceId: "${opts.workspaceId}"
-  - key: "<category>/<name>"
-  - content: "<what you learned>"
-  - tags: ["<category>"]
+mnotes kb store \\
+  --key "<category>/<name>" \\
+  --content "<what you learned>" \\
+  --tags "<category>"
 \`\`\`
 
 Recall knowledge:
 \`\`\`
-Call recall_knowledge with:
-  - workspaceId: "${opts.workspaceId}"
-  - query: "<what you're looking for>"
+mnotes kb recall --query "<what you're looking for>"
 \`\`\`
 
 ## Key Naming Conventions (kb-store fast-capture)
@@ -108,33 +107,24 @@ Call recall_knowledge with:
 
 Every note should link to at least one other. Build the graph proactively:
 \`\`\`
-Call populate_graph with:
-  - workspaceId: "${opts.workspaceId}"
-(initializes from existing notes — idempotent)
-
-Call create_node with:
-  - label: "<concept name>"
-  - nodeType: "concept" (or "note", "tag")
-  - workspaceId: "${opts.workspaceId}"
-
-Call create_edge with:
-  - sourceId: "<node id>"
-  - targetId: "<node id>"
-  - edgeType: "related" (or "parent", "tagged", "custom")
-  - workspaceId: "${opts.workspaceId}"
+mnotes graph populate          # initialize from existing notes (idempotent)
+mnotes graph create-node --label "<concept name>" --node-type concept
+mnotes graph create-edge --source <id> --target <id> --edge-type related
 \`\`\`
 
-## Available MCP Tools
-- \`knowledge_store\` -- Store knowledge
-- \`recall_knowledge\` -- Semantic search
-- \`bulk_knowledge_recall\` -- Recall by tag pattern
-- \`knowledge_snapshot\` -- Export all knowledge
-- \`scan_knowledge_conflicts\` -- Lint: find contradictions
-- \`wiki_log_append\` -- Append ingest/query/lint/decision log entry
-- \`wiki_index_refresh\` -- Regenerate Wiki Index from current notes
-- \`context_fetch\` / \`search_notes\` -- Search notes
-- \`create_note\` / \`update_note\` / \`append_to_note\` -- Note authoring
-- \`populate_graph\` -- Initialize graph
-- \`create_node\` / \`create_edge\` -- Build graph structure
-- \`query_graph\` / \`get_neighbors\` / \`query_note_graph\` -- Explore graph`;
+## Common CLI commands
+- \`mnotes kb store\` -- store knowledge
+- \`mnotes kb recall\` -- semantic search
+- \`mnotes bulk knowledge-recall\` -- recall by tag pattern
+- \`mnotes kb snapshot\` -- export all knowledge
+- \`mnotes kb scan-conflicts\` -- lint: find contradictions
+- \`mnotes wiki log-append\` -- append ingest/query/lint/decision log entry
+- \`mnotes wiki index-refresh\` -- regenerate the Wiki Index from current notes
+- \`mnotes composite context-fetch\` / \`mnotes search\` -- search notes
+- \`mnotes note create\` / \`mnotes note update\` / \`mnotes note-ops append\` -- note authoring
+- \`mnotes graph populate\` -- initialize the graph
+- \`mnotes graph create-node\` / \`mnotes graph create-edge\` -- build graph structure
+- \`mnotes graph query\` / \`mnotes graph neighbors\` / \`mnotes graph query-note\` -- explore the graph
+
+Run \`mnotes <group> --help\` for flags on any command.`;
 }

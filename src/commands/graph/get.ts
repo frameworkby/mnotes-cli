@@ -14,7 +14,6 @@ export const getGraphAction: ActionDescriptor<GetInput, GraphResult> = {
   name: "get",
   describe:
     "Fetch the knowledge graph for a workspace, optionally filtered by label query and node type.",
-  mcpTool: "get_graph",
   args: (cmd: Command) =>
     cmd
       .option("--query <q>", "Filter nodes whose label contains this string")
