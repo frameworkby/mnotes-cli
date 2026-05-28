@@ -14,7 +14,6 @@ export const queryByTypeAction: ActionDescriptor<Input, QueryByTypeResult> = {
   name: "query",
   describe:
     "Query notes by object type. Optionally filter by property values (JSON object). Returns note id, title, objectTypeId, and properties.",
-  mcpTool: "query_by_type",
   positional: ["type"],
   args: (cmd: Command) =>
     cmd

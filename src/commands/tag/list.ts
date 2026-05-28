@@ -9,7 +9,6 @@ interface Input {
 export const listTagsAction: ActionDescriptor<Input, unknown> = {
   name: "list",
   describe: "List all tags in the workspace with usage counts.",
-  mcpTool: "list_tags",
   args: (cmd: Command) => cmd,
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);

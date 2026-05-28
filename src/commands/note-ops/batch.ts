@@ -10,7 +10,6 @@ interface Input {
 export const batchAction: ActionDescriptor<Input, unknown> = {
   name: "batch",
   describe: "Fetch multiple notes by ID (max 50).",
-  mcpTool: "get_notes",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--ids <csv>", "Comma-separated note IDs (max 50)"),

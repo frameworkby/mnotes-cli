@@ -11,7 +11,6 @@ interface Input {
 export const appendAction: ActionDescriptor<Input, unknown> = {
   name: "append",
   describe: "Append content to the end of an existing note.",
-  mcpTool: "append_to_note",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd

@@ -39,7 +39,7 @@ function mockClient(methods: {
 
 // ── tests ─────────────────────────────────────────────────────────────────────
 
-describe("deleteEmptyFoldersAction (mcpTool: delete_empty_folders)", () => {
+describe("deleteEmptyFoldersAction", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

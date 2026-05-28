@@ -11,7 +11,6 @@ export const populateGraphAction: ActionDescriptor<PopulateInput, PopulateGraphR
   name: "populate",
   describe:
     "Populate the graph for a workspace by syncing nodes and edges from notes/wikilinks.",
-  mcpTool: "populate_graph",
   args: (cmd: Command) => cmd,
 
   run: async (input, ctx) => {

@@ -16,7 +16,6 @@ export const listSessionsAction: ActionDescriptor<
   name: "list",
   describe:
     "List recent session traces for the user (paginated). Returns id, sessionLabel, startedAt, endedAt, toolCallCount, and noteIds.",
-  mcpTool: "list_sessions",
   args: (cmd: Command) =>
     cmd
       .option("--limit <n>", "Max results (1-50, default 20)", (v) =>

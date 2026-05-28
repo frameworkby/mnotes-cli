@@ -10,7 +10,6 @@ interface Input {
 export const extractEntitiesAction: ActionDescriptor<Input, unknown> = {
   name: "extract",
   describe: "AI-extract entities (people, projects, concepts, orgs, locations) from a note.",
-  mcpTool: "extract_entities",
   positional: ["noteId"],
   args: (cmd: Command) =>
     cmd

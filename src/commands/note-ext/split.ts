@@ -14,7 +14,6 @@ export const splitNoteAction: ActionDescriptor<Input, SplitNoteResult> = {
   name: "split",
   describe:
     "Use AI to split a long note into 2-10 focused sub-notes. Returns proposed splits without creating them — call create_note separately for each split you want to keep.",
-  mcpTool: "split_note",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd

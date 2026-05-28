@@ -12,7 +12,6 @@ export const suggestTagsAction: ActionDescriptor<Input, SuggestTagsResult> = {
   name: "suggest-tags",
   describe:
     "Suggest up to 5 relevant tags for a note based on semantic similarity. Finds the top-10 most similar notes and returns the most frequent tags across them.",
-  mcpTool: "suggest_tags",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd

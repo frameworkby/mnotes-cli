@@ -16,7 +16,6 @@ export const bulkKnowledgeRecallAction: ActionDescriptor<
   name: "knowledge-recall",
   describe:
     "Recall knowledge entries matching multiple tag patterns in one call. Results are grouped by pattern, sorted by importance then freshness, and deduplicated across groups.",
-  mcpTool: "bulk_knowledge_recall",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--queries <csv>", "Comma-separated tag patterns (1-20)")

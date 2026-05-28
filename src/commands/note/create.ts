@@ -30,7 +30,6 @@ interface CreateOutput {
 export const createNoteAction: ActionDescriptor<CreateInput, CreateOutput> = {
   name: "create",
   describe: "Create a new note",
-  mcpTool: "create_note",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--title <title>", "Note title")

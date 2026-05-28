@@ -10,7 +10,6 @@ interface Input {
 export const unpinAction: ActionDescriptor<Input, unknown> = {
   name: "unpin",
   describe: "Unpin a note.",
-  mcpTool: "unpin_note",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd.argument("<id>", "Note ID"),

@@ -13,7 +13,6 @@ export const bulkMoveAction: ActionDescriptor<Input, BulkOpResult> = {
   name: "move",
   describe:
     "Move multiple notes to a target folder. Returns error if the folder does not exist or is not owned by the caller.",
-  mcpTool: "bulk_move",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--note-ids <csv>", "Comma-separated note IDs (1-100)")

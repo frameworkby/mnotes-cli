@@ -12,7 +12,6 @@ export const conflictsAction: ActionDescriptor<ConflictsInput, ConflictRow[]> = 
   name: "conflicts",
   describe:
     "List previously detected knowledge conflicts. Filter by classification (contradicting, complementary, unrelated, or all).",
-  mcpTool: "get_knowledge_conflicts",
   args: (cmd: Command) =>
     cmd
       .addOption(

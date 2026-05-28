@@ -13,7 +13,6 @@ export const runRecipeAction: ActionDescriptor<Input, RunRecipeResult> = {
   name: "run",
   describe:
     "Run a prompt recipe against a note. Fetches the note content, substitutes {{note_title}} and {{note_content}} placeholders in the recipe template, and returns the AI response.",
-  mcpTool: "run_recipe",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd

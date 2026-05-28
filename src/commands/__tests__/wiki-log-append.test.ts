@@ -32,7 +32,7 @@ function mockAppend(result: { appended: string }) {
 
 // ── tests ─────────────────────────────────────────────────────────────────────
 
-describe("logAppendAction (mcpTool: wiki_log_append)", () => {
+describe("logAppendAction", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

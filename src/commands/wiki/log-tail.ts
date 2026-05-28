@@ -24,7 +24,6 @@ function renderHuman(out: WikiLogTailResult): void {
 export const logTailAction: ActionDescriptor<LogTailInput, WikiLogTailResult> = {
   name: "tail",
   describe: "Show the most recent entries from the wiki activity log.",
-  mcpTool: "wiki_log_tail",
   args: (cmd: Command) =>
     cmd
       .option("--limit <n>", "Number of entries to return (1..200, default 20)")

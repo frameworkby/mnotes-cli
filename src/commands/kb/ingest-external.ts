@@ -35,7 +35,6 @@ export const ingestExternalAction: ActionDescriptor<
   name: "ingest-external",
   describe:
     "Ingest external content (web page, PDF, email, slack, meeting, other) into the knowledge base. If --source-url matches an existing note's provenance, the note is updated; otherwise a new note is created. Content is capped at 100KB.",
-  mcpTool: "ingest_external",
   args: (cmd: Command) =>
     cmd
       .option("--title <title>", "Note title")

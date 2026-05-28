@@ -12,7 +12,6 @@ export const getProvenanceAction: ActionDescriptor<Input, GetProvenanceResult> =
   name: "get-provenance",
   describe:
     "Retrieve the provenance chain for a note — the list of sources where its knowledge originated.",
-  mcpTool: "get_provenance",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd

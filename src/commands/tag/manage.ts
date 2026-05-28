@@ -12,7 +12,6 @@ interface Input {
 export const manageTagsAction: ActionDescriptor<Input, unknown> = {
   name: "manage",
   describe: "Rename, merge, or delete a tag across notes.",
-  mcpTool: "manage_tags",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--op <op>", "rename | merge | delete")

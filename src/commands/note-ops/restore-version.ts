@@ -11,7 +11,6 @@ interface Input {
 export const restoreVersionAction: ActionDescriptor<Input, unknown> = {
   name: "restore-version",
   describe: "Restore a note to a previous version snapshot.",
-  mcpTool: "restore_version",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd

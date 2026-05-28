@@ -11,7 +11,6 @@ interface Input {
 export const setTypeAction: ActionDescriptor<Input, unknown> = {
   name: "set-type",
   describe: "Set the object-type for a note (e.g. 'task', 'meeting').",
-  mcpTool: "set_note_type",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd

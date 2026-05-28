@@ -13,7 +13,6 @@ interface Input {
 export const setupWsAction: ActionDescriptor<Input, unknown> = {
   name: "setup",
   describe: "Create a new workspace from a template (default: remedy-pod).",
-  mcpTool: "setup_workspace",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--name <s>", "Workspace name")

@@ -102,7 +102,7 @@ export function isDigestNote(opts: {
 
 /**
  * Process-local session counter for digest opens. In-memory, resets per
- * process — accurate for long-lived MCP servers; always 1 for short-lived
+ * process — accurate for long-lived processes; always 1 for short-lived
  * `mnotes read` invocations (which is correct: each invocation is session 1).
  */
 let _digestOpenCount = 0;

@@ -14,7 +14,6 @@ export const listSmartFoldersAction: ActionDescriptor<
   name: "list",
   describe:
     "List saved smart folders (saved searches) for the current workspace.",
-  mcpTool: "list_smart_folders",
   args: (cmd: Command) => cmd,
 
   run: async (input, ctx) => {

@@ -11,7 +11,6 @@ export const listRecipesAction: ActionDescriptor<Input, ListRecipesResult> = {
   name: "list",
   describe:
     "List all prompt recipes for the authenticated user. Returns recipe id, name, and description.",
-  mcpTool: "list_recipes",
   args: (cmd: Command) => cmd,
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);

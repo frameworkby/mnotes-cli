@@ -18,7 +18,6 @@ interface GetInput {
 export const getNoteAction: ActionDescriptor<GetInput, Note> = {
   name: "get",
   describe: "Get a note by ID",
-  mcpTool: "get_note",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd
@@ -39,7 +38,7 @@ export const getNoteAction: ActionDescriptor<GetInput, Note> = {
       void sendTelemetryEvent({
         event: "digest_note_opened",
         props: {
-          source: "mcp",
+          source: "cli",
           age_hours: bucketAgeHours(note.createdAt),
           session_index: nextDigestSessionIndex(),
         },

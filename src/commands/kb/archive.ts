@@ -19,7 +19,6 @@ export const archiveAction: ActionDescriptor<ArchiveInput, ArchiveStaleResult> =
     "Key-mode:       --key <key> or --keys <key1>,<key2>,...\n" +
     "Threshold-mode: --max-decay-score <n> --max-importance <n>\n\n" +
     "The two modes are mutually exclusive. Use --dry-run to preview without writing.",
-  mcpTool: "archive_stale_memories",
   args: (cmd: Command) =>
     cmd
       .option("--key <key>", "Archive a single entry by its key")

@@ -24,7 +24,6 @@ export const linkAction: ActionDescriptor<LinkInput, KnowledgeLinkResult> = {
   name: "link",
   describe:
     "Create a typed relationship edge between two knowledge entries (by key or note ID). Useful for declaring supports/contradicts/extends/replaces/depends_on/related links.",
-  mcpTool: "knowledge_link",
   args: (cmd: Command) =>
     cmd
       .addOption(

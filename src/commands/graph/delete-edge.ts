@@ -11,7 +11,6 @@ interface DeleteEdgeInput {
 export const deleteEdgeAction: ActionDescriptor<DeleteEdgeInput, DeleteGraphEntityResult> = {
   name: "delete-edge",
   describe: "Delete a graph edge by ID.",
-  mcpTool: "delete_edge",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd.argument("<id>", "Edge ID"),
