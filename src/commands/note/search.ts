@@ -18,7 +18,6 @@ interface SearchOutput {
 export const searchNotesAction: ActionDescriptor<SearchInput, SearchOutput> = {
   name: "search",
   describe: "Search notes (full-text or semantic)",
-  mcpTool: "search_notes",
   positional: ["query"],
   args: (cmd: Command) =>
     cmd

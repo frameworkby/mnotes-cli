@@ -12,7 +12,6 @@ export const sessionReplayAction: ActionDescriptor<ReplayInput, SessionReplay> =
   name: "replay",
   describe:
     "Fetch a single session trace by ID, including all tool calls, affected note IDs, and timestamps.",
-  mcpTool: "get_session_replay",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd

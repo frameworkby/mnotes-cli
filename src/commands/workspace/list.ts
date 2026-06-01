@@ -15,7 +15,6 @@ interface ListOutput {
 export const listWorkspacesAction: ActionDescriptor<Record<string, never>, ListOutput> = {
   name: "list",
   describe: "List all workspaces",
-  mcpTool: "list_workspaces",
 
   run: async (_input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);

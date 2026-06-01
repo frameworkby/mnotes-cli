@@ -12,7 +12,6 @@ export const suggestTagsLinksAction: ActionDescriptor<Input, SuggestionsResult> 
   name: "suggest-tags-links",
   describe:
     "Get AI-powered tag and wikilink suggestions for a note based on semantic similarity. Uses the note's existing embedding to find similar notes (score >= 0.75).",
-  mcpTool: "suggest_tags_links",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd

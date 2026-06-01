@@ -12,7 +12,6 @@ export const frontmatterSetAction: ActionDescriptor<Input, unknown> = {
   name: "frontmatter-set",
   describe:
     'Set/merge YAML frontmatter fields. --fields is a JSON object, e.g. \'{"status":"draft"}\'.',
-  mcpTool: "set_note_frontmatter",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd

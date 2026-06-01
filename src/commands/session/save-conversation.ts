@@ -13,7 +13,6 @@ export const saveConversationAction: ActionDescriptor<Input, unknown> = {
   name: "save-conversation",
   describe:
     'Save an AI conversation transcript as a new note. Pass --messages as a JSON array, e.g. \'[{"role":"user","content":"hi"}]\'.',
-  mcpTool: "save_conversation",
   args: (cmd: Command) =>
     cmd
       .requiredOption(

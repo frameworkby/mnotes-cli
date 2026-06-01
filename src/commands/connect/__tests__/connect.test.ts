@@ -5,10 +5,9 @@ import * as path from "path";
 import * as os from "os";
 import { registerConnectCommand, INTEGRATION_TARGETS } from "../index";
 import {
-  readMcpJson,
-  writeMcpJson,
   readClaudeMdBlock,
   writeClaudeMdBlock,
+  writeInstructionBlock,
   detectConnectedAgents,
 } from "../config-utils";
 import { generateCodexTemplate } from "../../../templates/codex";
@@ -128,15 +127,11 @@ describe("mnotes connect --status", () => {
     expect(output).toContain("not connected");
   });
 
-  it("detects openclaw from openclaw-mnotes server in .mcp.json", async () => {
-    fs.writeFileSync(
-      path.join(tmpDir, ".mcp.json"),
-      JSON.stringify({
-        mcpServers: {
-          "openclaw-mnotes": { url: "http://localhost:3000/api/mcp" },
-        },
-      }),
-      "utf-8"
+  it("detects openclaw from the m-notes block in instructions.md", async () => {
+    writeInstructionBlock(
+      tmpDir,
+      "instructions.md",
+      "**Server**: http://localhost:3000\n**Workspace**: ws-1",
     );
 
     const program = new Command();
@@ -156,7 +151,7 @@ describe("mnotes connect --status", () => {
     }
 
     expect(output).toMatch(/openclaw\s+connected/);
-    expect(output).toContain("http://localhost:3000/api/mcp");
+    expect(output).toContain("http://localhost:3000");
   });
 });
 
@@ -218,75 +213,6 @@ describe("mnotes connect flags", () => {
 });
 
 // =============================================================
-// Config utilities — readMcpJson / writeMcpJson
-// =============================================================
-describe("config-utils: .mcp.json", () => {
-  let tmpDir: string;
-
-  beforeEach(() => {
-    tmpDir = makeTmpDir();
-  });
-
-  afterEach(() => {
-    cleanTmpDir(tmpDir);
-  });
-
-  it("readMcpJson returns exists=false when file missing", () => {
-    const result = readMcpJson(tmpDir);
-    expect(result.exists).toBe(false);
-    expect(result.config).toBeNull();
-  });
-
-  it("readMcpJson parses valid .mcp.json", () => {
-    fs.writeFileSync(
-      path.join(tmpDir, ".mcp.json"),
-      JSON.stringify({ mcpServers: { test: { url: "http://test" } } }),
-      "utf-8"
-    );
-    const result = readMcpJson(tmpDir);
-    expect(result.exists).toBe(true);
-    expect(result.config?.mcpServers?.test?.url).toBe("http://test");
-  });
-
-  it("readMcpJson returns error for invalid JSON", () => {
-    fs.writeFileSync(path.join(tmpDir, ".mcp.json"), "not json{", "utf-8");
-    const result = readMcpJson(tmpDir);
-    expect(result.exists).toBe(true);
-    expect(result.config).toBeNull();
-    expect(result.error).toContain("Failed to parse");
-  });
-
-  it("writeMcpJson creates file when missing", () => {
-    writeMcpJson(tmpDir, { "m-notes": { url: "http://localhost:3000/api/mcp" } });
-    const content = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, ".mcp.json"), "utf-8")
-    );
-    expect(content.mcpServers["m-notes"].url).toBe(
-      "http://localhost:3000/api/mcp"
-    );
-  });
-
-  it("writeMcpJson merges into existing file", () => {
-    fs.writeFileSync(
-      path.join(tmpDir, ".mcp.json"),
-      JSON.stringify({
-        mcpServers: { existing: { url: "http://other" } },
-      }),
-      "utf-8"
-    );
-
-    writeMcpJson(tmpDir, { "m-notes": { url: "http://localhost:3000/api/mcp" } });
-    const content = JSON.parse(
-      fs.readFileSync(path.join(tmpDir, ".mcp.json"), "utf-8")
-    );
-    expect(content.mcpServers.existing.url).toBe("http://other");
-    expect(content.mcpServers["m-notes"].url).toBe(
-      "http://localhost:3000/api/mcp"
-    );
-  });
-});
-
-// =============================================================
 // Config utilities — CLAUDE.md block
 // =============================================================
 describe("config-utils: CLAUDE.md block", () => {
@@ -330,10 +256,10 @@ describe("config-utils: CLAUDE.md block", () => {
   });
 
   it("writeClaudeMdBlock creates file with block when missing", () => {
-    writeClaudeMdBlock(tmpDir, "Use m-notes MCP server at http://localhost:3000");
+    writeClaudeMdBlock(tmpDir, "Use the mnotes CLI against http://localhost:3000");
     const content = fs.readFileSync(path.join(tmpDir, "CLAUDE.md"), "utf-8");
     expect(content).toContain("<!-- m-notes:start -->");
-    expect(content).toContain("Use m-notes MCP server at http://localhost:3000");
+    expect(content).toContain("Use the mnotes CLI against http://localhost:3000");
     expect(content).toContain("<!-- m-notes:end -->");
   });
 
@@ -371,37 +297,29 @@ describe("config-utils: detectConnectedAgents", () => {
     expect(agents.get("openclaw")?.connected).toBe(false);
   });
 
-  it("detects codex from .mcp.json m-notes server", () => {
-    fs.writeFileSync(
-      path.join(tmpDir, ".mcp.json"),
-      JSON.stringify({
-        mcpServers: {
-          "m-notes": { url: "https://notes.example.com/api/mcp" },
-        },
-      }),
-      "utf-8"
+  it("detects codex from the m-notes block in AGENTS.md", () => {
+    writeInstructionBlock(
+      tmpDir,
+      "AGENTS.md",
+      "Server: https://notes.example.com\nWorkspace: ws-1",
     );
 
     const agents = detectConnectedAgents(tmpDir);
     expect(agents.get("codex")?.connected).toBe(true);
-    expect(agents.get("codex")?.url).toBe("https://notes.example.com/api/mcp");
+    expect(agents.get("codex")?.url).toBe("https://notes.example.com");
     expect(agents.get("openclaw")?.connected).toBe(false);
   });
 
-  it("detects openclaw from openclaw-mnotes server in .mcp.json", () => {
-    fs.writeFileSync(
-      path.join(tmpDir, ".mcp.json"),
-      JSON.stringify({
-        mcpServers: {
-          "openclaw-mnotes": { url: "https://notes.example.com/api/mcp" },
-        },
-      }),
-      "utf-8"
+  it("detects openclaw from the m-notes block in instructions.md", () => {
+    writeInstructionBlock(
+      tmpDir,
+      "instructions.md",
+      "**Server**: https://notes.example.com\n**Workspace**: ws-1",
     );
 
     const agents = detectConnectedAgents(tmpDir);
     expect(agents.get("openclaw")?.connected).toBe(true);
-    expect(agents.get("openclaw")?.url).toBe("https://notes.example.com/api/mcp");
+    expect(agents.get("openclaw")?.url).toBe("https://notes.example.com");
   });
 });
 
@@ -428,10 +346,10 @@ describe("generateCodexTemplate", () => {
     expect(result).toContain("Session Start");
     expect(result).toContain("Session End");
     expect(result).toContain("During Work");
-    expect(result).toContain("project_context_load");
-    expect(result).toContain("session_context_resume");
-    expect(result).toContain("knowledge_store");
-    expect(result).toContain("session_log");
+    expect(result).toContain("mnotes composite project-load");
+    expect(result).toContain("mnotes session resume");
+    expect(result).toContain("mnotes kb store");
+    expect(result).toContain("mnotes session log");
   });
 
   it("includes all six key naming conventions (AC-6.2 / AC-6.3)", () => {
@@ -448,25 +366,25 @@ describe("generateCodexTemplate", () => {
     expect(result).toContain("context/{area}");
   });
 
-  it("includes all available MCP tools (AC-6.3)", () => {
+  it("includes the common CLI commands (AC-6.3)", () => {
     const result = generateCodexTemplate({
       url: "http://localhost:3000",
       workspaceId: "ws-test",
     });
 
-    const expectedTools = [
-      "project_context_load",
-      "session_context_resume",
-      "knowledge_store",
-      "recall_knowledge",
-      "bulk_knowledge_recall",
-      "knowledge_snapshot",
-      "session_log",
-      "context_fetch",
+    const expectedCommands = [
+      "mnotes composite project-load",
+      "mnotes session resume",
+      "mnotes kb store",
+      "mnotes kb recall",
+      "mnotes bulk knowledge-recall",
+      "mnotes kb snapshot",
+      "mnotes session log",
+      "mnotes composite context-fetch",
     ];
 
-    for (const tool of expectedTools) {
-      expect(result).toContain(tool);
+    for (const cmd of expectedCommands) {
+      expect(result).toContain(cmd);
     }
   });
 });
@@ -485,14 +403,14 @@ describe("generateOpenClawTemplate", () => {
     expect(result).toContain("ws-abc-123");
   });
 
-  it("focuses on knowledge_store and recall_knowledge (AC-6.4)", () => {
+  it("focuses on kb store and kb recall (AC-6.4)", () => {
     const result = generateOpenClawTemplate({
       url: "http://localhost:3000",
       workspaceId: "ws-test",
     });
 
-    expect(result).toContain("knowledge_store");
-    expect(result).toContain("recall_knowledge");
+    expect(result).toContain("mnotes kb store");
+    expect(result).toContain("mnotes kb recall");
   });
 
   it("includes key naming conventions", () => {

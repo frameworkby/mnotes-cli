@@ -17,7 +17,6 @@ function renderHuman(out: WikiIndexRefreshResult): void {
 export const indexRefreshAction: ActionDescriptor<IndexRefreshInput, WikiIndexRefreshResult> = {
   name: "refresh",
   describe: "Rebuild the wiki index.md from current workspace notes.",
-  mcpTool: "wiki_index_refresh",
   args: (cmd: Command) => cmd.option("--json", "Emit full JSON envelope"),
 
   run: async (input, ctx) => {

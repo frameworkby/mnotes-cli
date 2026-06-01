@@ -12,7 +12,6 @@ interface Input {
 export const starAction: ActionDescriptor<Input, unknown> = {
   name: "star",
   describe: "Star or unstar a note (default: star). Pass --no-starred to unstar.",
-  mcpTool: "toggle_star",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd

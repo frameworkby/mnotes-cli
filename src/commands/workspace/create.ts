@@ -20,7 +20,6 @@ interface CreateOutput {
 export const createWorkspaceAction: ActionDescriptor<CreateInput, CreateOutput> = {
   name: "create",
   describe: "Create a new workspace",
-  mcpTool: "create_workspace",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--name <name>", "Workspace name")

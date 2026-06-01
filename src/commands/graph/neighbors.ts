@@ -14,7 +14,6 @@ export const neighborsAction: ActionDescriptor<NeighborsInput, GraphResult> = {
   name: "neighbors",
   describe:
     "Fetch graph neighbors of a node up to a given depth (BFS, distinct nodes).",
-  mcpTool: "get_neighbors",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--node-id <id>", "Start node ID")

@@ -17,7 +17,6 @@ export const listTimelineAction: ActionDescriptor<
   name: "list",
   describe:
     "List notes by creation date (newest first). Optionally filter by ISO date range and limit (max 200, default 100).",
-  mcpTool: "list_timeline",
   args: (cmd: Command) =>
     cmd
       .option("--from <iso>", "Lower bound ISO datetime (inclusive)")

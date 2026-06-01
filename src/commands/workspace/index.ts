@@ -39,7 +39,7 @@ export function registerWorkspaceGroup(program: Command): void {
   ]);
 
   // Attach legacy local-config commands to the workspace group. These do not
-  // map to MCP tools and stay outside the parity registry on purpose — they
+  // are composite helpers and stay outside the registry on purpose — they
   // manage *client-side* directory/global mappings, not server state.
   const ws = program.commands.find((c: Command) => c.name() === "workspace");
   if (!ws) return;

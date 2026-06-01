@@ -16,7 +16,6 @@ export const decayAction: ActionDescriptor<DecayInput, DecayEntry[]> = {
   name: "decay",
   describe:
     "Find stale knowledge entries based on time-based decay scoring. Decay score = min(1.0, daysSinceUpdate / decayWindow). Score 0 = fresh, 1 = fully stale. Useful for prioritizing fresh information and flagging entries needing review.",
-  mcpTool: "knowledge_decay",
   args: (cmd: Command) =>
     cmd
       .option("--threshold <n>", "Min decay score 0.0–1.0 (default 0.5)", (v) =>

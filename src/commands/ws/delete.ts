@@ -10,7 +10,6 @@ interface Input {
 export const deleteWsAction: ActionDescriptor<Input, unknown> = {
   name: "delete",
   describe: "Delete a workspace (owner only). Destructive — use with care.",
-  mcpTool: "delete_workspace",
   positional: ["id"],
   args: (cmd: Command) => cmd.argument("<id>", "Workspace ID"),
   run: async (input, ctx) => {

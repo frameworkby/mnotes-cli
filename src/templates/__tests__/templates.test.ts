@@ -12,8 +12,8 @@ const openclaw = generateOpenClawTemplate(opts);
 // ============================================================
 
 describe("generateCodexTemplate: version marker", () => {
-  it("contains v7 marker", () => {
-    expect(codex).toContain("<!-- m-notes instructions v7 -->");
+  it("contains v8 marker", () => {
+    expect(codex).toContain("<!-- m-notes instructions v8 -->");
   });
 });
 
@@ -81,8 +81,8 @@ describe("generateCodexTemplate: human/LLM division", () => {
 // ============================================================
 
 describe("generateOpenClawTemplate: version marker", () => {
-  it("contains v7 marker", () => {
-    expect(openclaw).toContain("<!-- m-notes instructions v7 -->");
+  it("contains v8 marker", () => {
+    expect(openclaw).toContain("<!-- m-notes instructions v8 -->");
   });
 });
 

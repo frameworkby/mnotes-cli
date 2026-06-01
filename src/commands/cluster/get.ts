@@ -11,7 +11,6 @@ export const getClustersAction: ActionDescriptor<GetClustersInput, ClusterResult
   name: "get",
   describe:
     "Return cached k-means clusters of notes by embedding (computed via the /clusters page).",
-  mcpTool: "get_clusters",
   args: (cmd: Command) => cmd,
 
   run: async (input, ctx) => {

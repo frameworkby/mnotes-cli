@@ -9,7 +9,6 @@ interface Input {
 export const contextAction: ActionDescriptor<Input, unknown> = {
   name: "context",
   describe: "Workspace overview: folder tree, recent notes, top tags.",
-  mcpTool: "get_workspace_context",
   args: (cmd: Command) => cmd,
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);

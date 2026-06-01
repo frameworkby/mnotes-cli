@@ -30,7 +30,6 @@ function parseMetadata(json?: string): Record<string, unknown> | undefined {
 export const createEdgeAction: ActionDescriptor<CreateEdgeInput, GraphEdgeRecord> = {
   name: "create-edge",
   describe: "Create a directed edge between two graph nodes.",
-  mcpTool: "create_edge",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--source-id <id>", "Source node ID")

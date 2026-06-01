@@ -16,7 +16,6 @@ export const snapshotAction: ActionDescriptor<
   name: "snapshot",
   describe:
     "Export a snapshot of all knowledge entries in the workspace as JSON (default) or markdown. Optionally filter by tags.",
-  mcpTool: "knowledge_snapshot",
   args: (cmd: Command) =>
     cmd
       .option("--tags <csv>", "Comma-separated tags filter")

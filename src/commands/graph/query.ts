@@ -17,7 +17,6 @@ export const queryGraphAction: ActionDescriptor<QueryInput, GraphResult> = {
   name: "query",
   describe:
     "Advanced graph query: filter nodes by type/label, edges by type, or expand from a connected node.",
-  mcpTool: "query_graph",
   args: (cmd: Command) =>
     cmd
       .option("--node-type <t>", "Filter by node type")

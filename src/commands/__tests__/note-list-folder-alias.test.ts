@@ -33,7 +33,7 @@ function mockListNotes(data: unknown[] = []) {
 
 // ── tests ─────────────────────────────────────────────────────────────────────
 
-describe("listAction (mcpTool: list_notes) — --folder alias", () => {
+describe("listAction — --folder alias", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -78,7 +78,7 @@ describe("listAction (mcpTool: list_notes) — --folder alias", () => {
     );
   });
 
-  it("returns notes and nextCursor in MCP shape", async () => {
+  it("returns notes and nextCursor in the documented CLI shape", async () => {
     const notes = [
       { id: "n-1", title: "Note One", updatedAt: new Date().toISOString() },
     ];

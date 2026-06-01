@@ -11,7 +11,6 @@ interface Input {
 export const projectLoadAction: ActionDescriptor<Input, unknown> = {
   name: "project-load",
   describe: "Composite tool: load project context (folder summary + recent notes + memory recall) in one call.",
-  mcpTool: "project_context_load",
   args: (cmd: Command) =>
     cmd
       .option("--query <s>", "Optional semantic query")

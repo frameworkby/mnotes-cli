@@ -16,7 +16,6 @@ export const storeAction: ActionDescriptor<StoreInput, KnowledgeStoreResult> = {
   name: "store",
   describe:
     "Store a structured knowledge entry (fact, decision, or context) that persists across sessions. Creates a new entry when the key is new, or updates the existing entry when the key already exists for the user+workspace. Knowledge entries are searchable via search_notes but hidden from the UI sidebar.",
-  mcpTool: "knowledge_store",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--key <key>", "Unique identifier for this entry")

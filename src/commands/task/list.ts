@@ -15,7 +15,6 @@ export const listTasksAction: ActionDescriptor<ListTasksInput, TaskItem[]> = {
   name: "list",
   describe:
     "Extract markdown checkboxes (tasks) from notes. Returns each checkbox with its note, line number, text, and completion status. Filterable by status (open/done/all), tag, or specific noteId.",
-  mcpTool: "list_tasks",
   args: (cmd: Command) =>
     cmd
       .option(

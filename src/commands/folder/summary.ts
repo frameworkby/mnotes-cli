@@ -8,10 +8,9 @@ interface SummaryInput {
 
 export const folderSummaryAction: ActionDescriptor<SummaryInput, unknown> = {
   name: "summary",
-  // Mirrored verbatim from MCP `get_workspace_summary` description.
+  // Mirrored verbatim from the API `get_workspace_summary` description.
   describe:
     "Get a high-level workspace overview: total notes and folders, nested folder tree with note counts, recent activity (last 5 modified notes), top 20 tags by usage, and note counts per type. Useful for AI agent orientation in an unfamiliar workspace.",
-  mcpTool: "get_workspace_summary",
   args: (cmd: Command) => cmd,
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);

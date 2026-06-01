@@ -14,7 +14,6 @@ export const generateMocAction: ActionDescriptor<GenerateMocInput, MocResult> = 
   name: "generate",
   describe:
     "Generate a Map of Content (MoC) note for a folder or tag. Notes are ordered by embedding similarity and each line is a wikilink with a one-sentence description. Re-running updates the existing MoC.",
-  mcpTool: "generate_moc",
   args: (cmd: Command) =>
     cmd
       .requiredOption(

@@ -17,7 +17,6 @@ export const sessionResumeAction: ActionDescriptor<
   name: "resume",
   describe:
     "Resume context from a previous session. Returns decisions, actions, tool-call summary, and (by default) affected notes for the most recent session, or a specified one.",
-  mcpTool: "session_context_resume",
   args: (cmd: Command) =>
     cmd
       .option("--session-id <id>", "Session ID (defaults to most recent)")

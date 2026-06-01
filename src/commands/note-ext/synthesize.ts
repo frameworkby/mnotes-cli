@@ -13,7 +13,6 @@ export const synthesizeAction: ActionDescriptor<Input, SynthesizeNotesResult> = 
   name: "synthesize",
   describe:
     "Synthesize multiple notes into a single markdown document with wikilink citations. Accepts 2-20 note IDs, fetches their content, and generates a structured synthesis.",
-  mcpTool: "synthesize_notes",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--note-ids <csv>", "Comma-separated note IDs (2-20)")

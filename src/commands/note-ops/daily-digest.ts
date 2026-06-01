@@ -10,7 +10,6 @@ interface Input {
 export const dailyDigestAction: ActionDescriptor<Input, unknown> = {
   name: "daily-digest",
   describe: "Summary of notes touched on a date (default: today).",
-  mcpTool: "daily_digest",
   args: (cmd: Command) =>
     cmd
       .option("--date <s>", "ISO date YYYY-MM-DD (default: today)"),

@@ -17,7 +17,6 @@ export const createSmartFolderAction: ActionDescriptor<
   name: "create",
   describe:
     "Create a smart folder (saved search) with a name, query, and search mode (fulltext or semantic).",
-  mcpTool: "create_smart_folder",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--name <name>", "Smart folder name")

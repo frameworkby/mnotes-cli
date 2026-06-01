@@ -4,8 +4,8 @@ import { printJson } from "../output";
 /**
  * Context passed to every action handler. Provides resolved global flags,
  * config, and a hint for whether the user wants JSON output. Action handlers
- * return a plain object (the MCP-shaped JSON); the wrapper either prints it
- * as JSON or hands it to a human-format renderer.
+ * return a plain object; the wrapper either prints it as JSON or hands it to a
+ * human-format renderer.
  *
  * Caller restriction: `registerGroup` is intended to be invoked against the
  * root `program` (the one created in `buildProgram`). Nested usage is not
@@ -37,33 +37,29 @@ export interface ActionDescriptor<TInput = Record<string, unknown>, TOutput = un
   positional?: string[];
   /** Optional configurator for positional args / options. */
   args?: (cmd: Command) => Command;
-  /** Name of the corresponding MCP tool, e.g. `list_notes`. Used by parity. */
-  mcpTool: string;
   /**
    * Optional aliases registered as hidden top-level commands so legacy flat
    * commands (e.g. `mnotes list`) keep working after migration.
    */
   aliases?: string[];
-  /** Action handler — returns the MCP-shaped JSON payload. */
+  /** Action handler — returns the JSON payload. */
   run: (input: TInput, ctx: ActionContext) => Promise<TOutput>;
   /** Optional human-readable renderer; falls back to `printJson` when absent.
    * The framework always passes `input` so renderers can gate output on flags
-   * without leaking CLI state into the JSON/MCP payload.  Existing renderers
+   * without leaking CLI state into the JSON payload.  Existing renderers
    * that ignore the second arg keep working. */
   renderHuman?: (output: TOutput, input?: TInput) => void;
 }
 
 /**
- * In-process registry of every action that has been registered. Used by
- * `mnotes parity` to compare the CLI surface against the MCP manifest without
- * shelling out.
+ * In-process registry of every action that has been registered. Used to
+ * detect duplicate command registrations.
  */
 export interface RegisteredAction {
   group: string;
   action: string;
   /** Full command path the user types, e.g. `note list`. */
   commandPath: string;
-  mcpTool: string;
   aliases: string[];
 }
 
@@ -156,7 +152,6 @@ export function registerGroup(
       group,
       action: action.name,
       commandPath: `${group} ${action.name}`,
-      mcpTool: action.mcpTool,
       aliases: action.aliases ?? [],
     });
 

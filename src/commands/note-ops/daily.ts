@@ -10,7 +10,6 @@ interface Input {
 export const dailyAction: ActionDescriptor<Input, unknown> = {
   name: "daily",
   describe: "Create or open the daily note for a date (default: today).",
-  mcpTool: "daily_note",
   args: (cmd: Command) =>
     cmd
       .option("--date <s>", "ISO date YYYY-MM-DD (default: today)"),

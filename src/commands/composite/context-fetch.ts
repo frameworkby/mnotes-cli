@@ -15,7 +15,6 @@ export const contextFetchAction: ActionDescriptor<Input, unknown> = {
   name: "context-fetch",
   describe:
     "Token-budgeted hybrid retrieval: returns the most relevant notes for a query within a token budget.",
-  mcpTool: "context_fetch",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--query <s>", "Search query")

@@ -64,7 +64,6 @@ function attachLeaf<TInput, TOutput>(
     group: groupPath,
     action: action.name,
     commandPath: `${groupPath} ${action.name}`,
-    mcpTool: action.mcpTool,
     aliases: action.aliases ?? [],
   });
 }

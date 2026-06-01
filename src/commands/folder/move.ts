@@ -12,10 +12,9 @@ interface MoveInput {
 
 export const moveFolderAction: ActionDescriptor<MoveInput, FolderRecord> = {
   name: "move",
-  // Mirrored verbatim from MCP `move_folder` description.
+  // Mirrored verbatim from the API `move_folder` description.
   describe:
     "Change a folder's parent. Set parentId to null to move to root level. Cannot move the root folder. Maximum nesting depth is 1.",
-  mcpTool: "move_folder",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd

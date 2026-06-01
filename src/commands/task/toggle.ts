@@ -18,7 +18,6 @@ export const toggleTaskAction: ActionDescriptor<
   name: "toggle",
   describe:
     "Toggle a markdown checkbox in a note between done and undone. Uses the line number reported by `task list` (1-based).",
-  mcpTool: "toggle_task",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--note-id <id>", "Note ID containing the task")

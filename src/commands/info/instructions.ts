@@ -10,8 +10,7 @@ interface Input {
 
 export const instructionsAction: ActionDescriptor<Input, unknown> = {
   name: "instructions",
-  describe: "Generate setup instructions for an MCP-capable AI client (claude-code, claude-desktop, cursor, windsurf, vscode-copilot, generic).",
-  mcpTool: "generate_agent_instructions",
+  describe: "Generate setup instructions for an AI client (claude-code, claude-desktop, cursor, windsurf, vscode-copilot, generic).",
   args: (cmd: Command) =>
     cmd
       .option("--client <s>", "Target client")

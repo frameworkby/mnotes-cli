@@ -23,7 +23,6 @@ export const logAppendAction: ActionDescriptor<LogAppendInput, WikiLogAppendResu
   name: "append",
   describe:
     "Append an entry to the wiki activity log. Kind must be one of: ingest, query, lint, decision.",
-  mcpTool: "wiki_log_append",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--kind <kind>", "Entry kind: ingest, query, lint, decision")

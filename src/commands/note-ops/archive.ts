@@ -10,7 +10,6 @@ interface Input {
 export const archiveAction: ActionDescriptor<Input, unknown> = {
   name: "archive",
   describe: "Archive a note (soft-delete; recoverable).",
-  mcpTool: "archive_note",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd.argument("<id>", "Note ID"),

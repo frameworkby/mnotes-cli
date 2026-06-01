@@ -56,13 +56,13 @@ function mockGetNote(note: ReturnType<typeof makeNote>) {
 
 // ── tests ─────────────────────────────────────────────────────────────────────
 
-describe("getNoteAction (mcpTool: get_note) — digest telemetry", () => {
+describe("getNoteAction — digest telemetry", () => {
   beforeEach(() => {
     sendTelemetrySpy.mockClear();
     telemetryModule._resetDigestCounter();
   });
 
-  it("fires digest telemetry with source 'mcp' when note matches digest pattern", async () => {
+  it("fires digest telemetry with source 'cli' when note matches digest pattern", async () => {
     const createdAt = new Date(Date.now() - 10 * 3_600_000).toISOString(); // 10 hours ago
     mockGetNote(makeNote({ title: "Daily Digest — 2026-05-01", createdAt }));
 
@@ -73,7 +73,7 @@ describe("getNoteAction (mcpTool: get_note) — digest telemetry", () => {
     expect(call).toMatchObject({
       event: "digest_note_opened",
       props: {
-        source: "mcp",
+        source: "cli",
         age_hours: "6-24",
         session_index: 1,
       },

@@ -15,12 +15,11 @@ export const folderSearchTagsAction: ActionDescriptor<
   TaggedNoteItem[]
 > = {
   name: "search-tags",
-  // Mirrored verbatim from MCP `search_by_tags` description.
+  // Mirrored verbatim from the API `search_by_tags` description.
   describe:
     'Find notes matching given tags. Use match="any" (default) to find notes with at least one of the tags, or match="all" to find notes that have every specified tag.',
-  // Mounted under `folder` to match the MCP grouping (folder-tools.ts owns this
+  // Mounted under `folder` to match the command grouping (folder-tools.ts owns this
   // tool even though it returns notes). Operator-confirmed naming choice.
-  mcpTool: "search_by_tags",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--tags <list>", "Comma-separated tags (at least one)")

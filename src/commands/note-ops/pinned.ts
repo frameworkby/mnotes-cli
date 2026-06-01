@@ -9,7 +9,6 @@ interface Input {
 export const pinnedAction: ActionDescriptor<Input, unknown> = {
   name: "pinned",
   describe: "List pinned notes for the workspace.",
-  mcpTool: "list_pinned",
   args: (cmd: Command) => cmd,
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);

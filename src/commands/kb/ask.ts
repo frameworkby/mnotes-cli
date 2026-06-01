@@ -13,7 +13,6 @@ export const askAction: ActionDescriptor<AskInput, AskResult> = {
   name: "ask",
   describe:
     "Ask a natural-language question against the knowledge base. Returns an answer with confidence score and supporting source excerpts.",
-  mcpTool: "ask_notes",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--question <q>", "The question to ask")

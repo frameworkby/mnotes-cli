@@ -37,7 +37,6 @@ interface DeleteOutput {
 export const deleteNoteAction: ActionDescriptor<DeleteInput, DeleteOutput> = {
   name: "delete",
   describe: "Delete a note",
-  mcpTool: "delete_note",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd

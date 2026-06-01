@@ -163,7 +163,6 @@ export const lintAction: ActionDescriptor<LintInput, WikiLintResult> = {
     "Use --checks to subset. By default, archived notes and system-generated notes (Wiki Activity Log, Wiki Index) " +
     "are excluded from the orphans list. Pass --include-archived or --include-system to opt back in. " +
     "Pass --notes-only to exclude kb entries (notes with a key) from all lint categories.",
-  mcpTool: "wiki_lint",
   args: (cmd: Command) =>
     cmd
       .option(

@@ -11,7 +11,6 @@ interface BacklinksInput {
 export const backlinksAction: ActionDescriptor<BacklinksInput, BacklinkNote[]> = {
   name: "backlinks",
   describe: "List notes that wikilink to the given note.",
-  mcpTool: "get_backlinks",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd.argument("<id>", "Note ID"),

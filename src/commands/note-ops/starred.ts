@@ -9,7 +9,6 @@ interface Input {
 export const starredAction: ActionDescriptor<Input, unknown> = {
   name: "starred",
   describe: "List starred notes for the workspace.",
-  mcpTool: "list_starred",
   args: (cmd: Command) => cmd,
   run: async (input, ctx) => {
     const config = resolveConfig(ctx.globalOpts);

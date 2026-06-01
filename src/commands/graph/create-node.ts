@@ -29,7 +29,6 @@ function parseMetadata(json?: string): Record<string, unknown> | undefined {
 export const createNodeAction: ActionDescriptor<CreateNodeInput, GraphNodeRecord> = {
   name: "create-node",
   describe: "Create a new graph node (note | tag | concept) in a workspace.",
-  mcpTool: "create_node",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--label <s>", "Node label")

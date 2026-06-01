@@ -14,7 +14,6 @@ export const ingestAction: ActionDescriptor<IngestInput, KnowledgeIngestRow[]> =
   name: "ingest",
   describe:
     "Batch-import multiple knowledge entries in one call (max 50). Each entry is upserted by key — created if new, updated if the key already exists. All entries are validated before any writes; if any entry is invalid the entire batch is rejected.",
-  mcpTool: "knowledge_ingest",
   args: (cmd: Command) =>
     cmd
       .option(

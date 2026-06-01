@@ -13,7 +13,6 @@ export const setImportanceAction: ActionDescriptor<Input, SetImportanceResult> =
   name: "set-importance",
   describe:
     "Set the importance score for a knowledge entry or note. Importance influences retrieval ranking in recall_knowledge — higher importance entries surface first.",
-  mcpTool: "set_importance",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd

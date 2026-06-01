@@ -12,7 +12,6 @@ export const statsAction: ActionDescriptor<StatsInput, KbStats> = {
   name: "stats",
   describe:
     "Get knowledge base statistics: total notes, total tags, orphan count, stale count, conflict count, and embedding coverage.",
-  mcpTool: "get_kb_stats",
   args: (cmd: Command) =>
     cmd.option(
       "--show-missing",

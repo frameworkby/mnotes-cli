@@ -65,7 +65,7 @@ function mockClient(methods: {
 
 // ── tests ─────────────────────────────────────────────────────────────────────
 
-describe("manageFoldersAction (mcpTool: manage_folders)", () => {
+describe("manageFoldersAction", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

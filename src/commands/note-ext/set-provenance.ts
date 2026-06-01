@@ -17,7 +17,6 @@ export const setProvenanceAction: ActionDescriptor<Input, SetProvenanceResult> =
   name: "set-provenance",
   describe:
     "Append a provenance entry to a note, recording where the knowledge originated. Each entry has a source type (url, mcp_tool, conversation, manual) and a reference string.",
-  mcpTool: "set_provenance",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd

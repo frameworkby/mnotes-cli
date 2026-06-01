@@ -11,7 +11,6 @@ interface Input {
 export const noteSummaryAction: ActionDescriptor<Input, unknown> = {
   name: "note-summary",
   describe: "AI-generated short summary of a note.",
-  mcpTool: "note_summary",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd

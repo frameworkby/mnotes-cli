@@ -28,7 +28,6 @@ interface UpdateOutput {
 export const updateNoteAction: ActionDescriptor<UpdateInput, UpdateOutput> = {
   name: "update",
   describe: "Update a note",
-  mcpTool: "update_note",
   positional: ["id"],
   args: (cmd: Command) =>
     cmd

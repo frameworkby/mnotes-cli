@@ -35,7 +35,6 @@ export const checkIngestedAction: ActionDescriptor<
   name: "check-ingested",
   describe:
     "Check which external source URLs have already been ingested into the knowledge base. Returns one row per unique input URL with status 'exists' or 'not_found'.",
-  mcpTool: "check_ingested_sources",
   args: (cmd: Command) =>
     cmd
       .option("--urls <csv>", "Comma-separated list of source URLs to check")

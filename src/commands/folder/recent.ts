@@ -11,12 +11,11 @@ interface RecentInput {
 
 export const folderRecentAction: ActionDescriptor<RecentInput, RecentNoteItem[]> = {
   name: "recent",
-  // Mirrored verbatim from MCP `get_recent_notes` description.
+  // Mirrored verbatim from the API `get_recent_notes` description.
   describe:
     "Get notes modified since a given timestamp. Returns notes sorted by updatedAt descending.",
-  // Mounted under `folder` to match the MCP grouping (folder-tools.ts owns this
+  // Mounted under `folder` to match the command grouping (folder-tools.ts owns this
   // tool even though it returns notes). Operator-confirmed naming choice.
-  mcpTool: "get_recent_notes",
   args: (cmd: Command) =>
     cmd
       .requiredOption("--since <iso>", "ISO 8601 datetime string")

@@ -16,10 +16,9 @@ interface ListOutput {
 
 export const listFoldersAction: ActionDescriptor<ListInput, ListOutput> = {
   name: "list",
-  // Mirrored verbatim from MCP `list_folders` description.
+  // Mirrored verbatim from the API `list_folders` description.
   describe:
     "List folders for the authenticated user with their hierarchy (parent-child relationships) and note counts. Supports cursor-based pagination.",
-  mcpTool: "list_folders",
   args: (cmd: Command) =>
     cmd
       .option("--cursor <cursor>", "Pagination cursor")
