@@ -54,7 +54,7 @@ Skip any step and the wiki degrades.
 
 **Session Start (before ANY work):**
 - [ ] \`mnotes kb recall --query "<the user's topic>"\`
-- [ ] \`mnotes search "<related terms>"\`
+- [ ] \`mnotes note search "<related terms>"\`
 - [ ] \`mnotes graph populate\` if graph is empty
 
 Do not skip this. Do not assume you know what's in the wiki.
@@ -72,11 +72,11 @@ Do not skip this. Do not assume you know what's in the wiki.
 
 ## Core Loops
 
-**Ingest** — when given a source (URL/paste): find **10–15 related notes** via \`mnotes search\` + \`mnotes kb recall\` — a non-trivial source typically touches 10–15 pages, not 3. Update or create, link them with \`[[wikilinks]]\`, add a "Sources" section and \`source/<slug>\` tag to each touched note. Update frontmatter (\`updated\`, \`sources\`, \`related\`). Log with \`mnotes wiki log-append --kind ingest\`. Refresh index with \`mnotes wiki index-refresh\`.
+**Ingest** — when given a source (URL/paste): find **10–15 related notes** via \`mnotes note search\` + \`mnotes kb recall\` — a non-trivial source typically touches 10–15 pages, not 3. Update or create, link them with \`[[wikilinks]]\`, add a "Sources" section and \`source/<slug>\` tag to each touched note. Update frontmatter (\`updated\`, \`sources\`, \`related\`). Log with \`mnotes wiki log append --kind ingest\`. Refresh index with \`mnotes wiki index refresh\`.
 
-**Query** — when answering a non-trivial question: search the wiki first; if the answer required real synthesis, file it back as a new note using the appropriate page type (\`concept\`, \`overview\`, etc.). Log with \`mnotes wiki log-append --kind query\`. This is the compounding loop.
+**Query** — when answering a non-trivial question: search the wiki first; if the answer required real synthesis, file it back as a new note using the appropriate page type (\`concept\`, \`overview\`, etc.). Log with \`mnotes wiki log append --kind query\`. This is the compounding loop.
 
-**Lint** — periodically check for contradictions, orphan notes, broken wikilinks, stale entries. Log findings with \`mnotes wiki log-append --kind lint\`.
+**Lint** — periodically check for contradictions, orphan notes, broken wikilinks, stale entries. Log findings with \`mnotes wiki log append --kind lint\`.
 
 ## Quick Reference
 
@@ -109,7 +109,7 @@ Every note should link to at least one other. Build the graph proactively:
 \`\`\`
 mnotes graph populate          # initialize from existing notes (idempotent)
 mnotes graph create-node --label "<concept name>" --node-type concept
-mnotes graph create-edge --source <id> --target <id> --edge-type related
+mnotes graph create-edge --source-id <id> --target-id <id> --edge-type related
 \`\`\`
 
 ## Common CLI commands
@@ -118,9 +118,9 @@ mnotes graph create-edge --source <id> --target <id> --edge-type related
 - \`mnotes bulk knowledge-recall\` -- recall by tag pattern
 - \`mnotes kb snapshot\` -- export all knowledge
 - \`mnotes kb scan-conflicts\` -- lint: find contradictions
-- \`mnotes wiki log-append\` -- append ingest/query/lint/decision log entry
-- \`mnotes wiki index-refresh\` -- regenerate the Wiki Index from current notes
-- \`mnotes composite context-fetch\` / \`mnotes search\` -- search notes
+- \`mnotes wiki log append\` -- append ingest/query/lint/decision log entry
+- \`mnotes wiki index refresh\` -- regenerate the Wiki Index from current notes
+- \`mnotes composite context-fetch\` / \`mnotes note search\` -- search notes
 - \`mnotes note create\` / \`mnotes note update\` / \`mnotes note-ops append\` -- note authoring
 - \`mnotes graph populate\` -- initialize the graph
 - \`mnotes graph create-node\` / \`mnotes graph create-edge\` -- build graph structure

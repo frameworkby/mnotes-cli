@@ -65,7 +65,7 @@ These are not suggestions. Skip any step and the wiki degrades.
 **Session Start (before ANY work):**
 - [ ] \`mnotes composite project-load\`
 - [ ] \`mnotes kb recall --query "<the user's topic>"\`
-- [ ] \`mnotes search "<related terms>"\`
+- [ ] \`mnotes note search "<related terms>"\`
 - [ ] \`mnotes graph populate\` if graph is empty
 - [ ] Read \`type:config\` schema notes before editing
 
@@ -85,14 +85,14 @@ Do not skip this. Do not assume you know what's in the wiki.
 - [ ] If you did meaningful work and stored nothing — go back and store it
 
 ### During Work
-- Recall before researching: \`mnotes kb recall\`, \`mnotes search\`.
+- Recall before researching: \`mnotes kb recall\`, \`mnotes note search\`.
 - Store discoveries via \`mnotes kb store --key "<category>/<name>" --content "..." --tags <category>\`.
 - When the user supplies a source (URL/paste/file), run the **ingest loop**:
-  1. \`mnotes search\` + \`mnotes graph query\` to find **10–15 related notes** — a non-trivial source typically touches 10–15 pages, not 3
+  1. \`mnotes note search\` + \`mnotes graph query\` to find **10–15 related notes** — a non-trivial source typically touches 10–15 pages, not 3
   2. Plan creates/updates with \`[[wikilinks]]\` connecting touched notes; update frontmatter (\`updated\`, \`sources\`, \`related\`)
   3. Apply — each touched note gets a \`source/<slug>\` tag and a "Sources" section
 - **Query loop**: when answering a non-trivial question, search the wiki first; if the answer required real synthesis, file it back as a new note (choose the appropriate page type). This is the compounding loop.
-- Periodically run the **lint loop**: \`mnotes kb scan-conflicts\`, find orphans via \`mnotes graph query-note\`, fix broken \`[[wikilinks]]\`, update stale notes. Log result with \`mnotes wiki log-append --kind lint\`.
+- Periodically run the **lint loop**: \`mnotes kb scan-conflicts\`, find orphans via \`mnotes graph query-note\`, fix broken \`[[wikilinks]]\`, update stale notes. Log result with \`mnotes wiki log append --kind lint\`.
 - Every new or edited note must have at least one outbound \`[[wikilink]]\`.
 
 ### Key Naming Conventions (kb-store fast-capture)
@@ -118,7 +118,7 @@ Every note belongs to the graph. Build relationships proactively.
 
 Example:
   mnotes graph create-node --label "Auth Module" --node-type concept
-  mnotes graph create-edge --source <id> --target <id> --edge-type related
+  mnotes graph create-edge --source-id <id> --target-id <id> --edge-type related
 
 ## Common CLI commands
 - \`mnotes composite project-load\` -- load context at session start
@@ -129,10 +129,10 @@ Example:
 - \`mnotes kb snapshot\` -- export all knowledge
 - \`mnotes kb scan-conflicts\` -- lint for contradictions
 - \`mnotes session log\` -- log a session summary
-- \`mnotes wiki log-append\` -- append ingest/query/lint/decision log entry
-- \`mnotes wiki index-refresh\` -- regenerate the Wiki Index from current notes
+- \`mnotes wiki log append\` -- append ingest/query/lint/decision log entry
+- \`mnotes wiki index refresh\` -- regenerate the Wiki Index from current notes
 - \`mnotes note create\` / \`mnotes note update\` / \`mnotes note-ops append\` -- note authoring
-- \`mnotes search\` / \`mnotes note get\` / \`mnotes note list\` -- note retrieval
+- \`mnotes note search\` / \`mnotes note get\` / \`mnotes note list\` -- note retrieval
 - \`mnotes composite context-fetch\` -- search notes by query
 - \`mnotes graph populate\` -- initialize the graph (idempotent)
 - \`mnotes graph create-node\` / \`mnotes graph create-edge\` -- build graph structure
