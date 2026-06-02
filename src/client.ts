@@ -378,6 +378,45 @@ export interface PopulateGraphResult {
   edges: number;
 }
 
+export interface GraphFact {
+  id: string;
+  statement: string;
+  predicate: string;
+  confidence: number;
+  sourceNoteId: string | null;
+  subjectId: string;
+  objectId: string | null;
+  score: number;
+}
+
+export interface GraphExtractResult {
+  episodes: number;
+  facts: number;
+}
+
+export interface TraversedFactEntity {
+  id: string;
+  name: string;
+  entityType: string;
+  depth: number;
+}
+
+export interface TraversedFact {
+  id: string;
+  subjectId: string;
+  objectId: string | null;
+  predicate: string;
+  statement: string;
+  confidence: number;
+}
+
+export interface TraverseFactsResult {
+  entities: TraversedFactEntity[];
+  facts: TraversedFact[];
+  nodeCount: number;
+  edgeCount: number;
+}
+
 export interface RelatedNote {
   noteId: string;
   title: string;
@@ -1248,6 +1287,42 @@ export function createClient(baseUrl: string, apiKey: string, opts: CreateClient
       workspaceId: string;
     }): Promise<PopulateGraphResult> {
       return request<PopulateGraphResult>("POST", "/api/v1/graph/populate", opts);
+    },
+
+    async graphExtract(opts: {
+      workspaceId: string;
+      full?: boolean;
+    }): Promise<GraphExtractResult> {
+      return request<GraphExtractResult>("POST", "/api/v1/graph/extract", opts);
+    },
+
+    async graphFacts(opts: {
+      workspaceId: string;
+      subjectId?: string;
+      predicate?: string;
+      asOf?: string;
+      limit?: number;
+    }): Promise<GraphFact[]> {
+      const params = new URLSearchParams({ workspaceId: opts.workspaceId });
+      if (opts.subjectId) params.set("subjectId", opts.subjectId);
+      if (opts.predicate) params.set("predicate", opts.predicate);
+      if (opts.asOf) params.set("asOf", opts.asOf);
+      if (opts.limit != null) params.set("limit", String(opts.limit));
+      const res = await request<{ data: GraphFact[] }>(
+        "GET",
+        `/api/v1/graph/facts?${params.toString()}`,
+      );
+      return res.data;
+    },
+
+    async graphTraverseFacts(opts: {
+      startEntityId: string;
+      maxDepth?: number;
+      predicates?: string[];
+      asOf?: string;
+      workspaceId: string;
+    }): Promise<TraverseFactsResult> {
+      return request<TraverseFactsResult>("POST", "/api/v1/graph/facts/traverse", opts);
     },
 
     async relatedNotes(

@@ -3,6 +3,25 @@
 All notable changes to the CLI are documented here. The CLI follows semver
 independent of the app — see `feedback_release_versioning` in agent memory.
 
+## 4.3.0 — 2026-06-02
+
+### Add
+
+Graphiti-parity temporal-graph commands, backed by the new `/api/v1/graph`
+bi-temporal surface:
+
+- `mnotes graph extract [--full]` — run LLM entity/relationship extraction over
+  notes to build the knowledge graph (backfill). Without `--full`, only notes
+  that have not yet been extracted are processed.
+- `mnotes graph facts [--subject <entityId>] [--predicate <p>] [--as-of <ISO>] [--limit <n>]`
+  — query bi-temporal facts. `--as-of` is the temporal axis (defaults to now /
+  current truth).
+- `mnotes graph traverse-facts --start <entityId> [--depth <n>] [--predicates a,b] [--as-of <ISO>]`
+  — temporal-aware graph traversal from a seed entity.
+
+New client types/methods (`GraphFact`, `GraphExtractResult`, `TraversedFact`,
+`graphExtract`, `graphFacts`, `graphTraverseFacts`) back these commands.
+
 ## 4.2.0 — 2026-05-19
 
 ### Add

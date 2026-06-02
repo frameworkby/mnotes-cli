@@ -14,6 +14,9 @@ import { createNodeAction } from "./create-node";
 import { deleteNodeAction } from "./delete-node";
 import { createEdgeAction } from "./create-edge";
 import { deleteEdgeAction } from "./delete-edge";
+import { extractFactsAction } from "./extract";
+import { factsAction } from "./facts";
+import { traverseFactsAction } from "./traverse-facts";
 
 export function registerGraphGroup(program: Command): void {
   registerGroup(program, "graph", [
@@ -31,5 +34,8 @@ export function registerGraphGroup(program: Command): void {
     deleteNodeAction,
     createEdgeAction,
     deleteEdgeAction,
+    extractFactsAction,
+    factsAction,
+    traverseFactsAction,
   ]);
 }

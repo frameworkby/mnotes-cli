@@ -115,17 +115,24 @@ mnotes delete abc123
 
 ## JSON output contract
 
-The CLI is designed so AI agents can swap MCP transport for CLI invocations
-without rewriting downstream parsing. To make this safe, every command that
-mirrors an MCP tool emits JSON with a top-level shape that matches the MCP
-tool's response.
+> **MCP is gone.** m-notes no longer ships an MCP server, and the CLI no longer
+> speaks MCP. The shapes below are a *stability contract*: the CLI's `--json`
+> envelopes were frozen to the former MCP tool responses so that agents which
+> migrated off MCP onto the CLI did not have to rewrite downstream parsing. The
+> recorded MCP fixtures live on only as golden test data — there is no live MCP
+> transport. (MCP clients that still need to reach m-notes use the standalone
+> [Hermes memory bridge](https://github.com/frameworkby/remedy-pod-mnotes/tree/main/integrations/hermes-agent),
+> which translates MCP calls to the REST API.)
+
+Every command that mirrored an MCP tool emits JSON with a top-level shape that
+matches that tool's former response.
 
 ### The rule
 
-For each `mnotes <group> <action> --json` that has a corresponding MCP tool:
+For each `mnotes <group> <action> --json` that mirrored an MCP tool:
 
-- The **top-level keys must match** the MCP tool response (same names, same
-  nesting). Per-item field names within arrays must match too.
+- The **top-level keys must match** the recorded MCP tool response (same names,
+  same nesting). Per-item field names within arrays must match too.
 - Extra fields on individual items are allowed — schemas are `passthrough` —
   but envelopes (`{ notes, nextCursor }`, etc.) are strict.
 - The CLI is the consumer of HTTP APIs; if the API shape diverges from MCP,
