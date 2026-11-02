@@ -7,9 +7,11 @@ on:
 
 jobs:
   publish:
-    runs-on: self-hosted
+    # npm trusted publishing (OIDC) only supports GitHub-hosted runners
+    runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -21,6 +23,5 @@ jobs:
       - name: Build
         run: npm run build
       - name: Publish
+        # OIDC via trusted publisher on npmjs.com — no token; provenance is automatic
         run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
