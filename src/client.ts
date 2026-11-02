@@ -420,6 +420,30 @@ export interface GraphEdgeRecord {
   updatedAt: string;
 }
 
+export interface GraphBuildStats {
+  nodes: number;
+  edges: number;
+  communities: number;
+  droppedLinks: number;
+  hyperedgesIgnored: number;
+  layoutMs: number;
+  importMs: number;
+}
+
+export interface GraphBuildRecord {
+  id: string;
+  name: string;
+  workspaceId: string;
+  rootPath: string | null;
+  commitSha: string | null;
+  tool: string;
+  toolVersion: string | null;
+  createdAt: string;
+  stats: GraphBuildStats;
+  /** Relative, e.g. "/graph/builds/<id>". */
+  url: string;
+}
+
 export interface DeleteGraphEntityResult {
   success: true;
   id: string;
@@ -1319,6 +1343,43 @@ export function createClient(baseUrl: string, apiKey: string, opts: CreateClient
       return request<DeleteGraphEntityResult>(
         "DELETE",
         `/api/v1/graph/edges/${encodeURIComponent(id)}?${params.toString()}`,
+      );
+    },
+
+    async importGraphBuild(body: {
+      workspaceId: string;
+      name: string;
+      rootPath?: string;
+      commitSha?: string;
+      toolVersion?: string;
+      replace?: boolean;
+      graph: unknown;
+    }): Promise<GraphBuildRecord & { replaced: boolean }> {
+      return request<GraphBuildRecord & { replaced: boolean }>(
+        "POST",
+        "/api/v1/graph/builds",
+        body,
+      );
+    },
+
+    async listGraphBuilds(
+      workspaceId: string,
+    ): Promise<{ builds: GraphBuildRecord[] }> {
+      const params = new URLSearchParams({ workspaceId });
+      return request<{ builds: GraphBuildRecord[] }>(
+        "GET",
+        `/api/v1/graph/builds?${params.toString()}`,
+      );
+    },
+
+    async deleteGraphBuild(
+      id: string,
+      workspaceId: string,
+    ): Promise<DeleteGraphEntityResult> {
+      const params = new URLSearchParams({ workspaceId });
+      return request<DeleteGraphEntityResult>(
+        "DELETE",
+        `/api/v1/graph/builds/${encodeURIComponent(id)}?${params.toString()}`,
       );
     },
 
