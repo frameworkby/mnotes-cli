@@ -70,6 +70,7 @@ mnotes --api-key <key> --url <url> <command>
 | `mnotes file upload --path <p> --mime-type <t>` | Upload an image or PDF; optional `--note-id` to embed |
 | `mnotes kb <action>` | Knowledge-base ops: `recall`, `store`, `memory`, `ingest`, `decay`, `archive`, `consolidate`, `snapshot`, `ask`, `link`, `scan-conflicts`, `conflicts`, `stats` |
 | `mnotes graph <action>` | Graph: `get`, `neighbors`, `traverse`, `find-path`, `query`, `query-note`, `populate`, `related`, `backlinks`, `links`, `create-node`, `delete-node`, `create-edge`, `delete-edge` |
+| `mnotes graph import <graph.json> --root <repo>` | Import a graphify build; with `--root`, attaches up to 20 lines of source per code node for the inspector (`--no-snippets` to skip) |
 | `mnotes session <action>` | Sessions: `list`, `log`, `replay`, `resume`, `save-conversation` |
 | `mnotes cluster get` | KMeans cluster layout for the note graph |
 | `mnotes timeline list` | Time-bucketed activity timeline |

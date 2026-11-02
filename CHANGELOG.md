@@ -3,6 +3,18 @@
 All notable changes to the CLI are documented here. The CLI follows semver
 independent of the app — see `feedback_release_versioning` in agent memory.
 
+## 4.5.0 — 2026-11-02
+
+### Add
+
+`mnotes graph import <file> --root <repo>` now reads each code node's
+`source_file` under `--root` and attaches a `snippet` (up to 20 lines /
+1500 chars from the node's start line) so the build inspector can show the
+code. Skips non-code nodes, missing / binary / > 1 MB files and paths that
+resolve outside the root; total snippet payload is capped at 8 MB (one-line
+warning when hit). Opt out with `--no-snippets`. Needs the app release that
+renders snippets; older servers store the field but don't show it.
+
 ## 4.2.0 — 2026-05-19
 
 ### Add
