@@ -4,7 +4,7 @@ export interface OpenClawTemplateOpts {
 }
 
 export function generateOpenClawTemplate(opts: OpenClawTemplateOpts): string {
-  return `<!-- m-notes instructions v7 -->
+  return `<!-- m-notes instructions v8 -->
 # m-notes — Your Wiki
 
 **Server**: ${opts.url}
@@ -123,6 +123,17 @@ Call create_edge with:
   - edgeType: "related" (or "parent", "tagged", "custom")
   - workspaceId: "${opts.workspaceId}"
 \`\`\`
+
+## Code Graph (\`mnotes code\`)
+
+If this repo has a code graph build (imported from graphify), use it before exploring or changing code:
+
+- \`mnotes code status\` -- which build covers this repo and whether it is stale (\`mnotes code refresh\` re-extracts and replaces it; needs graphify: \`uv tool install graphifyy==0.9.97\`)
+- \`mnotes code search <query>\` -- where is a symbol or file; prefer it over broad grep for "where is X / who uses X"
+- \`mnotes code show <node-id|query>\` -- location, snippet, callers, callees/imports and linked notes
+- \`mnotes code impact <file|symbol>\` -- what depends on it; run it before editing a file and check the dependents it lists
+
+Add \`--json\` for machine-readable output. The build defaults to the newest one named after the repo; override with \`--build <id|name>\` or \`MNOTES_CODE_BUILD\`.
 
 ## Available MCP Tools
 - \`knowledge_store\` -- Store knowledge

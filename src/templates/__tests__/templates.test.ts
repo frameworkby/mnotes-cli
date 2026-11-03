@@ -12,8 +12,8 @@ const openclaw = generateOpenClawTemplate(opts);
 // ============================================================
 
 describe("generateCodexTemplate: version marker", () => {
-  it("contains v7 marker", () => {
-    expect(codex).toContain("<!-- m-notes instructions v7 -->");
+  it("contains v8 marker", () => {
+    expect(codex).toContain("<!-- m-notes instructions v8 -->");
   });
 });
 
@@ -81,8 +81,8 @@ describe("generateCodexTemplate: human/LLM division", () => {
 // ============================================================
 
 describe("generateOpenClawTemplate: version marker", () => {
-  it("contains v7 marker", () => {
-    expect(openclaw).toContain("<!-- m-notes instructions v7 -->");
+  it("contains v8 marker", () => {
+    expect(openclaw).toContain("<!-- m-notes instructions v8 -->");
   });
 });
 
@@ -142,5 +142,13 @@ describe("generateOpenClawTemplate: promotion rule with page-type vocabulary", (
 describe("generateOpenClawTemplate: human/LLM division", () => {
   it("mentions grunt work", () => {
     expect(openclaw).toContain("grunt work");
+  });
+});
+
+describe("templates: code graph", () => {
+  it.each([["codex", codex], ["openclaw", openclaw]])("%s mentions the mnotes code commands", (_name, t) => {
+    for (const cmd of ["mnotes code status", "mnotes code search", "mnotes code show", "mnotes code impact", "mnotes code refresh"]) {
+      expect(t).toContain(cmd);
+    }
   });
 });

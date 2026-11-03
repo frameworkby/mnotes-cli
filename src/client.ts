@@ -449,6 +449,53 @@ export interface DeleteGraphEntityResult {
   id: string;
 }
 
+// ── Code graph (graph build queries) ─────────────────────────────────────
+
+export interface CodeNodeRef {
+  id: string;
+  label: string;
+  nodeType: string;
+  sourceFile: string | null;
+  sourceLocation: string | null;
+}
+
+export interface CodeSearchHit extends CodeNodeRef {
+  community: number | null;
+  degree: number;
+}
+
+export interface CodeEdge {
+  edgeType: string;
+  confidence: string | number | null;
+  other: CodeNodeRef;
+}
+
+export interface CodeNodeDetail {
+  node: CodeNodeRef & {
+    community: number | null;
+    communityName: string | null;
+    snippet: string | null;
+    snippetStartLine: number | null;
+  };
+  outgoing: CodeEdge[];
+  incoming: CodeEdge[];
+  notes: Array<{ noteId: string; label: string; type: string }>;
+  truncated: boolean;
+}
+
+export interface CodeDependent extends CodeNodeRef {
+  distance: number;
+  via: string;
+}
+
+export interface CodeImpactResult {
+  /** `{ file }` (server-normalized path) or `{ node }`. */
+  target: { file?: string; node?: CodeNodeRef };
+  dependents: CodeDependent[];
+  files: Array<{ sourceFile: string; minDistance: number; count: number }>;
+  truncated: boolean;
+}
+
 // ── Session / cluster / timeline / MoC / smart-folder / task types ───────
 
 export interface SessionSummary {
@@ -1364,8 +1411,10 @@ export function createClient(baseUrl: string, apiKey: string, opts: CreateClient
 
     async listGraphBuilds(
       workspaceId: string,
+      opts: { name?: string } = {},
     ): Promise<{ builds: GraphBuildRecord[] }> {
       const params = new URLSearchParams({ workspaceId });
+      if (opts.name) params.set("name", opts.name);
       return request<{ builds: GraphBuildRecord[] }>(
         "GET",
         `/api/v1/graph/builds?${params.toString()}`,
@@ -1380,6 +1429,50 @@ export function createClient(baseUrl: string, apiKey: string, opts: CreateClient
       return request<DeleteGraphEntityResult>(
         "DELETE",
         `/api/v1/graph/builds/${encodeURIComponent(id)}?${params.toString()}`,
+      );
+    },
+
+    async searchGraphBuild(
+      buildId: string,
+      workspaceId: string,
+      opts: { q: string; type?: string; limit?: number },
+    ): Promise<{ nodes: CodeSearchHit[] }> {
+      const params = new URLSearchParams({ workspaceId, q: opts.q });
+      if (opts.type) params.set("type", opts.type);
+      if (opts.limit != null) params.set("limit", String(opts.limit));
+      return request<{ nodes: CodeSearchHit[] }>(
+        "GET",
+        `/api/v1/graph/builds/${encodeURIComponent(buildId)}/search?${params.toString()}`,
+      );
+    },
+
+    async getGraphBuildNode(
+      buildId: string,
+      nodeId: string,
+      workspaceId: string,
+      opts: { limit?: number } = {},
+    ): Promise<CodeNodeDetail> {
+      const params = new URLSearchParams({ workspaceId });
+      if (opts.limit != null) params.set("limit", String(opts.limit));
+      return request<CodeNodeDetail>(
+        "GET",
+        `/api/v1/graph/builds/${encodeURIComponent(buildId)}/nodes/${encodeURIComponent(nodeId)}?${params.toString()}`,
+      );
+    },
+
+    async getGraphBuildImpact(
+      buildId: string,
+      workspaceId: string,
+      opts: { node?: string; file?: string; depth?: number; limit?: number },
+    ): Promise<CodeImpactResult> {
+      const params = new URLSearchParams({ workspaceId });
+      if (opts.node) params.set("node", opts.node);
+      if (opts.file) params.set("file", opts.file);
+      if (opts.depth != null) params.set("depth", String(opts.depth));
+      if (opts.limit != null) params.set("limit", String(opts.limit));
+      return request<CodeImpactResult>(
+        "GET",
+        `/api/v1/graph/builds/${encodeURIComponent(buildId)}/impact?${params.toString()}`,
       );
     },
 
