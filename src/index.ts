@@ -9,6 +9,7 @@ import { registerFolderGroup } from "./commands/folder";
 import { registerFileGroup } from "./commands/file";
 import { registerKbGroup } from "./commands/kb";
 import { registerGraphGroup } from "./commands/graph";
+import { registerCodeGroup } from "./commands/code";
 import { registerSessionGroup } from "./commands/session";
 import { registerClusterGroup } from "./commands/cluster";
 import { registerTimelineGroup } from "./commands/timeline";
@@ -50,6 +51,7 @@ export function buildProgram(): Command {
   registerFileGroup(program);
   registerKbGroup(program);
   registerGraphGroup(program);
+  registerCodeGroup(program);
   registerSessionGroup(program);
   registerClusterGroup(program);
   registerTimelineGroup(program);

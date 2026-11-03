@@ -3,6 +3,36 @@
 All notable changes to the CLI are documented here. The CLI follows semver
 independent of the app — see `feedback_release_versioning` in agent memory.
 
+## 4.6.0 — 2026-11-03
+
+### Add
+
+`mnotes code` — query the repo's code graph build (a graphify import) from
+agents and the terminal. All commands take `--json` and `--build <name|id>`;
+the build otherwise comes from `MNOTES_CODE_BUILD`, then the build named
+after the git top-level (or cwd) basename (looked up with `?name=`). A
+`--build` value is matched as a name first, then as an id.
+
+- `mnotes code status`: the build, `repoRoot`, short `head`, commits
+  `behind`, `stale` (HEAD moved past the build commit, or the commit is
+  unknown locally) and `dirty` (tracked files modified; doesn't make the
+  build stale).
+- `mnotes code search <query> [--type <t>] [--limit <n>]`
+- `mnotes code show <node-id|query> [--limit <n>]`: location, snippet,
+  incoming/outgoing edges grouped by type and linked notes; a non-id falls
+  back to the top search hit.
+- `mnotes code impact <file|symbol> [--depth <n>] [--limit <n>]`: reverse
+  dependencies grouped by file; files on disk are sent as repo-relative POSIX
+  paths. A file the build doesn't know yet returns no dependents with
+  `notInGraph: true` (exit 0) instead of failing.
+- `mnotes code refresh [--if-stale] [--exclude <glob>]...`: runs
+  `graphify extract . --code-only` and imports it in-process (name, `--root`,
+  `--commit`, `--replace`). `--if-stale` is a no-op when the build is fresh
+  and never creates a first build.
+
+Needs the app release with the `/api/v1/graph/builds/:id/{search,nodes,impact}`
+endpoints. Codex/OpenClaw instructions (v8) now point agents at `mnotes code`.
+
 ## 4.5.0 — 2026-11-02
 
 ### Add
