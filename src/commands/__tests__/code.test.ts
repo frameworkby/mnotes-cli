@@ -155,7 +155,7 @@ describe("build resolution", () => {
 describe("code status", () => {
   it("returns build: null and stale: false without a build", async () => {
     const s = await codeStatusAction.run({}, ctx);
-    expect(s).toEqual({ build: null, repoRoot: expect.any(String), head, behind: null, stale: false });
+    expect(s).toEqual({ build: null, repoRoot: expect.any(String), head, behind: null, stale: false, dirty: false });
     expect(basename(s.repoRoot!)).toBe("my-repo");
   });
 
@@ -184,14 +184,24 @@ describe("code status", () => {
     expect(s.head).not.toBe(head);
   });
 
-  it("is stale when tracked files are modified, not for untracked files", async () => {
+  it("reports modified tracked files as dirty without going stale; ignores untracked files", async () => {
     mockList.mockResolvedValue({ builds: [makeBuild({ name: "my-repo", commitSha: head })] });
     writeFileSync(join(repo, "untracked.ts"), "x\n");
-    expect((await codeStatusAction.run({}, ctx)).stale).toBe(false);
+    expect(await codeStatusAction.run({}, ctx)).toMatchObject({ stale: false, dirty: false });
     writeFileSync(join(repo, "src", "lib", "a.ts"), "export const a = 2;\n");
     const s = await codeStatusAction.run({}, ctx);
-    expect(s.behind).toBe(0);
-    expect(s.stale).toBe(true);
+    expect(s).toMatchObject({ behind: 0, stale: false, dirty: true });
+    codeStatusAction.renderHuman!(s);
+    expect(logs[1]).toMatch(/\(0 commit\(s\) behind, uncommitted changes\)$/);
+    expect(logs[2]).toBe("Up to date.");
+  });
+
+  it("--if-stale doesn't refresh a build that is only dirty", async () => {
+    vi.mocked(shared.findGraphify).mockReturnValue(null);
+    mockList.mockResolvedValue({ builds: [makeBuild({ name: "my-repo", commitSha: head })] });
+    writeFileSync(join(repo, "src", "lib", "a.ts"), "export const a = 2;\n");
+    const out = await codeRefreshAction.run({ ifStale: true }, ctx);
+    expect(out).toMatchObject({ refreshed: false, reason: "up-to-date", before: { dirty: true, stale: false } });
   });
 
   it("reports behind: null (stale) for a sha unknown locally", async () => {
@@ -208,7 +218,7 @@ describe("code status", () => {
     mockList.mockResolvedValue({ builds: [makeBuild({ name: "plain-dir", commitSha: "abc1234" })] });
     const s = await codeStatusAction.run({}, ctx);
     expect(s.build?.name).toBe("plain-dir");
-    expect(s).toMatchObject({ repoRoot: null, head: null, behind: null, stale: false });
+    expect(s).toMatchObject({ repoRoot: null, head: null, behind: null, stale: false, dirty: false });
   });
 });
 

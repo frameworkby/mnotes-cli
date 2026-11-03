@@ -22,13 +22,17 @@ export interface CodeStatus {
   head: string | null;
   /** Commits between the build's commitSha and HEAD; null when the sha is unknown locally. */
   behind: number | null;
+  /** HEAD moved past the build's commit, or that commit is unknown locally. */
   stale: boolean;
+  /** Tracked files have uncommitted changes (not part of `stale`). */
+  dirty: boolean;
 }
 
 /**
  * Compare a build against the local checkout. Stale means: the build exists,
- * we're in a git repo, and either HEAD moved past the build's commit (or that
- * commit is unknown locally) or tracked files have uncommitted changes.
+ * we're in a git repo, and HEAD moved past the build's commit (or that commit
+ * is unknown locally). Uncommitted changes are reported as `dirty` only, so
+ * `refresh --if-stale` doesn't re-extract on every trigger while editing.
  */
 export function computeStatus(build: GraphBuildRecord | null, env: Pick<CodeEnv, "repoRoot">): CodeStatus {
   const root = env.repoRoot;
@@ -41,7 +45,7 @@ export function computeStatus(build: GraphBuildRecord | null, env: Pick<CodeEnv,
     behind = out !== null && /^\d+$/.test(out) ? Number(out) : null;
   }
   const dirty = root ? (git(["status", "--porcelain", "--untracked-files=no"], root) ?? "") !== "" : false;
-  const stale = Boolean(build && root && (behind === null || behind >= 1 || dirty));
+  const stale = Boolean(build && root && (behind === null || behind >= 1));
   return {
     build: build
       ? { id: build.id, name: build.name, commitSha: build.commitSha, createdAt: build.createdAt, stats: build.stats }
@@ -50,6 +54,7 @@ export function computeStatus(build: GraphBuildRecord | null, env: Pick<CodeEnv,
     head,
     behind,
     stale,
+    dirty,
   };
 }
 
@@ -80,7 +85,7 @@ export const codeStatusAction: ActionDescriptor<CodeStatusInput, CodeStatus> = {
       return;
     }
     const behind = s.behind === null ? "build commit unknown locally" : `${s.behind} commit(s) behind`;
-    console.log(`Repo: ${s.repoRoot} at ${s.head ?? "no commits"} (${behind})`);
+    console.log(`Repo: ${s.repoRoot} at ${s.head ?? "no commits"} (${behind}${s.dirty ? ", uncommitted changes" : ""})`);
     console.log(s.stale ? "Stale. Run `mnotes code refresh`." : "Up to date.");
   },
 };

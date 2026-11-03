@@ -14,8 +14,9 @@ after the git top-level (or cwd) basename (looked up with `?name=`). A
 `--build` value is matched as a name first, then as an id.
 
 - `mnotes code status`: the build, `repoRoot`, short `head`, commits
-  `behind` and `stale` (HEAD moved past the build commit, the commit is
-  unknown locally, or tracked files are modified).
+  `behind`, `stale` (HEAD moved past the build commit, or the commit is
+  unknown locally) and `dirty` (tracked files modified; doesn't make the
+  build stale).
 - `mnotes code search <query> [--type <t>] [--limit <n>]`
 - `mnotes code show <node-id|query> [--limit <n>]`: location, snippet,
   incoming/outgoing edges grouped by type and linked notes; a non-id falls
