@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import * as fs from "node:fs";
-import { mkdtempSync, mkdirSync, copyFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, copyFileSync, writeFileSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, basename } from "node:path";
-import { importGraphAction } from "../graph/import";
+import { importGraphAction, attachSnippets } from "../graph/import";
 import { listBuildsAction } from "../graph/builds";
 import { deleteBuildAction } from "../graph/delete-build";
 import { resolveConfig } from "../../config";
@@ -160,6 +160,93 @@ describe("graph import", () => {
       'Imported "repo": 40 nodes, 146 edges, 17 communities (0 links dropped) → https://mnotes.example.com/graph/builds/b1',
     );
     expect(logs[2]).toBe("(Build viewer page ships in Phase 2.)");
+  });
+});
+
+describe("graph import snippets", () => {
+  const fn = (over: Record<string, unknown> = {}) => ({
+    id: "f", label: "f()", _callable: true, file_type: "code", source_file: "a.ts", source_location: "L3", ...over,
+  });
+  const lines = (n: number) => Array.from({ length: n }, (_, i) => `line ${i + 1}`).join("\n");
+  type N = Parameters<typeof attachSnippets>[0][number];
+
+  beforeEach(() => {
+    writeFileSync(join(tmp, "a.ts"), lines(50));
+  });
+
+  it("slices up to 20 lines from the start line, or to the range end", () => {
+    const nodes: N[] = [fn(), fn({ source_location: "L10-L12" }), fn({ source_location: "L49" })];
+    expect(attachSnippets(nodes, tmp)).toEqual({ attached: 3, overBudget: 0 });
+    expect(nodes[0].snippet!.split("\n")).toEqual(Array.from({ length: 20 }, (_, i) => `line ${i + 3}`));
+    expect(nodes[1].snippet).toBe("line 10\nline 11\nline 12");
+    expect(nodes[2].snippet).toBe("line 49\nline 50");
+  });
+
+  it("caps a snippet at 1500 chars", () => {
+    writeFileSync(join(tmp, "long.ts"), "x".repeat(5000));
+    const nodes: N[] = [fn({ source_file: "long.ts", source_location: "L1" })];
+    attachSnippets(nodes, tmp);
+    expect(nodes[0].snippet).toHaveLength(1500);
+  });
+
+  it("skips non-code nodes, missing files, binaries, > 1 MB files and missing locations", () => {
+    writeFileSync(join(tmp, "bin.ts"), Buffer.from([0x61, 0x00, 0x62]));
+    writeFileSync(join(tmp, "big.ts"), "y\n".repeat(600_000));
+    const nodes: N[] = [
+      { id: "a.ts", label: "a.ts", file_type: "code", source_file: "a.ts", source_location: "L1" }, // file node
+      { id: "e", label: "e", type: "external", file_type: "concept", source_file: "a.ts", source_location: "L1" },
+      { id: "d", label: "d", file_type: "document", source_file: "a.ts", source_location: "L1" },
+      fn({ source_file: "nope.ts" }),
+      fn({ source_file: "bin.ts", source_location: "L1" }),
+      fn({ source_file: "big.ts", source_location: "L1" }),
+      fn({ source_location: undefined }),
+      fn({ source_location: "L999" }),
+    ];
+    expect(attachSnippets(nodes, tmp)).toEqual({ attached: 0, overBudget: 0 });
+    for (const n of nodes) expect(n).not.toHaveProperty("snippet");
+  });
+
+  it("refuses paths that escape the root, including via symlink", () => {
+    const root = join(tmp, "root");
+    mkdirSync(root);
+    symlinkSync(join(tmp, "a.ts"), join(root, "link.ts"));
+    const nodes: N[] = [
+      fn({ source_file: "../a.ts" }),
+      fn({ source_file: join(tmp, "a.ts") }),
+      fn({ source_file: "link.ts" }),
+    ];
+    expect(attachSnippets(nodes, root)).toEqual({ attached: 0, overBudget: 0 });
+  });
+
+  it("stops attaching once the budget is spent", () => {
+    const nodes: N[] = [fn({ source_location: "L1-L1" }), fn({ source_location: "L2-L2" }), fn({ source_location: "L3-L3" })];
+    // each snippet is JSON '"line N"' = 8 chars
+    expect(attachSnippets(nodes, tmp, 16)).toEqual({ attached: 2, overBudget: 1 });
+    expect(nodes[2]).not.toHaveProperty("snippet");
+  });
+
+  it("attaches snippets on import with --root, warns on budget, and honours --no-snippets", async () => {
+    const f = join(tmp, "graph.json");
+    writeFileSync(f, JSON.stringify({ nodes: [fn()], links: [] }));
+    await importGraphAction.run({ file: f, name: "x", root: tmp }, ctx);
+    expect((sentBody().graph as { nodes: N[] }).nodes[0].snippet).toMatch(/^line 3\n/);
+
+    mockImport.mockClear();
+    await importGraphAction.run({ file: f, name: "x", root: tmp, snippets: false }, ctx);
+    expect((sentBody().graph as { nodes: N[] }).nodes[0]).not.toHaveProperty("snippet");
+
+    mockImport.mockClear();
+    await importGraphAction.run({ file: f, name: "x" }, ctx);
+    expect((sentBody().graph as { nodes: N[] }).nodes[0]).not.toHaveProperty("snippet");
+  });
+
+  it("prints one warning line when the budget runs out", async () => {
+    const f = join(tmp, "graph.json");
+    writeFileSync(f, JSON.stringify({ nodes: [fn()], links: [] }));
+    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+    vi.mocked(fs.statSync).mockReturnValueOnce({ size: 29_500_000 } as fs.Stats);
+    await importGraphAction.run({ file: f, name: "x", root: tmp }, ctx);
+    expect(stderr).toHaveBeenCalledWith("Snippet budget reached: attached 0 code snippets, skipped 1.\n");
   });
 });
 
