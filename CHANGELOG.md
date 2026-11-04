@@ -3,6 +3,13 @@
 All notable changes to the CLI are documented here. The CLI follows semver
 independent of the app — see `feedback_release_versioning` in agent memory.
 
+## 4.6.1 — 2026-11-04
+
+### Security
+
+- Removed the unused `zod` dependency (high advisory GHSA for oversized collections). The CLI now has no vulnerable production dependencies.
+- Dev: vitest 4.1.12; `npm audit` reports 0 vulnerabilities.
+
 ## 4.6.0 — 2026-11-03
 
 ### Add
