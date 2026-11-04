@@ -297,6 +297,15 @@ export interface KnowledgeLinkResult {
   created: boolean;
 }
 
+export interface SupersedeResult {
+  noteId: string;
+  key: string | null;
+  title: string;
+  supersededById: string | null;
+  supersededBy: { id: string; key: string | null; title: string } | null;
+  resolvedConflicts: number;
+}
+
 export interface ScanConflictsResult {
   scanId: string;
   estimatedPairs: number;
@@ -1207,6 +1216,17 @@ export function createClient(baseUrl: string, apiKey: string, opts: CreateClient
       confidence?: number;
     }): Promise<KnowledgeLinkResult> {
       return request<KnowledgeLinkResult>("POST", "/api/v1/knowledge/link", opts);
+    },
+
+    async supersedeKnowledge(opts: {
+      workspaceId: string;
+      noteId?: string;
+      key?: string;
+      byNoteId?: string;
+      byKey?: string;
+      clear?: boolean;
+    }): Promise<{ data: SupersedeResult }> {
+      return request<{ data: SupersedeResult }>("POST", "/api/v1/knowledge/supersede", opts);
     },
 
     async scanKnowledgeConflicts(opts: {

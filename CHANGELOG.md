@@ -3,6 +3,22 @@
 All notable changes to the CLI are documented here. The CLI follows semver
 independent of the app — see `feedback_release_versioning` in agent memory.
 
+## 4.8.0 — 2026-11-04
+
+### Add
+
+- `mnotes kb supersede`: marks a knowledge entry as superseded by a newer one,
+  so `kb recall` and `kb ask` stop returning it. Needs an app release with
+  frameworkby/mnotes#1137.
+
+```sh
+mnotes kb supersede --key db.engine --by db.engine.v2   # or --id / --by-id
+mnotes kb supersede --key db.engine --clear             # restore it
+```
+
+`--json` prints the server's `data` unchanged:
+`{ noteId, key, title, supersededById, supersededBy: { id, key, title } | null, resolvedConflicts }`.
+
 ## 4.7.0 — 2026-11-04
 
 ### Add

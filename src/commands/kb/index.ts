@@ -15,6 +15,7 @@ import { linkAction } from "./link";
 import { scanConflictsAction } from "./scan-conflicts";
 import { conflictsAction } from "./conflicts";
 import { statsAction } from "./stats";
+import { supersedeAction } from "./supersede";
 
 export function registerKbGroup(program: Command): void {
   registerGroup(program, "kb", [
@@ -33,5 +34,6 @@ export function registerKbGroup(program: Command): void {
     scanConflictsAction,
     conflictsAction,
     statsAction,
+    supersedeAction,
   ]);
 }
