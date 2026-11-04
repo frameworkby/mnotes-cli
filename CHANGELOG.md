@@ -3,6 +3,35 @@
 All notable changes to the CLI are documented here. The CLI follows semver
 independent of the app — see `feedback_release_versioning` in agent memory.
 
+## 4.7.0 — 2026-11-04
+
+### Add
+
+- `mnotes kb ask --context-only`: returns the retrieved notes without calling
+  the server's LLM, for agents that reason over the notes themselves. Needs an
+  app release with frameworkby/mnotes#1142; older servers ignore the flag and
+  answer as before.
+
+`--json` shape (all new fields are additive):
+
+```jsonc
+{
+  "answer": "string | null",          // null only with --context-only
+  "contextOnly": true,                // only with --context-only
+  "context": "### [1] Title (chunk 1/3, score: 0.81)\n…",  // only with --context-only
+  "confidence": 0.82,
+  "sources": [{ "noteId": "…", "title": "…", "excerpt": "≤200 chars", "relevanceScore": 0.81, "chunkIndex": 0, "totalChunks": 3 }],
+  "evidence": {
+    "chunks": [{ "id": "noteId#0", "noteId": "…", "chunkIndex": 0, "score": 0.81 }],
+    "nodes": [{ "id": "graphNodeId", "noteId": "…", "label": "…" }]
+  }
+}
+```
+
+`evidence.chunks[].id` is `noteId#chunkIndex` and is not stable across note
+edits yet (stable ids come with frameworkby/mnotes#1141). `evidence.nodes`
+lists the graph node of each source note that has one.
+
 ## 4.6.1 — 2026-11-04
 
 ### Security

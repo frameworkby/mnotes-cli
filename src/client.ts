@@ -267,8 +267,18 @@ export interface SnapshotJson {
 }
 
 export interface AskResult {
-  answer: string;
+  /** null only when the request set contextOnly. */
+  answer: string | null;
   confidence: number;
+  /** Present (true) only in context-only mode. */
+  contextOnly?: boolean;
+  /** Context-only mode: the retrieved notes block, full chunk text. */
+  context?: string;
+  /** Chunk ids are `noteId#chunkIndex` and change when a note is edited. Missing on servers before 1142. */
+  evidence?: {
+    chunks: Array<{ id: string; noteId: string; chunkIndex: number; score: number }>;
+    nodes: Array<{ id: string; noteId: string; label: string }>;
+  };
   sources: Array<{
     noteId: string;
     title: string;
@@ -1175,6 +1185,7 @@ export function createClient(baseUrl: string, apiKey: string, opts: CreateClient
       question: string;
       workspaceId: string;
       limit?: number;
+      contextOnly?: boolean;
     }): Promise<AskResult> {
       return request<AskResult>("POST", "/api/v1/knowledge/ask", opts);
     },
