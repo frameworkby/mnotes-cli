@@ -3,6 +3,23 @@
 All notable changes to the CLI are documented here. The CLI follows semver
 independent of the app — see `feedback_release_versioning` in agent memory.
 
+## 4.9.0 — 2026-11-05
+
+### Add
+
+- `mnotes kb feedback`: rates a `kb ask` answer up or down. Ratings nudge which
+  notes rank first in later answers (at most ±15%), and re-rating replaces the
+  previous rating. `kb ask --json` now includes `answerId` (null when nothing
+  was retrieved). Needs an app release with frameworkby/mnotes#1138.
+
+```sh
+mnotes kb feedback <answerId> --rating up [--comment "..."]
+mnotes kb feedback <answerId> --rating clear
+```
+
+`--json` prints the server payload unchanged:
+`{ "data": { "answerId", "rating": 1 | -1 | null, "notesUpdated" } }`.
+
 ## 4.8.0 — 2026-11-04
 
 ### Add
