@@ -269,6 +269,8 @@ export interface SnapshotJson {
 export interface AskResult {
   /** null only when the request set contextOnly. */
   answer: string | null;
+  /** Rate with `kb feedback`. null when nothing was retrieved; missing on servers before #1138. */
+  answerId?: string | null;
   confidence: number;
   /** Present (true) only in context-only mode. */
   contextOnly?: boolean;
@@ -287,6 +289,12 @@ export interface AskResult {
     chunkIndex?: number;
     totalChunks?: number;
   }>;
+}
+
+export interface AnswerFeedbackResult {
+  answerId: string;
+  rating: 1 | -1 | null;
+  notesUpdated: number;
 }
 
 export interface KnowledgeLinkResult {
@@ -1197,6 +1205,15 @@ export function createClient(baseUrl: string, apiKey: string, opts: CreateClient
       contextOnly?: boolean;
     }): Promise<AskResult> {
       return request<AskResult>("POST", "/api/v1/knowledge/ask", opts);
+    },
+
+    async answerFeedback(opts: {
+      workspaceId: string;
+      answerId: string;
+      rating: "up" | "down" | "clear";
+      comment?: string;
+    }): Promise<{ data: AnswerFeedbackResult }> {
+      return request<{ data: AnswerFeedbackResult }>("POST", "/api/v1/knowledge/feedback", opts);
     },
 
     async knowledgeLink(opts: {
