@@ -82,6 +82,7 @@ mnotes --api-key <key> --url <url> <command>
 | `mnotes moc generate` | Generate a Map-of-Content note for a folder or tag |
 | `mnotes smart-folder <action>` | `list`, `create`, `delete` saved searches |
 | `mnotes task <action>` | `list` and `toggle` tasks parsed from notes |
+| `mnotes board <action>` | Built-in task tracker (kanban): `list`, `create`, `show`, `update`, `move`, `comment`, `delete` — see below |
 | `mnotes note-ext <action>` | AI per-note: `suggest-tags`, `suggest-tags-links`, `set-importance`, `set-provenance`, `get-provenance`, `split`, `synthesize` |
 | `mnotes recipe <action>` | `list` and `run` recipes |
 | `mnotes object-type <action>` | `list` and `query` notes by object type |
@@ -119,6 +120,26 @@ mnotes read abc123 --json
 # Delete a note
 mnotes delete abc123
 ```
+
+### Board (task tracker)
+
+`mnotes board` drives the built-in kanban board. Statuses, in board order:
+`backlog`, `todo`, `in_progress` (`in-progress` also accepted), `review`,
+`done`. Priorities: `none`, `low`, `medium`, `high`, `urgent`. Changes made
+from the CLI are logged on the task as agent activity.
+
+```bash
+mnotes board list --status todo,in_progress --assignee claude-code
+mnotes board create "Wire up auth" --priority high --assignee claude-code --note-id abc123
+mnotes board show <id>                      # task + comments/activity
+mnotes board update <id> --title "…" --description "…" --priority urgent
+mnotes board update <id> --unassign
+mnotes board move <id> in-progress
+mnotes board comment <id> "Tests pass, opening PR"
+mnotes board delete <id>
+```
+
+Add `--json` to any of them for the raw API response.
 
 ## JSON output contract
 

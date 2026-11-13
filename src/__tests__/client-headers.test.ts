@@ -47,3 +47,18 @@ describe("createClient header sanitization", () => {
     expect(/^[\x20-\x7E\t]*$/.test(label)).toBe(true);
   });
 });
+
+describe("createClient board requests", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("deleteBoardTask tolerates a 204 with no body", async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const client = createClient("http://localhost", "test-key");
+    await expect(client.deleteBoardTask("t 1")).resolves.toBeUndefined();
+    expect(fetchMock.mock.calls[0]).toEqual([
+      "http://localhost/api/v1/board/tasks/t%201",
+      expect.objectContaining({ method: "DELETE" }),
+    ]);
+  });
+});

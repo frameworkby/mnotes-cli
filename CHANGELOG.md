@@ -3,6 +3,18 @@
 All notable changes to the CLI are documented here. The CLI follows semver
 independent of the app — see `feedback_release_versioning` in agent memory.
 
+## Unreleased
+
+### Add
+
+`mnotes board` — commands for the built-in task tracker (the kanban board at
+`/kanban`, independent of note tags and of markdown-checkbox `mnotes task`):
+`list [--status a,b] [--assignee] [--q] [--limit]`, `create <title>`,
+`show <id>`, `update <id>`, `move <id> <status>`, `comment <id> <body>`,
+`delete <id>`. Statuses: `backlog`, `todo`, `in_progress` (`in-progress`
+accepted), `review`, `done`. Writes from the CLI show up as agent activity on
+the task. Needs the app release that ships `/api/v1/board/tasks`.
+
 ## 4.9.0 — 2026-11-05
 
 ### Add
