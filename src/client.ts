@@ -627,6 +627,50 @@ export interface TaskToggleResult {
   text: string;
 }
 
+// ── Board (task tracker) types ──────────────────────────────────────────
+
+export const BOARD_STATUSES = ["backlog", "todo", "in_progress", "review", "done"] as const;
+export type BoardStatus = (typeof BOARD_STATUSES)[number];
+export const BOARD_PRIORITIES = ["none", "low", "medium", "high", "urgent"] as const;
+export type BoardPriority = (typeof BOARD_PRIORITIES)[number];
+
+export interface BoardTask {
+  id: string;
+  workspaceId: string;
+  title: string;
+  description: string;
+  status: BoardStatus;
+  priority: BoardPriority;
+  position: number;
+  assignee: string | null;
+  notes: Array<{ id: string; title: string }>;
+  commentCount: number;
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+}
+
+export interface BoardComment {
+  id: string;
+  taskId: string;
+  body: string;
+  kind: "comment" | "event";
+  actorType: "user" | "agent";
+  actor: string;
+  createdAt: string;
+}
+
+export interface BoardTaskInput {
+  title?: string;
+  description?: string;
+  status?: BoardStatus;
+  priority?: BoardPriority;
+  assignee?: string | null;
+  noteIds?: string[];
+  position?: number;
+}
+
+
 
 // ── Note extension types ────────────────────────────────────────────────
 
@@ -814,6 +858,7 @@ export function createClient(baseUrl: string, apiKey: string, opts: CreateClient
       throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
     }
 
+    if (res.status === 204) return undefined as T;
     return res.json() as Promise<T>;
   }
 
@@ -845,7 +890,11 @@ export function createClient(baseUrl: string, apiKey: string, opts: CreateClient
       mode?: "fulltext" | "semantic";
       workspaceId?: string;
     }): Promise<{ data: { results: SearchResult[] } }> {
-      return request<{ data: { results: SearchResult[] } }>("POST", "/api/v1/notes/search", opts);
+      return request<{ data: { results: SearchResult[] } }>(
+        "POST",
+        "/api/v1/notes/search",
+        opts,
+      );
     },
 
     async createNote(opts: {
@@ -1693,6 +1742,45 @@ export function createClient(baseUrl: string, apiKey: string, opts: CreateClient
         opts,
       );
       return res.data;
+    },
+
+    // ── Board (task tracker) ─────────────────────────────────────────────
+
+    async listBoardTasks(opts: {
+      workspaceId: string;
+      status?: BoardStatus[];
+      assignee?: string;
+      q?: string;
+      limit?: number;
+    }): Promise<{ tasks: BoardTask[] }> {
+      const params = new URLSearchParams({ workspaceId: opts.workspaceId });
+      if (opts.status?.length) params.set("status", opts.status.join(","));
+      if (opts.assignee) params.set("assignee", opts.assignee);
+      if (opts.q) params.set("q", opts.q);
+      if (opts.limit != null) params.set("limit", String(opts.limit));
+      return request("GET", `/api/v1/board/tasks?${params.toString()}`);
+    },
+
+    async createBoardTask(
+      body: BoardTaskInput & { workspaceId: string; title: string },
+    ): Promise<{ task: BoardTask }> {
+      return request("POST", "/api/v1/board/tasks", body);
+    },
+
+    async getBoardTask(id: string): Promise<{ task: BoardTask; comments: BoardComment[] }> {
+      return request("GET", `/api/v1/board/tasks/${encodeURIComponent(id)}`);
+    },
+
+    async updateBoardTask(id: string, body: BoardTaskInput): Promise<{ task: BoardTask }> {
+      return request("PATCH", `/api/v1/board/tasks/${encodeURIComponent(id)}`, body);
+    },
+
+    async deleteBoardTask(id: string): Promise<void> {
+      await request("DELETE", `/api/v1/board/tasks/${encodeURIComponent(id)}`);
+    },
+
+    async commentBoardTask(id: string, body: string): Promise<{ comment: BoardComment }> {
+      return request("POST", `/api/v1/board/tasks/${encodeURIComponent(id)}/comments`, { body });
     },
 
     async createWorkspace(
