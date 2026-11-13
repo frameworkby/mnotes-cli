@@ -1,9 +1,9 @@
 import type { Command } from "commander";
 import { resolveConfig } from "../../config";
 import { createClient } from "../../client";
-import { printSearchResults } from "../../output";
+import { printRelatedTasks, printSearchResults } from "../../output";
 import type { ActionDescriptor } from "../_register-group";
-import type { SearchResult } from "../../client";
+import type { RelatedTask, SearchResult } from "../../client";
 
 interface SearchInput {
   query: string;
@@ -13,6 +13,7 @@ interface SearchInput {
 
 interface SearchOutput {
   results: SearchResult[];
+  relatedTasks?: RelatedTask[];
 }
 
 export const searchNotesAction: ActionDescriptor<SearchInput, SearchOutput> = {
@@ -40,10 +41,11 @@ export const searchNotesAction: ActionDescriptor<SearchInput, SearchOutput> = {
     if (input.limit !== undefined && input.limit > 0) {
       results = results.slice(0, input.limit);
     }
-    return { results };
+    return { results, relatedTasks: res.data.relatedTasks };
   },
 
   renderHuman: (output) => {
     printSearchResults(output.results);
+    printRelatedTasks(output.relatedTasks);
   },
 };

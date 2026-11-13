@@ -3,7 +3,7 @@
 All notable changes to the CLI are documented here. The CLI follows semver
 independent of the app — see `feedback_release_versioning` in agent memory.
 
-## Unreleased
+## 5.0.0 — 2026-11-13
 
 ### Add
 
@@ -14,6 +14,17 @@ independent of the app — see `feedback_release_versioning` in agent memory.
 `delete <id>`. Statuses: `backlog`, `todo`, `in_progress` (`in-progress`
 accepted), `review`, `done`. Writes from the CLI show up as agent activity on
 the task. Needs the app release that ships `/api/v1/board/tasks`.
+
+Query commands show related board tasks: `mnotes search`, `mnotes note
+search` and `mnotes kb recall` end with a `Related tasks:` footer (tasks
+linked to a result note, or whose title/description contains the query);
+`--json` output of all query commands includes `relatedTasks`. `kb recall`
+writes its human-mode footer to stderr. Older servers: no footer,
+`relatedTasks: []`.
+
+**Breaking:** `mnotes search --json` and `mnotes kb recall --json` now print
+`{ "results": [...], "relatedTasks": [...] }` instead of a bare results array.
+Scripts that parsed the array should read `.results`.
 
 ## 4.9.0 — 2026-11-05
 

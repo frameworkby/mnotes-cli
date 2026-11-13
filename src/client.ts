@@ -281,6 +281,7 @@ export interface AskResult {
     chunks: Array<{ id: string; noteId: string; chunkIndex: number; score: number }>;
     nodes: Array<{ id: string; noteId: string; label: string }>;
   };
+  relatedTasks?: RelatedTask[];
   sources: Array<{
     noteId: string;
     title: string;
@@ -670,6 +671,15 @@ export interface BoardTaskInput {
   position?: number;
 }
 
+/** Board task surfaced next to query results. Absent on servers that predate it. */
+export interface RelatedTask {
+  id: string;
+  title: string;
+  status: BoardStatus;
+  assignee: string | null;
+  /** `note:<noteId>` (linked to a result note) or `text` (query matched title/description). */
+  matchedVia: string;
+}
 
 
 // ── Note extension types ────────────────────────────────────────────────
@@ -889,8 +899,8 @@ export function createClient(baseUrl: string, apiKey: string, opts: CreateClient
       query: string;
       mode?: "fulltext" | "semantic";
       workspaceId?: string;
-    }): Promise<{ data: { results: SearchResult[] } }> {
-      return request<{ data: { results: SearchResult[] } }>(
+    }): Promise<{ data: { results: SearchResult[]; relatedTasks?: RelatedTask[] } }> {
+      return request<{ data: { results: SearchResult[]; relatedTasks?: RelatedTask[] } }>(
         "POST",
         "/api/v1/notes/search",
         opts,
@@ -965,6 +975,7 @@ export function createClient(baseUrl: string, apiKey: string, opts: CreateClient
           freshnessScore: number;
           finalScore: number;
         }>;
+        relatedTasks?: RelatedTask[];
       };
     }> {
       return request("POST", "/api/v1/knowledge/recall", {

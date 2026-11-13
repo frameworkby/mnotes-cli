@@ -1,3 +1,6 @@
+import type { RelatedTask } from "./client";
+import { STATUS_LABELS } from "./commands/board/_shared";
+
 export function printJson(data: unknown): void {
   console.log(JSON.stringify(data, null, 2));
 }
@@ -129,4 +132,19 @@ export function printGraph(
 
 export function printSuccess(msg: string): void {
   process.stderr.write(`${msg}\n`);
+}
+
+/** Footer listing board tasks related to a query. Prints nothing when absent/empty. */
+export function printRelatedTasks(
+  tasks: RelatedTask[] | undefined,
+  write: (line: string) => void = (line) => console.log(line),
+): void {
+  if (!tasks?.length) return;
+  write("");
+  write("Related tasks:");
+  for (const t of tasks) {
+    const assignee = t.assignee ? `  (@${t.assignee})` : "";
+    const via = t.matchedVia.startsWith("note:") ? `note ${t.matchedVia.slice(5)}` : t.matchedVia;
+    write(`  ${t.id}  [${STATUS_LABELS[t.status] ?? t.status}] ${t.title}${assignee}  — via ${via}`);
+  }
 }
