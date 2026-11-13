@@ -3,7 +3,7 @@
 All notable changes to the CLI are documented here. The CLI follows semver
 independent of the app — see `feedback_release_versioning` in agent memory.
 
-## Unreleased
+## 5.0.0 — 2026-11-13
 
 ### Add
 
