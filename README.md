@@ -141,6 +141,22 @@ mnotes board delete <id>
 
 Add `--json` to any of them for the raw API response.
 
+Query commands also surface tracked work. `mnotes search`, `mnotes note
+search` and `mnotes kb recall` end with a footer when board tasks relate to
+the query (linked to a result note, or the query appears in the task's title
+or description; max 5, open tasks first):
+
+```
+Related tasks:
+  cm9x…  [In progress] Wire up auth  (@claude-code)  — via note abc123
+  cm9y…  [Todo] Auth docs  — via text
+```
+
+With `--json`, every query command carries the same list as `relatedTasks`
+(`{ id, title, status, assignee, matchedVia }`); `mnotes search --json` and
+`mnotes kb recall --json` print `{ results, relatedTasks }`. In human mode
+`kb recall` prints the footer on stderr.
+
 ## JSON output contract
 
 The CLI is designed so AI agents can swap MCP transport for CLI invocations
@@ -158,6 +174,10 @@ For each `mnotes <group> <action> --json` that has a corresponding MCP tool:
   but envelopes (`{ notes, nextCursor }`, etc.) are strict.
 - The CLI is the consumer of HTTP APIs; if the API shape diverges from MCP,
   the CLI reshapes inside the action handler, not the server.
+
+**Exceptions (MCP is deprecated):** `mnotes kb recall --json` and
+`mnotes search --json` no longer mirror `recall_knowledge` / `search_notes`;
+they print `{ results, relatedTasks }` so agents see related board tasks.
 
 ### Where the contract lives
 

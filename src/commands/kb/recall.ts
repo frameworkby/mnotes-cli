@@ -2,7 +2,10 @@ import type { Command } from "commander";
 import { resolveConfig } from "../../config";
 import { createClient } from "../../client";
 import type { ActionDescriptor } from "../_register-group";
-import type { RecallEntry } from "../../client";
+import type { RecallEntry, RelatedTask } from "../../client";
+import { printJson, printRelatedTasks } from "../../output";
+
+type RecallOutput = { results: RecallEntry[]; relatedTasks: RelatedTask[] };
 
 interface RecallInput {
   query: string;
@@ -11,7 +14,7 @@ interface RecallInput {
   decayWindow?: number;
 }
 
-export const recallAction: ActionDescriptor<RecallInput, RecallEntry[]> = {
+export const recallAction: ActionDescriptor<RecallInput, RecallOutput> = {
   name: "recall",
   // Mirrored verbatim from MCP `recall_knowledge` description.
   describe:
@@ -54,8 +57,12 @@ export const recallAction: ActionDescriptor<RecallInput, RecallEntry[]> = {
       tags,
       limit: input.limit,
     });
-    // API returns `{ data: { results } }`; MCP's `recall_knowledge` returns the
-    // results array directly. Reshape to match MCP — that's the parity contract.
-    return apiResp.data.results;
+    return { results: apiResp.data.results, relatedTasks: apiResp.data.relatedTasks ?? [] };
+  },
+
+  // Human mode keeps printing the results array on stdout; the footer goes to stderr.
+  renderHuman: (output) => {
+    printJson(output.results);
+    printRelatedTasks(output.relatedTasks, (line) => process.stderr.write(`${line}\n`));
   },
 };

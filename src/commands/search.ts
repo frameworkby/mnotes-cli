@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { resolveConfig } from "../config";
 import { createClient } from "../client";
-import { printJson, printSearchResults } from "../output";
+import { printJson, printRelatedTasks, printSearchResults } from "../output";
 
 export function registerSearchCommand(program: Command): void {
   program
@@ -20,9 +20,10 @@ export function registerSearchCommand(program: Command): void {
       });
 
       if (globalOpts.json) {
-        printJson(result.data.results);
+        printJson({ results: result.data.results, relatedTasks: result.data.relatedTasks ?? [] });
       } else {
         printSearchResults(result.data.results);
+        printRelatedTasks(result.data.relatedTasks);
       }
     });
 }
